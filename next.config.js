@@ -10,11 +10,8 @@ const nextConfig = {
       },
     ],
   },
-  // Google Fontsの設定を追加
+  // Google Fontsの設定を修正
   optimizeFonts: false,
-  experimental: {
-    fontLoaders: [{ loader: "@next/font/google", options: { subsets: ["latin"] } }],
-  },
 }
 
 module.exports = nextConfig
