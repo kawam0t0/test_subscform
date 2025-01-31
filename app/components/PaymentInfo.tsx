@@ -22,25 +22,21 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
           throw new Error("カード情報入力フォームが見つかりません")
         }
 
+        console.log("Square SDK initialization starting...")
         const payments = await loadSquareSdk()
         if (!payments || !isMounted) return
 
-        console.log("カード支払いフォームを作成中...")
+        console.log("Creating card payment form...")
         const card = await payments.card()
         await card.attach(cardContainerRef.current)
-        console.log("カード支払いフォームが正常に作成されました")
+        console.log("Card payment form created successfully")
         setCard(card)
         setIsLoading(false)
       } catch (error) {
-        console.error("Square SDKの読み込みに失敗しました:", error)
+        console.error("Square SDK initialization failed:", error)
         if (isMounted) {
-          // エラーメッセージを日本語化
           const errorMessage = error instanceof Error ? error.message : "支払いフォームの読み込みに失敗しました"
-          if (errorMessage.includes("credentials are not properly configured")) {
-            setError("Square認証情報が正しく設定されていません。管理者に連絡してください。")
-          } else {
-            setError(errorMessage)
-          }
+          setError(`Square SDKの初期化に失敗しました: ${errorMessage}`)
           setIsLoading(false)
         }
       }

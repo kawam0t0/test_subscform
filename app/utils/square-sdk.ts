@@ -30,6 +30,14 @@ export async function loadSquareSdk(): Promise<Payments | null> {
   if (typeof window === "undefined") return null
 
   try {
+    // デバッグ情報の出力
+    console.log("Square SDK Initialization Debug Info:", {
+      appId: process.env.NEXT_PUBLIC_SQUARE_APP_ID,
+      environment: process.env.NODE_ENV,
+      hasAccessToken: !!process.env.SQUARE_ACCESS_TOKEN,
+      hasLocationId: !!process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID,
+    })
+
     const script = document.createElement("script")
     script.src = "https://web.squarecdn.com/v1/square.js"
     document.head.appendChild(script)
@@ -40,15 +48,24 @@ export async function loadSquareSdk(): Promise<Payments | null> {
     })
 
     const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID
-    if (!appId) throw new Error("Square application ID is not configured")
+    if (!appId) {
+      console.error("Square application ID is not configured")
+      throw new Error("Square application ID is not configured")
+    }
 
-    // 環境に応じて適切な設定を使用
+    // 環境設定のデバッグ出力
     const environment = process.env.NODE_ENV === "production" ? "production" : "sandbox"
-    console.log(`Initializing Square SDK in ${environment} environment`)
+    console.log(`Initializing Square SDK in ${environment} environment with App ID: ${appId.substring(0, 8)}...`)
 
-    return await window.Square.payments(appId, { environment })
+    const payments = await window.Square.payments(appId, { environment })
+    console.log("Square SDK initialized successfully")
+    return payments
   } catch (error) {
-    console.error("Failed to load Square SDK:", error)
+    console.error("Square SDK Initialization Error:", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      appId: process.env.NEXT_PUBLIC_SQUARE_APP_ID ? "Set" : "Not set",
+      environment: process.env.NODE_ENV,
+    })
     throw error
   }
 }
