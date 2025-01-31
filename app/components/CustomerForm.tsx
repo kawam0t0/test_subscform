@@ -137,14 +137,14 @@ export function CustomerForm() {
   }
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full max-w-md mx-auto">
-      <div className="bg-primary p-4 sm:p-6 text-white">
-        <h1 className="text-xl sm:text-2xl font-bold text-center flex items-center justify-center">
+    <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full max-w-md mx-auto min-h-[calc(100vh-2rem)]">
+      <div className="header sticky top-0 z-10">
+        <h1 className="text-xl sm:text-2xl font-bold text-center flex items-center justify-center py-4">
           <Droplet className="mr-2" />
           顧客情報フォーム
         </h1>
       </div>
-      <div className="p-4 sm:p-6">
+      <div className="p-4 sm:p-6 overflow-y-auto" style={{ maxHeight: "calc(100vh - 4rem)" }}>
         {step < 7 && <ProgressBar currentStep={step} totalSteps={6} />}
         {error && <ErrorMessage message={error} />}
         {renderStep()}

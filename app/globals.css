@@ -11,20 +11,25 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 212 100% 50%; /* #007BFF */
+    --primary: 213 100% 50%; /* #007BFF */
     --primary-foreground: 0 0% 100%;
-    --secondary: 212 100% 60%;
+    --secondary: 213 100% 60%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 210 40% 96.1%;
+    --muted: 213 100% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 212 100% 96%;
+    --accent: 213 100% 96%;
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 212 100% 50%;
+    --ring: 213 100% 50%;
     --radius: 0.5rem;
+  }
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
   }
 }
 
@@ -49,7 +54,7 @@
   }
 
   .btn {
-    @apply px-4 py-2 rounded-md text-white transition-all duration-200;
+    @apply px-4 py-2 rounded-md text-white transition-all duration-200 flex items-center justify-center gap-2;
     font-weight: 500;
   }
 
@@ -60,4 +65,12 @@
   .btn-secondary {
     @apply bg-[#6c757d] text-white hover:bg-[#5a6268];
   }
+
+  .header {
+    @apply bg-[#007BFF] p-4 sm:p-6 text-white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
 }
+
