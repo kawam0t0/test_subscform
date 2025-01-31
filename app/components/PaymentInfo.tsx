@@ -26,9 +26,7 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
         if (!payments || !isMounted) return
 
         console.log("カード支払いフォームを作成中...")
-        const card = await payments.card({
-          environment: "production", // 明示的に本番環境を指定
-        })
+        const card = await payments.card()
         await card.attach(cardContainerRef.current)
         console.log("カード支払いフォームが正常に作成されました")
         setCard(card)
