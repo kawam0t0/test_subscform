@@ -1,8 +1,8 @@
 // Square Web Payments SDKの型定義
 type SquarePayments = {
-  card: () => Promise<{
-    attach: (element: HTMLElement) => Promise<void>
-    tokenize: () => Promise<{
+  card(): Promise<{
+    attach(element: HTMLElement): Promise<void>
+    tokenize(): Promise<{
       status: string
       token?: string
       errors?: Array<{
@@ -17,13 +17,13 @@ type SquarePayments = {
 declare global {
   interface Window {
     Square: {
-      payments: (
+      payments(
         appId: string,
         options: {
           environment: "sandbox" | "production"
-          locationId?: string
+          locationId: string
         },
-      ) => Promise<SquarePayments>
+      ): Promise<SquarePayments>
     }
   }
 }
@@ -32,12 +32,10 @@ export async function loadSquareSdk(): Promise<SquarePayments | null> {
   if (typeof window === "undefined") return null
 
   try {
-    // デバッグ情報の出力
     console.log("Square SDK Initialization Debug Info:", {
       appId: process.env.NEXT_PUBLIC_SQUARE_APP_ID,
       locationId: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID,
       environment: "production",
-      hasAccessToken: !!process.env.SQUARE_ACCESS_TOKEN,
     })
 
     const script = document.createElement("script")
@@ -60,21 +58,22 @@ export async function loadSquareSdk(): Promise<SquarePayments | null> {
       throw new Error("Square location ID is not configured")
     }
 
-    // locationIdを追加
+    console.log("Attempting to initialize Square SDK with:", { appId, locationId })
+
     const payments = await window.Square.payments(appId, {
       environment: "production",
       locationId: locationId,
     })
 
-    console.log("Square SDK initialized successfully in production mode")
+    console.log("Square SDK initialized successfully")
     return payments
   } catch (error) {
-    console.error("Square SDK Initialization Error:", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      appId: process.env.NEXT_PUBLIC_SQUARE_APP_ID ? "Set" : "Not set",
-      locationId: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID ? "Set" : "Not set",
-      environment: "production",
-    })
+    console.error("Square SDK Initialization Error:", error)
+    if (error instanceof Error) {
+      console.error("Error name:", error.name)
+      console.error("Error message:", error.message)
+      console.error("Error stack:", error.stack)
+    }
     throw error
   }
 }

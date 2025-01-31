@@ -1,9 +1,8 @@
 "use client"
 
-import type React from "react"
-import { useEffect, useState, useRef } from "react"
-import { loadSquareSdk } from "../utils/square-sdk"
-import { CreditCard, ArrowLeft, AlertCircle } from "lucide-react"
+import React, { useEffect, useState, useRef } from 'react'
+import { CreditCard, ArrowLeft, AlertCircle } from 'lucide-react'
+import { loadSquareSdk } from '../utils/square-sdk'
 import type { BaseFormProps } from "../types"
 
 export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
@@ -42,37 +41,12 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
       }
     }
 
-    if (cardContainerRef.current) {
-      initializeSquare()
-    }
+    initializeSquare()
 
     return () => {
       isMounted = false
     }
   }, [])
-
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-md flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-          <div>
-            <h4 className="font-medium mb-1">エラーが発生しました</h4>
-            <p className="text-sm">{error}</p>
-          </div>
-        </div>
-        <div className="flex justify-between">
-          <button type="button" onClick={prevStep} className="btn btn-secondary">
-            <ArrowLeft className="w-4 h-4" />
-            前の画面に戻る
-          </button>
-          <button type="button" onClick={() => window.location.reload()} className="btn btn-primary">
-            再読み込み
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -95,6 +69,29 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-md flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="font-medium mb-1">エラーが発生しました</h4>
+            <p className="text-sm">{error}</p>
+          </div>
+        </div>
+        <div className="flex justify-between">
+          <button type="button" onClick={prevStep} className="btn btn-secondary">
+            <ArrowLeft className="w-4 h-4" />
+            前の画面に戻る
+          </button>
+          <button type="button" onClick={() => window.location.reload()} className="btn btn-primary">
+            再読み込み
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -124,4 +121,3 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
     </form>
   )
 }
-
