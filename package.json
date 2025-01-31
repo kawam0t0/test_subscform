@@ -22,8 +22,7 @@
     "square": "^25.2.0",
     "tailwind-merge": "^2.1.0",
     "tailwindcss-animate": "^1.0.7",
-    "googleapis": "^129.0.0",
-    "@square/web-payments-sdk-v2": "^2.0.0"
+    "googleapis": "^129.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -37,4 +36,5 @@
     "typescript": "^5"
   }
 }
+
 
