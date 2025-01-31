@@ -3,7 +3,7 @@
 import type React from "react"
 import { useEffect, useState, useRef } from "react"
 import { loadSquareSdk } from "../utils/square-sdk"
-import { CreditCard } from "lucide-react"
+import { CreditCard, ArrowLeft, AlertCircle } from "lucide-react"
 import type { BaseFormProps } from "../types"
 
 export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
@@ -34,7 +34,13 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
       } catch (error) {
         console.error("Square SDKの読み込みに失敗しました:", error)
         if (isMounted) {
-          setError(error instanceof Error ? error.message : "支払いフォームの読み込みに失敗しました")
+          // エラーメッセージを日本語化
+          const errorMessage = error instanceof Error ? error.message : "支払いフォームの読み込みに失敗しました"
+          if (errorMessage.includes("credentials are not properly configured")) {
+            setError("Square認証情報が正しく設定されていません。管理者に連絡してください。")
+          } else {
+            setError(errorMessage)
+          }
           setIsLoading(false)
         }
       }
@@ -48,6 +54,29 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
       isMounted = false
     }
   }, [])
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-md flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="font-medium mb-1">エラーが発生しました</h4>
+            <p className="text-sm">{error}</p>
+          </div>
+        </div>
+        <div className="flex justify-between">
+          <button type="button" onClick={prevStep} className="btn btn-secondary">
+            <ArrowLeft className="w-4 h-4" />
+            前の画面に戻る
+          </button>
+          <button type="button" onClick={() => window.location.reload()} className="btn btn-primary">
+            再読み込み
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,22 +101,6 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
     }
   }
 
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <div className="p-4 bg-red-50 text-red-600 rounded-md">{error}</div>
-        <div className="flex justify-between">
-          <button type="button" onClick={prevStep} className="btn btn-secondary">
-            戻る
-          </button>
-          <button type="button" onClick={() => window.location.reload()} className="btn btn-primary">
-            再試行
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
@@ -105,7 +118,8 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
       </div>
       <div className="pt-4 flex justify-between">
         <button type="button" onClick={prevStep} className="btn btn-secondary">
-          戻る
+          <ArrowLeft className="w-4 h-4" />
+          前の画面に戻る
         </button>
         <button type="submit" disabled={isLoading || !card} className="btn btn-primary">
           {isLoading ? "読み込み中..." : "次へ"}
