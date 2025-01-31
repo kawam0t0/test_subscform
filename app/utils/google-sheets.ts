@@ -1,8 +1,9 @@
 import { google } from "googleapis"
+import type { JWT } from "google-auth-library"
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-async function getAuthClient() {
+async function getAuthClient(): Promise<JWT> {
   const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY
   const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL
 
@@ -19,7 +20,8 @@ async function getAuthClient() {
     },
     scopes: SCOPES,
   })
-  return auth.getClient()
+  const client = (await auth.getClient()) as JWT
+  return client
 }
 
 export async function appendToSheet(values: string[][]) {
@@ -70,4 +72,3 @@ export async function appendToSheet(values: string[][]) {
     )
   }
 }
-
