@@ -17,7 +17,13 @@ type SquarePayments = {
 declare global {
   interface Window {
     Square: {
-      payments: (appId: string, options: { environment: "sandbox" | "production" }) => Promise<SquarePayments>
+      payments: (
+        appId: string,
+        options: {
+          environment: "sandbox" | "production"
+          locationId?: string
+        },
+      ) => Promise<SquarePayments>
     }
   }
 }
@@ -29,9 +35,9 @@ export async function loadSquareSdk(): Promise<SquarePayments | null> {
     // デバッグ情報の出力
     console.log("Square SDK Initialization Debug Info:", {
       appId: process.env.NEXT_PUBLIC_SQUARE_APP_ID,
-      environment: "production", // 明示的に本番環境を指定
+      locationId: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID,
+      environment: "production",
       hasAccessToken: !!process.env.SQUARE_ACCESS_TOKEN,
-      hasLocationId: !!process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID,
     })
 
     const script = document.createElement("script")
@@ -44,14 +50,20 @@ export async function loadSquareSdk(): Promise<SquarePayments | null> {
     })
 
     const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID
+    const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID
+
     if (!appId) {
-      console.error("Square application ID is not configured")
       throw new Error("Square application ID is not configured")
     }
 
-    // 環境を明示的にproductionに設定
+    if (!locationId) {
+      throw new Error("Square location ID is not configured")
+    }
+
+    // locationIdを追加
     const payments = await window.Square.payments(appId, {
-      environment: "production", // 必ず本番環境を指定
+      environment: "production",
+      locationId: locationId,
     })
 
     console.log("Square SDK initialized successfully in production mode")
@@ -60,6 +72,7 @@ export async function loadSquareSdk(): Promise<SquarePayments | null> {
     console.error("Square SDK Initialization Error:", {
       error: error instanceof Error ? error.message : "Unknown error",
       appId: process.env.NEXT_PUBLIC_SQUARE_APP_ID ? "Set" : "Not set",
+      locationId: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID ? "Set" : "Not set",
       environment: "production",
     })
     throw error

@@ -50,31 +50,34 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-sm mx-auto">
       <div>
-        <label htmlFor="carModel" className="flex items-center gap-2 form-label">
-          <Car />
+        <label htmlFor="carModel" className="select-label">
+          <Car className="w-5 h-5" />
           車種
         </label>
-        <select
-          id="carModel"
-          value={isCustomModel ? "その他" : formData.carModel}
-          onChange={handleCarModelChange}
-          required
-          className="form-input"
-        >
-          <option value="">選択してください</option>
-          {topCarModels.map((model) => (
-            <option key={model} value={model}>
-              {model}
-            </option>
-          ))}
-          <option value="その他">その他</option>
-        </select>
+        <div className="select-wrapper">
+          <select
+            id="carModel"
+            value={isCustomModel ? "その他" : formData.carModel}
+            onChange={handleCarModelChange}
+            required
+            className="custom-select"
+          >
+            <option value="">選択してください</option>
+            {topCarModels.map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
+            <option value="その他">その他</option>
+          </select>
+        </div>
       </div>
+
       {isCustomModel && (
         <div>
-          <label htmlFor="customCarModel" className="form-label">
+          <label htmlFor="customCarModel" className="select-label">
             その他の車種
           </label>
           <input
@@ -88,26 +91,30 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
           />
         </div>
       )}
+
       <div>
-        <label htmlFor="carColor" className="flex items-center gap-2 form-label">
-          <Palette />
+        <label htmlFor="carColor" className="select-label">
+          <Palette className="w-5 h-5" />
           車の色
         </label>
-        <select
-          id="carColor"
-          value={formData.carColor}
-          onChange={(e) => updateFormData({ carColor: e.target.value })}
-          required
-          className="form-input"
-        >
-          <option value="">選択してください</option>
-          {carColors.map((color) => (
-            <option key={color} value={color}>
-              {color}
-            </option>
-          ))}
-        </select>
+        <div className="select-wrapper">
+          <select
+            id="carColor"
+            value={formData.carColor}
+            onChange={(e) => updateFormData({ carColor: e.target.value })}
+            required
+            className="custom-select"
+          >
+            <option value="">選択してください</option>
+            {carColors.map((color) => (
+              <option key={color} value={color}>
+                {color}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
       <div className="pt-4 flex justify-between">
         <button type="button" onClick={prevStep} className="btn btn-secondary">
           戻る
