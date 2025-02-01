@@ -1,3 +1,30 @@
+// グローバルウィンドウの型定義を拡張
+declare global {
+  interface Window {
+    Square: {
+      payments(
+        appId: string,
+        options: {
+          environment: "sandbox" | "production"
+          locationId: string
+        },
+      ): Promise<{
+        card(): Promise<{
+          attach(element: HTMLElement): Promise<void>
+          tokenize(): Promise<{
+            status: string
+            token?: string
+            errors?: Array<{
+              code: string
+              message: string
+            }>
+          }>
+        }>
+      }>
+    }
+  }
+}
+
 const DEBUG = true // デバッグモードを有効化
 
 export async function loadSquareSdk() {
@@ -16,8 +43,9 @@ export async function loadSquareSdk() {
     const script = document.createElement("script")
     script.src = "https://web.squarecdn.com/v1/square.js"
 
-    await new Promise((resolve, reject) => {
-      script.onload = resolve
+    // スクリプトのロードを待機
+    await new Promise<void>((resolve, reject) => {
+      script.onload = () => resolve()
       script.onerror = (error) => {
         console.error("Square SDKスクリプトロードエラー:", error)
         reject(error)
@@ -64,6 +92,11 @@ export async function loadSquareSdk() {
     }
 
     try {
+      // Square SDKが確実にロードされていることを確認
+      if (typeof window.Square === "undefined") {
+        throw new Error("Square SDKが正しくロードされていません")
+      }
+
       const payments = await window.Square.payments(appId, {
         environment: "production",
         locationId: cleanLocationId,
