@@ -38,10 +38,11 @@ export async function POST(request: Request) {
         })
       : { result: { customers: [] } }
 
-    let customerId: string
     const existingCustomer = emailSearchResult.customers?.[0] || phoneSearchResult.customers?.[0]
 
-    if (existingCustomer) {
+    let customerId: string
+
+    if (existingCustomer && existingCustomer.id) {
       // 既存の顧客を更新
       customerId = existingCustomer.id
 
