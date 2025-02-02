@@ -15,80 +15,61 @@ export async function loadSquareSdk() {
   try {
     console.log("Starting Square initialization in loadSquareSdk function")
 
-    // 環境変数の取得
     const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID
     const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID
 
-    // 環境変数の確認ログ
-    console.log("環境変数の確認 (loadSquareSdk):", { appId, locationId })
+    console.log("Raw environment variables:", { appId, locationId })
 
-    // 環境変数の存在確認と型チェック
     if (!appId || typeof appId !== "string" || !locationId || typeof locationId !== "string") {
-      throw new Error(
-        `Required environment variables are missing or not strings: ${!appId || typeof appId !== "string" ? "NEXT_PUBLIC_SQUARE_APP_ID" : ""} ${!locationId || typeof locationId !== "string" ? "NEXT_PUBLIC_SQUARE_LOCATION_ID" : ""}`,
-      )
+      throw new Error("Required environment variables are missing or not strings")
     }
 
-    // 環境変数の値をトリムし、明示的に文字列として扱う
-    const trimmedAppId = String(appId).trim()
-    const trimmedLocationId = String(locationId)
-      .trim()
-      .replace(/[^a-zA-Z0-9]/g, "")
-    console.log("Cleaned locationId:", trimmedLocationId)
+    const trimmedAppId = appId.trim()
+    const trimmedLocationId = locationId.trim()
 
     console.log("Trimmed values:", { trimmedAppId, trimmedLocationId })
 
-    // ストレージのクリア
+    if (trimmedLocationId.length !== 12) {
+      throw new Error(`Invalid locationId length: ${trimmedLocationId.length}. Expected 12 characters.`)
+    }
+
     try {
       localStorage.clear()
       sessionStorage.clear()
       console.log("Storage cleared successfully")
     } catch (e) {
-      console.warn("ストレージのクリアに失敗しました:", e)
+      console.warn("Failed to clear storage:", e)
     }
 
-    console.log("Square SDK initialization starting...")
-
-    // Square.jsの読み込みを確実に
     if (!window.Square) {
       await new Promise<void>((resolve, reject) => {
         const script = document.createElement("script")
         script.src = "https://web.squarecdn.com/v1/square.js"
         script.onload = () => {
-          console.log("Square.jsスクリプトが正常に読み込まれました")
+          console.log("Square.js script loaded successfully")
           resolve()
         }
         script.onerror = (error) => {
-          console.error("Square.jsスクリプトの読み込みに失敗しました:", error)
+          console.error("Failed to load Square.js script:", error)
           reject(error)
         }
         document.head.appendChild(script)
       })
 
-      // スクリプトが読み込まれた後、少し待機
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }
 
-    console.log("Square SDKを初期化します:", {
-      appId: trimmedAppId,
+    console.log("Initializing Square SDK with:", { appId: trimmedAppId, locationId: trimmedLocationId })
+
+    const payments = await window.Square.payments(trimmedAppId, {
+      environment: "production",
       locationId: trimmedLocationId,
     })
 
-    // Square SDKの初期化を試みる
-    try {
-      const payments = await window.Square.payments(trimmedAppId, {
-        environment: "production",
-        locationId: trimmedLocationId,
-      })
-
-      console.log("Square SDKが正常に初期化されました")
-      return payments
-    } catch (error) {
-      console.error("Square paymentsの初期化に失敗しました:", error)
-      throw error
-    }
+    console.log("Square SDK initialized successfully")
+    return payments
   } catch (error) {
-    console.error("Square SDK初期化エラー:", error)
+    console.error("Square SDK initialization error:", error)
     throw error
   }
 }

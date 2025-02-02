@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   images: {
     remotePatterns: [
       {
@@ -10,13 +11,20 @@ const nextConfig = {
       },
     ],
   },
-  // Google Fontsの設定を修正
   optimizeFonts: false,
-  // エラーハンドリングの設定を追加
   onError: async (err, req, res) => {
     console.error("Server Error:", err)
     res.statusCode = 500
     res.end("Internal Server Error")
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      }
+    }
+    return config
   },
 }
 
