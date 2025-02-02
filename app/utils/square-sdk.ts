@@ -19,6 +19,10 @@ export async function loadSquareSdk() {
 
     // 環境変数の確認ログ
     console.log("環境変数の確認:", { appId, locationId })
+    console.log("✅ 環境変数の確認:", {
+      appId: process.env.NEXT_PUBLIC_SQUARE_APP_ID,
+      locationId: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID
+    });
     // `locationId` のデバッグ出力（改行・特殊文字がないか確認）
     if (locationId) {
       console.log("locationId詳細:", {
