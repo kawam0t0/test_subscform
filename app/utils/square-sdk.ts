@@ -25,12 +25,17 @@ export async function loadSquareSdk() {
     }
 
     const trimmedAppId = appId.trim()
-    const trimmedLocationId = locationId.trim()
+    const trimmedLocationId = locationId.trim().replace(/[^a-zA-Z0-9]/g, "")
 
     console.log("Trimmed values:", { trimmedAppId, trimmedLocationId })
 
-    if (trimmedLocationId.length !== 12) {
-      throw new Error(`Invalid locationId length: ${trimmedLocationId.length}. Expected 12 characters.`)
+    console.log("LocationId after cleaning:", trimmedLocationId)
+    console.log("LocationId length:", trimmedLocationId.length)
+
+    if (trimmedLocationId.length !== 13) {
+      throw new Error(
+        `Invalid locationId length: ${trimmedLocationId.length}. Expected 13 characters. Raw value: ${locationId}`,
+      )
     }
 
     try {
