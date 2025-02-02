@@ -1,13 +1,16 @@
 declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      NEXT_PUBLIC_SQUARE_APP_ID: string
-      NEXT_PUBLIC_SQUARE_LOCATION_ID: string
+  interface Window {
+    Square: {
+      payments(
+        appId: string,
+        options: {
+          environment: "sandbox" | "production"
+          locationId: string
+        },
+      ): Promise<any>
     }
   }
 }
-
-const DEBUG = true
 
 export async function loadSquareSdk() {
   if (typeof window === "undefined") return null
@@ -18,34 +21,19 @@ export async function loadSquareSdk() {
     const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID
     const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID
 
-    console.log("Raw environment variables:", { appId, locationId })
+    console.log("Environment variables:", {
+      appId,
+      locationId,
+      baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
+    })
 
-    if (!appId || typeof appId !== "string" || !locationId || typeof locationId !== "string") {
-      throw new Error("Required environment variables are missing or not strings")
+    if (!appId || !locationId) {
+      throw new Error(`Required environment variables are missing. 
+        NEXT_PUBLIC_SQUARE_APP_ID: ${appId ? "set" : "missing"},
+        NEXT_PUBLIC_SQUARE_LOCATION_ID: ${locationId ? "set" : "missing"}`)
     }
 
-    const trimmedAppId = appId.trim()
-    const trimmedLocationId = locationId.trim().replace(/[^a-zA-Z0-9]/g, "")
-
-    console.log("Trimmed values:", { trimmedAppId, trimmedLocationId })
-
-    console.log("LocationId after cleaning:", trimmedLocationId)
-    console.log("LocationId length:", trimmedLocationId.length)
-
-    if (trimmedLocationId.length !== 13) {
-      throw new Error(
-        `Invalid locationId length: ${trimmedLocationId.length}. Expected 13 characters. Raw value: ${locationId}`,
-      )
-    }
-
-    try {
-      localStorage.clear()
-      sessionStorage.clear()
-      console.log("Storage cleared successfully")
-    } catch (e) {
-      console.warn("Failed to clear storage:", e)
-    }
-
+    // Square.jsの読み込み
     if (!window.Square) {
       await new Promise<void>((resolve, reject) => {
         const script = document.createElement("script")
@@ -61,36 +49,31 @@ export async function loadSquareSdk() {
         document.head.appendChild(script)
       })
 
+      // スクリプトが完全に読み込まれるのを待つ
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }
 
-    console.log("Initializing Square SDK with:", { appId: trimmedAppId, locationId: trimmedLocationId })
-
-    const payments = await window.Square.payments(trimmedAppId, {
+    console.log("Initializing Square payments with:", {
+      appId,
+      locationId,
       environment: "production",
-      locationId: trimmedLocationId,
     })
 
-    console.log("Square SDK initialized successfully")
-    return payments
+    try {
+      const payments = await window.Square.payments(appId, {
+        environment: "production",
+        locationId: locationId,
+      })
+
+      console.log("Square payments initialized successfully")
+      return payments
+    } catch (error) {
+      console.error("Failed to initialize Square payments:", error)
+      throw error
+    }
   } catch (error) {
     console.error("Square SDK initialization error:", error)
     throw error
-  }
-}
-
-// グローバル型定義
-declare global {
-  interface Window {
-    Square: {
-      payments(
-        appId: string,
-        options: {
-          environment: "sandbox" | "production"
-          locationId: string
-        },
-      ): Promise<any>
-    }
   }
 }
 
