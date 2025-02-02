@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { CreditCard, ArrowLeft, AlertCircle } from "lucide-react"
+import { CreditCard } from "lucide-react"
 import { loadSquareSdk } from "../utils/square-sdk"
 import type { BaseFormProps } from "../types"
 import type React from "react"
@@ -10,6 +10,7 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
   const [card, setCard] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isFocused, setIsFocused] = useState(false)
   const cardContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -28,7 +29,26 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
         if (!payments || !isMounted) return
 
         console.log("Square SDK loaded successfully, initializing card")
-        const card = await payments.card()
+        const card = await payments.card({
+          style: {
+            ".input-container": {
+              borderRadius: "16px",
+              padding: "14px",
+            },
+            input: {
+              fontSize: "16px",
+              fontFamily: '"M PLUS Rounded 1c", sans-serif',
+              color: "#374151",
+            },
+            "input::placeholder": {
+              color: "#9CA3AF",
+            },
+            ".input-container.is-focused": {
+              borderColor: "#007BFF",
+              boxShadow: "0 0 0 2px rgba(0, 123, 255, 0.2)",
+            },
+          },
+        })
         await card.attach(cardContainerRef.current)
 
         if (isMounted) {
@@ -61,34 +81,12 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
     try {
       setIsLoading(true)
       setError(null)
-      console.log("Tokenizing card...")
       const result = await card.tokenize()
       if (result.status === "OK") {
-        console.log("Card tokenized successfully")
-
-        const response = await fetch("/api/create-customer-and-card", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...formData,
-            cardNonce: result.token,
-          }),
-        })
-
-        const data = await response.json()
-
-        if (data.success) {
-          console.log("Customer and card created successfully")
-          updateFormData({ cardToken: data.cardId })
-          nextStep()
-        } else {
-          throw new Error(data.error || "顧客とカード情報の保存に失敗しました")
-        }
+        updateFormData({ cardToken: result.token })
+        nextStep()
       } else {
-        setError("カード情報の処理に失敗しました")
-        console.error("カードのトークン化に失敗しました:", result.errors)
+        throw new Error(result.errors[0].message)
       }
     } catch (error) {
       console.error("カードの処理中にエラーが発生しました:", error)
@@ -99,33 +97,30 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label htmlFor="card-container" className="form-label">
+        <label htmlFor="card-container" className="form-label flex items-center gap-2">
+          <CreditCard className="h-5 w-5" />
           クレジットカード情報
         </label>
-        <div className="relative">
-          <CreditCard className="absolute left-3 top-3 text-gray-400" />
-          <div
-            ref={cardContainerRef}
-            id="card-container"
-            className="mt-1 p-3 pl-10 bg-white border rounded-md min-h-[100px]"
-          />
+        <div
+          className={`card-input-wrapper ${isFocused ? "focused" : ""}`}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+        >
+          <div ref={cardContainerRef} id="card-container" className="min-h-[44px]" />
         </div>
       </div>
+
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-md flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-          <div>
-            <h4 className="font-medium mb-1">エラーが発生しました</h4>
-            <p className="text-sm">{error}</p>
-          </div>
+        <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl">
+          <p className="text-sm">{error}</p>
         </div>
       )}
-      <div className="pt-4 flex justify-between">
+
+      <div className="pt-4 grid grid-cols-2 gap-3">
         <button type="button" onClick={prevStep} className="btn btn-secondary">
-          <ArrowLeft className="w-4 h-4" />
-          前の画面に戻る
+          戻る
         </button>
         <button type="submit" disabled={isLoading || !card} className="btn btn-primary">
           {isLoading ? "処理中..." : "次へ"}
