@@ -18,12 +18,12 @@ export async function POST(request: Request) {
     const { result: searchResult } = await squareClient.customersApi.searchCustomers({
       query: {
         filter: {
-          email_address: {
+          emailAddress: {
             exact: email,
           },
           // または電話番号で検索
           or: {
-            phone_number: {
+            phoneNumber: {
               exact: phone,
             },
           },
