@@ -17,16 +17,16 @@ export async function loadSquareSdk() {
     const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID
     const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID
 
-    // 環境変数の存在確認
-    if (!appId || !locationId) {
+    // 環境変数の存在確認と型チェック
+    if (!appId || typeof appId !== "string" || !locationId || typeof locationId !== "string") {
       throw new Error(
-        `Required environment variables are missing: ${!appId ? "NEXT_PUBLIC_SQUARE_APP_ID" : ""} ${!locationId ? "NEXT_PUBLIC_SQUARE_LOCATION_ID" : ""}`,
+        `Required environment variables are missing or not strings: ${!appId || typeof appId !== "string" ? "NEXT_PUBLIC_SQUARE_APP_ID" : ""} ${!locationId || typeof locationId !== "string" ? "NEXT_PUBLIC_SQUARE_LOCATION_ID" : ""}`,
       )
     }
 
-    // 環境変数の値をトリム
-    const trimmedAppId = appId.trim()
-    const trimmedLocationId = locationId.trim()
+    // 環境変数の値をトリムし、明示的に文字列として扱う
+    const trimmedAppId = String(appId).trim()
+    const trimmedLocationId = String(locationId).trim()
 
     // ストレージのクリア
     try {
@@ -44,7 +44,7 @@ export async function loadSquareSdk() {
         const script = document.createElement("script")
         script.src = "https://web.squarecdn.com/v1/square.js"
         script.onload = () => {
-          console.log("Square.jsスクリプトが正���に読み込まれました")
+          console.log("Square.jsスクリプトが正常に読み込まれました")
           resolve()
         }
         script.onerror = (error) => {
