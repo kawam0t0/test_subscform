@@ -63,7 +63,7 @@ export function CustomerForm() {
       setError(null)
       console.log("送信するフォームデータ:", formData)
 
-      const response = await fetch("/api/create-customer-and-payment-link", {
+      const response = await fetch("/api/create-customer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -123,17 +123,19 @@ export function CustomerForm() {
   }
 
   return (
-    <div className="bg-white shadow-lg w-full max-w-md mx-auto min-h-screen flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <div className="header sticky top-0 z-10">
         <h1 className="text-xl font-bold text-center flex items-center justify-center py-4">
           <Droplet className="mr-2 h-6 w-6" />
           顧客情報フォーム
         </h1>
       </div>
-      <div className="flex-1 form-container pb-safe-bottom">
-        {step < 7 && <ProgressBar currentStep={step} totalSteps={6} />}
-        {error && <ErrorMessage message={error} />}
-        <div className="flex-1 flex flex-col justify-center">{renderStep()}</div>
+      <div className="max-w-md mx-auto bg-white min-h-[calc(100vh-4rem)] shadow-sm">
+        <div className="px-4 py-6">
+          {step < 7 && <ProgressBar currentStep={step} totalSteps={6} />}
+          {error && <ErrorMessage message={error} />}
+          <div className="mt-4">{renderStep()}</div>
+        </div>
       </div>
     </div>
   )
