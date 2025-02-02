@@ -61,7 +61,6 @@ export function CustomerForm() {
   const submitForm = async () => {
     try {
       setError(null)
-
       console.log("送信するフォームデータ:", formData)
 
       const response = await fetch("/api/create-customer-and-payment-link", {
@@ -78,11 +77,11 @@ export function CustomerForm() {
         throw new Error(data.error || `応答ステータスコードが正常ではありませんでした: ${response.status}`)
       }
 
-      if (data.success && data.paymentLink) {
-        // Square Hosted Form にリダイレクト
-        window.location.href = data.paymentLink
+      if (data.success) {
+        // 成功した場合は直接Thank youページに遷移
+        setStep(7)
       } else {
-        throw new Error(data.error || "支払いリンクの生成に失敗しました")
+        throw new Error(data.error || "顧客情報の登録に失敗しました")
       }
     } catch (error) {
       console.error("フォーム送信エラー:", error)
