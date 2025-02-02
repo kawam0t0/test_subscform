@@ -50,13 +50,13 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-sm mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label htmlFor="carModel" className="select-label">
           <Car className="w-5 h-5" />
           車種
         </label>
-        <div className="select-wrapper">
+        <div className="select-wrapper min-w-[280px]">
           <select
             id="carModel"
             value={isCustomModel ? "その他" : formData.carModel}
@@ -97,7 +97,7 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
           <Palette className="w-5 h-5" />
           車の色
         </label>
-        <div className="select-wrapper">
+        <div className="select-wrapper min-w-[280px]">
           <select
             id="carColor"
             value={formData.carColor}
@@ -115,7 +115,7 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
         </div>
       </div>
 
-      <div className="pt-4 flex justify-between">
+      <div className="pt-4 grid grid-cols-2 gap-3">
         <button type="button" onClick={prevStep} className="btn btn-secondary">
           戻る
         </button>

@@ -31,21 +31,12 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
         console.log("Square SDK loaded successfully, initializing card")
         const card = await payments.card({
           style: {
-            ".input-container": {
-              borderRadius: "16px",
-              padding: "14px",
-            },
             input: {
               fontSize: "16px",
-              fontFamily: '"M PLUS Rounded 1c", sans-serif',
               color: "#374151",
             },
             "input::placeholder": {
               color: "#9CA3AF",
-            },
-            ".input-container.is-focused": {
-              borderColor: "#007BFF",
-              boxShadow: "0 0 0 2px rgba(0, 123, 255, 0.2)",
             },
           },
         })
