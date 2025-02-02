@@ -17,6 +17,9 @@ export async function loadSquareSdk() {
     const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID
     const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID
 
+    // 環境変数の確認ログ
+    console.log("環境変数の確認:", { appId, locationId })
+
     // 環境変数の存在確認と型チェック
     if (!appId || typeof appId !== "string" || !locationId || typeof locationId !== "string") {
       throw new Error(
@@ -96,4 +99,3 @@ declare global {
     }
   }
 }
-
