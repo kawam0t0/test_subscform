@@ -19,6 +19,14 @@ export async function loadSquareSdk() {
 
     // 環境変数の確認ログ
     console.log("環境変数の確認:", { appId, locationId })
+    // `locationId` のデバッグ出力（改行・特殊文字がないか確認）
+    if (locationId) {
+      console.log("locationId詳細:", {
+        raw: locationId,
+        json: JSON.stringify(locationId),
+        base64: btoa(locationId)
+      });
+    }
 
     // 環境変数の存在確認と型チェック
     if (!appId || typeof appId !== "string" || !locationId || typeof locationId !== "string") {
