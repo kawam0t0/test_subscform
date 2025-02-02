@@ -6,7 +6,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
   return (
     <div className="flex flex-col min-h-[calc(100vh-16rem)]">
       <div className="flex-1 overflow-y-auto px-4">
-        <div className="w-full max-w-[280px] mx-auto space-y-6 pb-24">
+        <div className="w-[280px] mx-auto space-y-6 pb-24">
           <h2 className="text-2xl font-semibold text-primary flex items-center justify-center mb-6">
             <CheckCircle className="mr-2" />
             確認
@@ -33,7 +33,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         </div>
       </div>
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
-        <div className="w-full max-w-[280px] mx-auto grid grid-cols-2 gap-3">
+        <div className="w-[280px] mx-auto grid grid-cols-2 gap-3">
           <button type="button" onClick={prevStep} className="btn btn-secondary">
             戻る
           </button>
