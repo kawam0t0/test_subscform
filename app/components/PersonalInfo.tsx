@@ -48,7 +48,7 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="relative">
         <label htmlFor="store" className="select-label">
           <MapPin className="h-5 w-5" />
@@ -128,7 +128,7 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
         {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
       </div>
 
-      <div className="pt-6 grid grid-cols-2 gap-4">
+      <div className="pt-4 grid grid-cols-2 gap-3">
         <button type="button" onClick={prevStep} className="btn btn-secondary">
           戻る
         </button>

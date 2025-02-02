@@ -91,21 +91,21 @@
   /* モバイル最適化のための追加スタイル */
   @media (max-width: 640px) {
     .form-container {
-      @apply px-4 py-6 max-w-[calc(100vw-2rem)] mx-auto;
+      @apply px-4 py-4 max-w-[calc(100vw-2rem)] mx-auto;
     }
 
     .form-input,
     .custom-select {
-      @apply text-lg py-4 px-4;
+      @apply text-base py-3 px-4;
     }
 
     .btn {
-      @apply py-4 px-6 text-lg w-full;
+      @apply py-3 px-6 text-base w-full;
     }
 
     .form-label,
     .select-label {
-      @apply text-lg mb-3;
+      @apply text-base mb-2;
     }
   }
 }
