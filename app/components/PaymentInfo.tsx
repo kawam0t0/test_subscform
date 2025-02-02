@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useEffect, useState, useRef } from 'react'
-import { CreditCard, ArrowLeft, AlertCircle } from 'lucide-react'
-import { loadSquareSdk } from '../utils/square-sdk'
+import { useEffect, useState, useRef } from "react"
+import { CreditCard, ArrowLeft, AlertCircle } from "lucide-react"
+import { loadSquareSdk } from "../utils/square-sdk"
 import type { BaseFormProps } from "../types"
 
 export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
@@ -17,25 +17,32 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
     const initializeSquare = async () => {
       try {
         setError(null)
+        console.log("Starting Square initialization in component")
+
         if (!cardContainerRef.current) {
-          throw new Error("カード情報入力フォームが見つかりません")
+          throw new Error("Card container not found")
         }
 
-        console.log("Square SDK initialization starting...")
         const payments = await loadSquareSdk()
-        if (!payments || !isMounted) return
+        if (!payments || !isMounted) {
+          console.log("Payments not initialized or component unmounted")
+          return
+        }
 
-        console.log("Creating card payment form...")
+        console.log("Creating card payment object")
         const card = await payments.card()
+        console.log("Attaching card to DOM")
         await card.attach(cardContainerRef.current)
-        console.log("Card payment form created successfully")
-        setCard(card)
-        setIsLoading(false)
-      } catch (error) {
-        console.error("Square SDK initialization failed:", error)
+
         if (isMounted) {
-          const errorMessage = error instanceof Error ? error.message : "支払いフォームの読み込みに失敗しました"
-          setError(`Square SDKの初期化に失敗しました: ${errorMessage}`)
+          console.log("Card attached successfully")
+          setCard(card)
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error("Detailed payment initialization error:", error)
+        if (isMounted) {
+          setError(error instanceof Error ? error.message : "Failed to initialize payment form")
           setIsLoading(false)
         }
       }
@@ -121,3 +128,4 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
     </form>
   )
 }
+
