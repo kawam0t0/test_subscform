@@ -18,7 +18,6 @@ function generateReferenceId(store: string): string {
       "SPLASH'N'GO!新前橋店": "005",
     }[store] || "000"
 
-  // 9桁のランダムな数字を生成（prefixの3桁と合わせて12桁になる）
   const randomPart = Math.floor(Math.random() * 1000000000)
     .toString()
     .padStart(9, "0")
@@ -68,32 +67,28 @@ export async function POST(request: Request) {
 
     let customerId: string
 
+    const customerData = {
+      givenName: name,
+      familyName: `${carModel}/${carColor}`,
+      emailAddress: email,
+      phoneNumber: phone,
+      referenceId: referenceId,
+      note: courseName,
+      customAttributes: {
+        store: { value: store },
+      },
+    }
+
     if (existingCustomer && existingCustomer.id) {
       // 既存の顧客を更新
       customerId = existingCustomer.id
 
-      const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
-        givenName: name,
-        familyName: `${carModel}/${carColor}`, // 姓に車種/車の色を設定
-        emailAddress: email,
-        phoneNumber: phone,
-        referenceId: referenceId, // リファレンスIDを設定
-        companyName: store, // 店舗名を設定
-        note: courseName, // コース名を設定
-      })
+      const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, customerData)
 
       console.log("既存の顧客を更新しました:", updateResult.customer?.id)
     } else {
       // 新規顧客を作成
-      const { result: customerResult } = await squareClient.customersApi.createCustomer({
-        givenName: name,
-        familyName: `${carModel}/${carColor}`, // 姓に車種/車の色を設定
-        emailAddress: email,
-        phoneNumber: phone,
-        referenceId: referenceId, // リファレンスIDを設定
-        companyName: store, // 店舗名を設定
-        note: courseName, // コース名を設定
-      })
+      const { result: customerResult } = await squareClient.customersApi.createCustomer(customerData)
 
       if (!customerResult.customer || !customerResult.customer.id) {
         throw new Error("顧客の作成に失敗しました")
