@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react"
 import { CreditCard, ArrowLeft, AlertCircle } from "lucide-react"
 import { loadSquareSdk } from "../utils/square-sdk"
 import type { BaseFormProps } from "../types"
+import type React from "react" // Added import for React
 
 export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [card, setCard] = useState<any>(null)
@@ -19,28 +20,30 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
         setError(null)
         console.log("Starting Square initialization in component")
 
+        // 環境変数の確認
+        console.log("Environment variables in component:", {
+          appId: process.env.NEXT_PUBLIC_SQUARE_APP_ID,
+          locationId: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID,
+        })
+
         if (!cardContainerRef.current) {
           throw new Error("Card container not found")
         }
 
         const payments = await loadSquareSdk()
-        if (!payments || !isMounted) {
-          console.log("Payments not initialized or component unmounted")
-          return
-        }
+        if (!payments || !isMounted) return
 
-        console.log("Creating card payment object")
+        console.log("Square SDK loaded successfully, initializing card")
         const card = await payments.card()
-        console.log("Attaching card to DOM")
         await card.attach(cardContainerRef.current)
 
         if (isMounted) {
-          console.log("Card attached successfully")
           setCard(card)
           setIsLoading(false)
+          console.log("Card initialized successfully")
         }
       } catch (error) {
-        console.error("Detailed payment initialization error:", error)
+        console.error("Payment initialization error:", error)
         if (isMounted) {
           setError(error instanceof Error ? error.message : "Failed to initialize payment form")
           setIsLoading(false)
@@ -62,8 +65,10 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
     try {
       setIsLoading(true)
       setError(null)
+      console.log("Tokenizing card...")
       const result = await card.tokenize()
       if (result.status === "OK") {
+        console.log("Card tokenized successfully")
         updateFormData({ cardToken: result.token })
         nextStep()
       } else {

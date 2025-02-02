@@ -13,24 +13,14 @@ export async function loadSquareSdk() {
   if (typeof window === "undefined") return null
 
   try {
+    console.log("Starting Square initialization in loadSquareSdk function")
+
     // 環境変数の取得
     const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID
     const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID
 
     // 環境変数の確認ログ
-    console.log("環境変数の確認:", { appId, locationId })
-    console.log("✅ 環境変数の確認:", {
-      appId: process.env.NEXT_PUBLIC_SQUARE_APP_ID,
-      locationId: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID
-    });
-    // `locationId` のデバッグ出力（改行・特殊文字がないか確認）
-    if (locationId) {
-      console.log("locationId詳細:", {
-        raw: locationId,
-        json: locationId, // JSON.stringify() を使わず、そのまま表示
-        base64: btoa(locationId)
-      });
-    }
+    console.log("環境変数の確認 (loadSquareSdk):", { appId, locationId })
 
     // 環境変数の存在確認と型チェック
     if (!appId || typeof appId !== "string" || !locationId || typeof locationId !== "string") {
@@ -43,10 +33,13 @@ export async function loadSquareSdk() {
     const trimmedAppId = String(appId).trim()
     const trimmedLocationId = String(locationId).trim()
 
+    console.log("Trimmed values:", { trimmedAppId, trimmedLocationId })
+
     // ストレージのクリア
     try {
       localStorage.clear()
       sessionStorage.clear()
+      console.log("Storage cleared successfully")
     } catch (e) {
       console.warn("ストレージのクリアに失敗しました:", e)
     }
@@ -111,3 +104,4 @@ declare global {
     }
   }
 }
+
