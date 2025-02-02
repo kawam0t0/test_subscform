@@ -66,7 +66,6 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
       if (result.status === "OK") {
         console.log("Card tokenized successfully")
 
-        // サーバーに顧客情報とカードトークンを送信
         const response = await fetch("/api/create-customer-and-card", {
           method: "POST",
           headers: {
@@ -99,7 +98,6 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
     }
   }
 
-  // コンポーネントのレンダリング部分を追加
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>

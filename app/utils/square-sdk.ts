@@ -1,13 +1,7 @@
 declare global {
   interface Window {
     Square: {
-      payments(
-        appId: string,
-        options: {
-          environment: "sandbox" | "production"
-          locationId: string
-        },
-      ): Promise<any>
+      payments(appId: string): Promise<any>
     }
   }
 }
@@ -19,21 +13,16 @@ export async function loadSquareSdk() {
     console.log("Starting Square initialization in loadSquareSdk function")
 
     const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID
-    const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID
 
     console.log("Environment variables:", {
       appId,
-      locationId,
       baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
     })
 
-    if (!appId || !locationId) {
-      throw new Error(`Required environment variables are missing. 
-        NEXT_PUBLIC_SQUARE_APP_ID: ${appId ? "set" : "missing"},
-        NEXT_PUBLIC_SQUARE_LOCATION_ID: ${locationId ? "set" : "missing"}`)
+    if (!appId) {
+      throw new Error("Required environment variable NEXT_PUBLIC_SQUARE_APP_ID is missing")
     }
 
-    // Square.jsの読み込み
     if (!window.Square) {
       await new Promise<void>((resolve, reject) => {
         const script = document.createElement("script")
@@ -49,22 +38,13 @@ export async function loadSquareSdk() {
         document.head.appendChild(script)
       })
 
-      // スクリプトが完全に読み込まれるのを待つ
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }
 
-    console.log("Initializing Square payments with:", {
-      appId,
-      locationId,
-      environment: "production",
-    })
+    console.log("Initializing Square payments with:", { appId })
 
     try {
-      const payments = await window.Square.payments(appId, {
-        environment: "production",
-        locationId: locationId,
-      })
-
+      const payments = await window.Square.payments(appId)
       console.log("Square payments initialized successfully")
       return payments
     } catch (error) {
