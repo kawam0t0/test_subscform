@@ -62,21 +62,9 @@ export function CustomerForm() {
     try {
       setError(null)
 
-      if (formData.operation === "signup" && !formData.cardToken) {
-        setError("カード情報が正しく登録されていません")
-        return
-      }
+      console.log("送信するフォームデータ:", formData)
 
-      console.log("送信するフォームデータ:", {
-        ...formData,
-        cardToken: formData.cardToken ? "********" : "未設定",
-      })
-
-      // ここにスクエアAPIの呼び出しを追加
-      console.log("スクエアAPIを呼び出します...")
-      // スクエアAPIの呼び出しコードをここに追加
-
-      const response = await fetch("/api/create-customer", {
+      const response = await fetch("/api/create-customer-and-payment-link", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -90,13 +78,13 @@ export function CustomerForm() {
         throw new Error(data.error || `応答ステータスコードが正常ではありませんでした: ${response.status}`)
       }
 
-      if (data.success) {
-        console.log("顧客情報が正常に追加されました")
-        nextStep()
+      if (data.success && data.paymentLink) {
+        // Square Hosted Form にリダイレクト
+        window.location.href = data.paymentLink
       } else {
-        throw new Error(data.error || "不明なエラーが発生しました")
+        throw new Error(data.error || "支払いリンクの生成に失敗しました")
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("フォーム送信エラー:", error)
       setError(error instanceof Error ? error.message : "フォームの送信中にエラーが発生しました")
     }
@@ -137,17 +125,17 @@ export function CustomerForm() {
   }
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full max-w-md mx-auto min-h-[calc(100vh-2rem)]">
+    <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full max-w-md mx-auto flex flex-col min-h-[calc(100vh-2rem)]">
       <div className="header sticky top-0 z-10">
-        <h1 className="text-xl sm:text-2xl font-bold text-center flex items-center justify-center py-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-center flex items-center justify-center py-6">
           <Droplet className="mr-2" />
           顧客情報フォーム
         </h1>
       </div>
-      <div className="p-4 sm:p-6 overflow-y-auto" style={{ maxHeight: "calc(100vh - 4rem)" }}>
+      <div className="flex-1 p-6 flex flex-col">
         {step < 7 && <ProgressBar currentStep={step} totalSteps={6} />}
         {error && <ErrorMessage message={error} />}
-        {renderStep()}
+        <div className="flex-1 flex flex-col justify-center">{renderStep()}</div>
       </div>
     </div>
   )
