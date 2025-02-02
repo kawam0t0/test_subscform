@@ -14,19 +14,54 @@ export async function POST(request: Request) {
 
     const { name, email, phone, carModel, carColor, course, store } = formData
 
-    // Square API を使用して顧客を作成
-    const { result: customerResult } = await squareClient.customersApi.createCustomer({
-      givenName: name,
-      emailAddress: email,
-      phoneNumber: phone,
-      note: `車種: ${carModel}, 色: ${carColor}, コース: ${course}, 店舗: ${store}`,
+    // 既存の顧客を検索
+    const { result: searchResult } = await squareClient.customersApi.searchCustomers({
+      query: {
+        filter: {
+          email_address: {
+            exact: email,
+          },
+          // または電話番号で検索
+          or: {
+            phone_number: {
+              exact: phone,
+            },
+          },
+        },
+      },
     })
 
-    if (!customerResult.customer || !customerResult.customer.id) {
-      throw new Error("顧客の作成に失敗しました")
-    }
+    let customerId: string
 
-    const customerId = customerResult.customer.id
+    if (searchResult.customers && searchResult.customers.length > 0) {
+      // 既存の顧客を更新
+      const existingCustomer = searchResult.customers[0]
+      customerId = existingCustomer.id
+
+      const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
+        givenName: name,
+        emailAddress: email,
+        phoneNumber: phone,
+        note: `車種: ${carModel}, 色: ${carColor}, コース: ${course}, 店舗: ${store}`,
+      })
+
+      console.log("既存の顧客を更新しました:", updateResult.customer?.id)
+    } else {
+      // 新規顧客を作成
+      const { result: customerResult } = await squareClient.customersApi.createCustomer({
+        givenName: name,
+        emailAddress: email,
+        phoneNumber: phone,
+        note: `車種: ${carModel}, 色: ${carColor}, コース: ${course}, 店舗: ${store}`,
+      })
+
+      if (!customerResult.customer || !customerResult.customer.id) {
+        throw new Error("顧客の作成に失敗しました")
+      }
+
+      customerId = customerResult.customer.id
+      console.log("新規顧客を作成しました:", customerId)
+    }
 
     // Google Sheetsに顧客情報を追加
     try {
@@ -50,7 +85,6 @@ export async function POST(request: Request) {
       console.error("Google Sheetsへの書き込み中にエラーが発生:", sheetError)
     }
 
-    // 支払いリンクの代わりに成功レスポンスを返す
     return NextResponse.json({
       success: true,
       customerId: customerId,
