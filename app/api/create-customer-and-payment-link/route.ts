@@ -7,12 +7,38 @@ const squareClient = new Client({
   environment: Environment.Production,
 })
 
+// リファレンスID生成関数
+function generateReferenceId(store: string): string {
+  const storePrefix =
+    {
+      "SPLASH'N'GO!前橋50号店": "001",
+      "SPLASH'N'GO!伊勢崎韮塚店": "002",
+      "SPLASH'N'GO!高崎棟高店": "003",
+      "SPLASH'N'GO!足利緑町店": "004",
+      "SPLASH'N'GO!新前橋店": "005",
+    }[store] || "000"
+
+  // 9桁のランダムな数字を生成（prefixの3桁と合わせて12桁になる）
+  const randomPart = Math.floor(Math.random() * 1000000000)
+    .toString()
+    .padStart(9, "0")
+
+  return `${storePrefix}${randomPart}`
+}
+
+// コース名から金額を除去する関数
+function extractCourseName(course: string): string {
+  return course.split("（")[0].trim()
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
     const { name, email, phone, carModel, carColor, course, store } = formData
+    const referenceId = generateReferenceId(store)
+    const courseName = extractCourseName(course)
 
     // まずメールアドレスで検索
     const { result: emailSearchResult } = await squareClient.customersApi.searchCustomers({
@@ -48,9 +74,12 @@ export async function POST(request: Request) {
 
       const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
+        familyName: `${carModel}/${carColor}`, // 姓に車種/車の色を設定
         emailAddress: email,
         phoneNumber: phone,
-        note: `車種: ${carModel}, 色: ${carColor}, コース: ${course}, 店舗: ${store}`,
+        referenceId: referenceId, // リファレンスIDを設定
+        companyName: store, // 店舗名を設定
+        note: courseName, // コース名を設定
       })
 
       console.log("既存の顧客を更新しました:", updateResult.customer?.id)
@@ -58,9 +87,12 @@ export async function POST(request: Request) {
       // 新規顧客を作成
       const { result: customerResult } = await squareClient.customersApi.createCustomer({
         givenName: name,
+        familyName: `${carModel}/${carColor}`, // 姓に車種/車の色を設定
         emailAddress: email,
         phoneNumber: phone,
-        note: `車種: ${carModel}, 色: ${carColor}, コース: ${course}, 店舗: ${store}`,
+        referenceId: referenceId, // リファレンスIDを設定
+        companyName: store, // 店舗名を設定
+        note: courseName, // コース名を設定
       })
 
       if (!customerResult.customer || !customerResult.customer.id) {
@@ -82,8 +114,9 @@ export async function POST(request: Request) {
           phone, // E列: 電話番号
           carModel, // F列: 車種
           carColor, // G列: 車の色
-          course, // H列: コース
+          courseName, // H列: コース
           customerId, // I列: Square顧客ID
+          referenceId, // J列: リファレンスID
         ],
       ]
 
@@ -96,6 +129,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       customerId: customerId,
+      referenceId: referenceId,
       message: "顧客情報が正常に登録されました",
     })
   } catch (error) {
