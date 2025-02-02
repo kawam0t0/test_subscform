@@ -28,17 +28,14 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
       phone: "",
     }
 
-    // Validate name (full-width katakana)
     if (!/^[ァ-ヶー　]+$/.test(formData.name)) {
       newErrors.name = "お名前は全角カタカナで入力してください。"
     }
 
-    // Validate email
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "有効なメールアドレスを入力してください。"
     }
 
-    // Validate phone number (10 or 11 consecutive digits)
     if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/[^\d]/g, ""))) {
       newErrors.phone = "電話番号は10桁または11桁の半角数字で入力してください。"
     }
@@ -51,70 +48,87 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="relative">
-        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-        <select
-          id="store"
-          value={formData.store}
-          onChange={(e) => updateFormData({ store: e.target.value })}
-          required
-          className="form-input pl-10"
-        >
-          <option value="">選択してください</option>
-          {stores.map((store) => (
-            <option key={store} value={store}>
-              {store}
-            </option>
-          ))}
-        </select>
+        <label htmlFor="store" className="select-label">
+          <MapPin className="h-5 w-5" />
+          入会店舗
+        </label>
+        <div className="select-wrapper">
+          <select
+            id="store"
+            value={formData.store}
+            onChange={(e) => updateFormData({ store: e.target.value })}
+            required
+            className="custom-select"
+          >
+            <option value="">選択してください</option>
+            {stores.map((store) => (
+              <option key={store} value={store}>
+                {store}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
       <div className="relative">
-        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <label htmlFor="name" className="form-label flex items-center gap-2">
+          <User className="h-5 w-5" />
+          お名前
+        </label>
         <input
           id="name"
           type="text"
-          placeholder="お名前（全角カタカナ）"
+          placeholder="全角カタカナ"
           value={formData.name}
           onChange={(e) => updateFormData({ name: e.target.value })}
           required
-          className="form-input pl-10"
+          className="form-input"
           pattern="^[ァ-ヶー　]+$"
         />
         {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
       </div>
+
       <div className="relative">
-        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <label htmlFor="email" className="form-label flex items-center gap-2">
+          <Mail className="h-5 w-5" />
+          メールアドレス
+        </label>
         <input
           id="email"
           type="email"
-          placeholder="メールアドレス"
+          placeholder="例：example@email.com"
           value={formData.email}
           onChange={(e) => updateFormData({ email: e.target.value })}
           required
-          className="form-input pl-10"
-          pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+          className="form-input"
         />
         {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
       </div>
+
       <div className="relative">
-        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <label htmlFor="phone" className="form-label flex items-center gap-2">
+          <Phone className="h-5 w-5" />
+          電話番号
+        </label>
         <input
           id="phone"
           type="tel"
-          placeholder="電話番号（半角数字のみ）"
+          placeholder="半角数字のみ"
           value={formData.phone}
           onChange={(e) => {
             const onlyNumbers = e.target.value.replace(/[^\d]/g, "")
             updateFormData({ phone: onlyNumbers })
           }}
           required
-          className="form-input pl-10"
+          className="form-input"
           pattern="^[0-9]{10,11}$"
         />
         {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
       </div>
-      <div className="pt-4 flex justify-between">
+
+      <div className="pt-6 grid grid-cols-2 gap-4">
         <button type="button" onClick={prevStep} className="btn btn-secondary">
           戻る
         </button>

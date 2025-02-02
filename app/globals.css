@@ -24,7 +24,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 213 100% 50%;
-    --radius: 0.5rem;
+    --radius: 1rem;
   }
 
   html,
@@ -43,29 +43,28 @@
 
 @layer components {
   .form-input {
-    @apply w-full rounded-md border border-gray-300 px-3 py-3 text-sm focus:border-[#007BFF] focus:outline-none focus:ring-1 focus:ring-[#007BFF] transition-all duration-200;
+    @apply w-full rounded-2xl border border-gray-200 px-4 py-4 text-base focus:border-[#007BFF] focus:outline-none focus:ring-2 focus:ring-[#007BFF]/20 transition-all duration-200 bg-white shadow-sm;
   }
 
   .form-label {
-    @apply block text-sm font-medium text-gray-700 mb-2;
+    @apply block text-base font-medium text-gray-700 mb-2;
     font-weight: 500;
   }
 
   .btn {
-    @apply px-6 py-3 rounded-md text-white transition-all duration-200 flex items-center justify-center gap-2;
-    font-weight: 500;
+    @apply px-8 py-4 rounded-xl text-white transition-all duration-200 flex items-center justify-center gap-2 text-base font-medium shadow-sm;
   }
 
   .btn-primary {
-    @apply bg-[#007BFF] hover:bg-[#0056b3] active:bg-[#004085];
+    @apply bg-[#007BFF] hover:bg-[#0056b3] active:bg-[#004085] shadow-lg hover:shadow-xl active:shadow-md;
   }
 
   .btn-secondary {
-    @apply bg-[#6c757d] text-white hover:bg-[#5a6268];
+    @apply bg-gray-500 text-white hover:bg-gray-600 shadow-lg hover:shadow-xl active:shadow-md;
   }
 
   .header {
-    @apply bg-[#007BFF] text-white;
+    @apply bg-[#007BFF] text-white shadow-lg;
     padding-top: env(safe-area-inset-top);
   }
 
@@ -74,7 +73,7 @@
   }
 
   .custom-select {
-    @apply w-full rounded-lg border border-gray-200 bg-white px-4 py-3.5 text-gray-700 
+    @apply w-full rounded-2xl border border-gray-200 bg-white px-4 py-4 text-base 
     shadow-sm transition-all duration-200 hover:border-gray-300 focus:border-primary 
     focus:outline-none focus:ring-2 focus:ring-primary/20;
     appearance: none;
@@ -82,11 +81,32 @@
     background-position: right 1rem center;
     background-repeat: no-repeat;
     background-size: 1.5em 1.5em;
-    padding-right: 2.5rem;
+    padding-right: 3rem;
   }
 
   .select-label {
-    @apply flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5;
+    @apply flex items-center gap-2 text-base font-medium text-gray-700 mb-2;
+  }
+
+  /* モバイル最適化のための追加スタイル */
+  @media (max-width: 640px) {
+    .form-container {
+      @apply px-4 py-6 max-w-[calc(100vw-2rem)] mx-auto;
+    }
+
+    .form-input,
+    .custom-select {
+      @apply text-lg py-4 px-4;
+    }
+
+    .btn {
+      @apply py-4 px-6 text-lg w-full;
+    }
+
+    .form-label,
+    .select-label {
+      @apply text-lg mb-3;
+    }
   }
 }
 

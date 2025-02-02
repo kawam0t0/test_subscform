@@ -78,7 +78,6 @@ export function CustomerForm() {
       }
 
       if (data.success) {
-        // 成功した場合は直接Thank youページに遷移
         setStep(7)
       } else {
         throw new Error(data.error || "顧客情報の登録に失敗しました")
@@ -124,14 +123,14 @@ export function CustomerForm() {
   }
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full max-w-md mx-auto flex flex-col min-h-[calc(100vh-2rem)]">
+    <div className="bg-white shadow-lg w-full max-w-md mx-auto min-h-screen flex flex-col">
       <div className="header sticky top-0 z-10">
-        <h1 className="text-xl sm:text-2xl font-bold text-center flex items-center justify-center py-6">
-          <Droplet className="mr-2" />
+        <h1 className="text-2xl font-bold text-center flex items-center justify-center py-6">
+          <Droplet className="mr-2 h-6 w-6" />
           顧客情報フォーム
         </h1>
       </div>
-      <div className="flex-1 p-6 flex flex-col">
+      <div className="flex-1 form-container">
         {step < 7 && <ProgressBar currentStep={step} totalSteps={6} />}
         {error && <ErrorMessage message={error} />}
         <div className="flex-1 flex flex-col justify-center">{renderStep()}</div>
