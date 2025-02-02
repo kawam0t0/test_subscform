@@ -31,7 +31,10 @@ export async function loadSquareSdk() {
 
     // 環境変数の値をトリムし、明示的に文字列として扱う
     const trimmedAppId = String(appId).trim()
-    const trimmedLocationId = String(locationId).trim()
+    const trimmedLocationId = String(locationId)
+      .trim()
+      .replace(/[^a-zA-Z0-9]/g, "")
+    console.log("Cleaned locationId:", trimmedLocationId)
 
     console.log("Trimmed values:", { trimmedAppId, trimmedLocationId })
 
