@@ -14,28 +14,35 @@ export async function POST(request: Request) {
 
     const { name, email, phone, carModel, carColor, course, store } = formData
 
-    // 既存の顧客を検索
-    const { result: searchResult } = await squareClient.customersApi.searchCustomers({
+    // まずメールアドレスで検索
+    const { result: emailSearchResult } = await squareClient.customersApi.searchCustomers({
       query: {
         filter: {
           emailAddress: {
             exact: email,
           },
-          // または電話番号で検索
-          or: {
-            phoneNumber: {
-              exact: phone,
-            },
-          },
         },
       },
     })
 
-    let customerId: string
+    // メールアドレスで見つからない場合は電話番号で検索
+    const { result: phoneSearchResult } = !emailSearchResult.customers?.length
+      ? await squareClient.customersApi.searchCustomers({
+          query: {
+            filter: {
+              phoneNumber: {
+                exact: phone,
+              },
+            },
+          },
+        })
+      : { result: { customers: [] } }
 
-    if (searchResult.customers && searchResult.customers.length > 0) {
+    let customerId: string
+    const existingCustomer = emailSearchResult.customers?.[0] || phoneSearchResult.customers?.[0]
+
+    if (existingCustomer) {
       // 既存の顧客を更新
-      const existingCustomer = searchResult.customers[0]
       customerId = existingCustomer.id
 
       const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
