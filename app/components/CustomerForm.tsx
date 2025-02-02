@@ -130,7 +130,7 @@ export function CustomerForm() {
           顧客情報フォーム
         </h1>
       </div>
-      <div className="max-w-md mx-auto bg-white min-h-[calc(100vh-4rem)] shadow-sm">
+      <div className="w-full max-w-[375px] mx-auto bg-white min-h-[calc(100vh-4rem)] shadow-sm">
         <div className="px-4 py-6">
           {step < 7 && <ProgressBar currentStep={step} totalSteps={6} />}
           {error && <ErrorMessage message={error} />}
