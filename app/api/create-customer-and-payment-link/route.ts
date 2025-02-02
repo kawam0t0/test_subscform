@@ -6,7 +6,7 @@ const squareClient = new Client({
   environment: Environment.Production,
 })
 
-// 新しく追加: 環境変数の存在確認を行う関数
+// 環境変数の存在確認を行う関数
 function assertEnvVar(name: string): string {
   const value = process.env[name]
   if (!value) {
@@ -36,10 +36,10 @@ export async function POST(request: Request) {
 
     const customerId = customerResult.customer.id
 
-    // コースの価格を取得（実際の実装ではこの部分を適切に処理してください）
+    // コースの価格を取得
     const coursePrice = getCoursePrice(course)
 
-    // 変更: 環境変数の存在を確認
+    // 環境変数の存在を確認
     const locationId = assertEnvVar("SQUARE_LOCATION_ID")
     const baseUrl = assertEnvVar("NEXT_PUBLIC_BASE_URL")
 
@@ -49,14 +49,14 @@ export async function POST(request: Request) {
       quickPay: {
         name: course,
         priceMoney: {
-          amount: BigInt(coursePrice * 100), // セント単位で指定
+          amount: BigInt(coursePrice * 100),
           currency: "JPY",
         },
-        locationId: locationId, // 変更: 直接環境変数を使用せず、確認済みの値を使用
+        locationId: locationId,
       },
       checkoutOptions: {
-        customerCancel: false,
-        redirectUrl: `${baseUrl}/thank-you`, // 変更: 確認済みのbaseUrlを使用
+        redirectUrl: `${baseUrl}/thank-you`, // customerCancelプロパティを削除
+        askForShippingAddress: false,
       },
       prePopulatedData: {
         buyerEmail: email,
@@ -82,7 +82,6 @@ export async function POST(request: Request) {
   }
 }
 
-// コースの価格を取得する関数（実際の実装に合わせて調整してください）
 function getCoursePrice(course: string): number {
   const prices: { [key: string]: number } = {
     "プレミアムスタンダード（月額980円）": 980,
