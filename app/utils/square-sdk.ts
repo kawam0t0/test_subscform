@@ -23,7 +23,7 @@ export async function loadSquareSdk() {
     if (locationId) {
       console.log("locationId詳細:", {
         raw: locationId,
-        json: JSON.stringify(locationId),
+        json: locationId, // JSON.stringify() を使わず、そのまま表示
         base64: btoa(locationId)
       });
     }
