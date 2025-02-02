@@ -6,6 +6,15 @@ const squareClient = new Client({
   environment: Environment.Production,
 })
 
+// 新しく追加: 環境変数の存在確認を行う関数
+function assertEnvVar(name: string): string {
+  const value = process.env[name]
+  if (!value) {
+    throw new Error(`環境変数 ${name} が設定されていません`)
+  }
+  return value
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.json()
@@ -30,6 +39,10 @@ export async function POST(request: Request) {
     // コースの価格を取得（実際の実装ではこの部分を適切に処理してください）
     const coursePrice = getCoursePrice(course)
 
+    // 変更: 環境変数の存在を確認
+    const locationId = assertEnvVar("SQUARE_LOCATION_ID")
+    const baseUrl = assertEnvVar("NEXT_PUBLIC_BASE_URL")
+
     // Square Payment Link API を使用して支払いリンクを生成
     const { result: paymentLinkResult } = await squareClient.checkoutApi.createPaymentLink({
       idempotencyKey: `${customerId}-${Date.now()}`,
@@ -39,11 +52,11 @@ export async function POST(request: Request) {
           amount: BigInt(coursePrice * 100), // セント単位で指定
           currency: "JPY",
         },
-        locationId: process.env.SQUARE_LOCATION_ID,
+        locationId: locationId, // 変更: 直接環境変数を使用せず、確認済みの値を使用
       },
       checkoutOptions: {
         customerCancel: false,
-        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/thank-you`, // 支払い完了後のリダイレクト先
+        redirectUrl: `${baseUrl}/thank-you`, // 変更: 確認済みのbaseUrlを使用
       },
       prePopulatedData: {
         buyerEmail: email,

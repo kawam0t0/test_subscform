@@ -12,11 +12,7 @@ const nextConfig = {
     ],
   },
   optimizeFonts: false,
-  onError: async (err, req, res) => {
-    console.error("Server Error:", err)
-    res.statusCode = 500
-    res.end("Internal Server Error")
-  },
+  // 変更: onErrorオプションを削除
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
