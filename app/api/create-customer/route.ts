@@ -36,57 +36,77 @@ export async function POST(request: Request) {
     console.log("受信したフォームデータ:", formData)
 
     const { name, email, phone, carModel, carColor, course, store, operation } = formData
-    const referenceId = generateReferenceId(store)
-    const courseName = extractCourseName(course)
 
-    // 新規顧客を作成
-    const { result: customerResult } = await squareClient.customersApi.createCustomer({
-      idempotencyKey: `${Date.now()}-${Math.random()}`,
-      givenName: name,
-      familyName: `${carModel}/${carColor}`, // 姓に車種/車の色を設定
-      emailAddress: email,
-      phoneNumber: phone,
-      companyName: store, // 会社名に店舗名を設定
-      nickname: courseName, // ニックネームにコース名を設定
-      referenceId: referenceId, // リファレンスIDを設定（キャメルケースに修正）
-      note: `店舗: ${store}\nコース: ${courseName}\n車種: ${carModel}\n車の色: ${carColor}`, // 備考欄に詳細情報を設定
-    })
+    // 入会の場合のみ特別な処理を行う
+    if (operation === "入会") {
+      const referenceId = generateReferenceId(store)
+      const courseName = extractCourseName(course)
 
-    if (!customerResult.customer || !customerResult.customer.id) {
-      throw new Error("顧客の作成に失敗しました")
+      // デバッグ用のログ
+      console.log("Creating customer with data:", {
+        name,
+        familyName: `${carModel}/${carColor}`,
+        email,
+        phone,
+        referenceId,
+        courseName,
+        store,
+      })
+
+      // 新規顧客を作成
+      const { result: customerResult } = await squareClient.customersApi.createCustomer({
+        idempotencyKey: `${Date.now()}-${Math.random()}`,
+        givenName: name,
+        familyName: `${carModel}/${carColor}`, // 車種/車の色を姓として設定
+        emailAddress: email,
+        phoneNumber: phone,
+        referenceId: referenceId, // リファレンスIDを設定
+        note: courseName, // コース名をノートとして設定
+        companyName: store, // 店舗名を会社名として設定
+      })
+
+      if (!customerResult.customer || !customerResult.customer.id) {
+        throw new Error("顧客の作成に失敗しました")
+      }
+
+      const customerId = customerResult.customer.id
+
+      // Google Sheetsに顧客情報を追加
+      try {
+        const sheetData = [
+          [
+            new Date().toISOString(),
+            store,
+            name,
+            email,
+            phone,
+            carModel,
+            carColor,
+            courseName,
+            customerId,
+            referenceId,
+          ],
+        ]
+
+        await appendToSheet(sheetData)
+        console.log("Google Sheetsに顧客情報が追加されました")
+      } catch (sheetError) {
+        console.error("Google Sheetsへの書き込み中にエラーが発生:", sheetError)
+      }
+
+      return NextResponse.json({
+        success: true,
+        customerId: customerId,
+        referenceId: referenceId,
+        message: "顧客情報が正常に登録されました",
+      })
+    } else {
+      // 入会以外の操作の場合は別の処理を行う（既存の処理をここに移動）
+      return NextResponse.json({
+        success: false,
+        error: "この操作は入会フロー以外では利用できません",
+      })
     }
-
-    const customerId = customerResult.customer.id
-
-    // Google Sheetsに顧客情報を追加
-    try {
-      const sheetData = [
-        [
-          new Date().toISOString(), // タイムスタンプ
-          store, // 店舗名
-          name, // 名前
-          email, // メールアドレス
-          phone, // 電話番号
-          carModel, // 車種
-          carColor, // 車の色
-          courseName, // コース名
-          customerId, // Square顧客ID
-          referenceId, // リファレンスID
-        ],
-      ]
-
-      await appendToSheet(sheetData)
-      console.log("Google Sheetsに顧客情報が追加されました")
-    } catch (sheetError) {
-      console.error("Google Sheetsへの書き込み中にエラーが発生:", sheetError)
-    }
-
-    return NextResponse.json({
-      success: true,
-      customerId: customerId,
-      referenceId: referenceId,
-      message: "顧客情報が正常に登録されました",
-    })
   } catch (error) {
     console.error("API エラー:", error)
     return NextResponse.json(
