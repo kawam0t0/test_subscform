@@ -61,17 +61,21 @@ export function CustomerForm() {
       console.log("APIレスポンス:", data)
 
       if (!response.ok) {
-        throw new Error(data.error || `エラーが発生しました: ${response.status}`)
+        if (response.status === 400) {
+          throw new Error("お客様情報の登録がありません。初めから再度ご入力ください")
+        } else {
+          throw new Error(data.error || `エラーが発生しました: ${response.status}`)
+        }
       }
 
       if (data.success) {
-        setStep(7)
+        setStep(7) // ThankYou コンポーネントを表示
       } else {
         throw new Error(data.error || "更新に失敗しました")
       }
     } catch (error) {
       console.error("フォーム送信エラー:", error)
-      setError(error instanceof Error ? error.message : "エラーが発生しました")
+      setError(error instanceof Error ? error.message : "お客様情報の登録がありません。初めから再度ご入力ください")
     }
   }
 
@@ -139,7 +143,7 @@ export function CustomerForm() {
           return <ThankYou formData={formData} />
         }
       case 6:
-        return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
+        return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} error={error} />
       case 7:
         return <ThankYou formData={formData} />
       default:
