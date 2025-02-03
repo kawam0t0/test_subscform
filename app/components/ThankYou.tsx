@@ -1,6 +1,13 @@
-import { CheckCircle } from "lucide-react"
+"use client"
 
-export function ThankYou() {
+import { CheckCircle } from "lucide-react"
+import type { FormData } from "../types"
+
+interface ThankYouProps {
+  formData: FormData
+}
+
+export function ThankYou({ formData }: ThankYouProps) {
   return (
     <div className="text-center space-y-6">
       <div className="text-primary">
