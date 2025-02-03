@@ -76,7 +76,7 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
         <div>
           <label htmlFor="name" className="form-label flex items-center gap-2">
             <User className="h-6 w-6" />
-            お名前
+            お名前(姓と名の間は開けずに入力して下さい)
           </label>
           <input
             id="name"
