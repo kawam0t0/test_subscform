@@ -88,7 +88,7 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 form-container">
       <div>
         <label htmlFor="card-container" className="form-label flex items-center gap-2">
           <CreditCard className="h-5 w-5" />

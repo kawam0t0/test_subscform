@@ -130,8 +130,8 @@ export function CustomerForm() {
           顧客情報フォーム
         </h1>
       </div>
-      <div className="w-full max-w-[400px] sm:max-w-[540px] md:max-w-[720px] lg:max-w-[960px] xl:max-w-[1140px] mx-auto bg-white shadow-sm">
-        <div className="px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8">
+      <div className="w-full bg-white shadow-sm">
+        <div className="py-6 md:py-8">
           {step < 7 && <ProgressBar currentStep={step} totalSteps={6} />}
           {error && <ErrorMessage message={error} />}
           <div className="mt-6 md:mt-8">{renderStep()}</div>

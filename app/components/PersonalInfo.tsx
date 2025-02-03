@@ -48,7 +48,7 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 form-container">
       <div className="relative">
         <label htmlFor="store" className="select-label">
           <MapPin className="h-5 w-5" />

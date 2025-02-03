@@ -4,7 +4,7 @@ import { CheckCircle, User, Mail, Phone, Car, Palette, CreditCard, MapPin } from
 
 export function Confirmation({ formData, prevStep, submitForm }: ConfirmationProps) {
   return (
-    <div className="flex flex-col min-h-[calc(100vh-16rem)]">
+    <div className="flex flex-col min-h-[calc(100vh-16rem)] form-container">
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-6 md:space-y-8">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-primary flex items-center justify-center">

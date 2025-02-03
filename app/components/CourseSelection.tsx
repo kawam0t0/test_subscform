@@ -53,7 +53,7 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
     : courses
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 form-container">
       <div>
         <label className="form-label text-base mb-4">コースを選択してください</label>
         <div className="grid grid-cols-2 gap-4">

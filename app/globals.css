@@ -67,7 +67,7 @@
   }
 
   .header {
-    @apply bg-[#007BFF] text-white shadow-lg;
+    @apply bg-[#007BFF] text-white shadow-lg w-full;
     padding-top: env(safe-area-inset-top);
   }
 
@@ -97,6 +97,22 @@
 
   .card-input-wrapper.focused {
     @apply border-primary ring-2 ring-primary/20;
+  }
+
+  .form-container {
+    @apply w-full px-4;
+  }
+
+  @screen sm {
+    .form-container {
+      @apply px-6;
+    }
+  }
+
+  @screen md {
+    .form-container {
+      @apply px-8;
+    }
   }
 }
 

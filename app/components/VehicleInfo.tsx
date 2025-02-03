@@ -50,7 +50,7 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 form-container">
       <div>
         <label htmlFor="carModel" className="select-label">
           <Car className="w-5 h-5" />
