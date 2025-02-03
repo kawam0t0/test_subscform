@@ -35,63 +35,28 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { name, email, phone, carModel, carColor, course, store, operation, currentCourse, newCourse } = formData
+    const { name, email, phone, carModel, carColor, course, store, operation } = formData
     const referenceId = generateReferenceId(store)
+    const courseName = extractCourseName(course)
 
-    // まずメールアドレスで検索
-    const { result: emailSearchResult } = await squareClient.customersApi.searchCustomers({
-      query: {
-        filter: {
-          emailAddress: {
-            exact: email,
-          },
-        },
-      },
-    })
-
-    // メールアドレスで見つからない場合は電話番号で検索
-    const { result: phoneSearchResult } = !emailSearchResult.customers?.length
-      ? await squareClient.customersApi.searchCustomers({
-          query: {
-            filter: {
-              phoneNumber: {
-                exact: phone,
-              },
-            },
-          },
-        })
-      : { result: { customers: [] } }
-
-    const existingCustomer = emailSearchResult.customers?.[0] || phoneSearchResult.customers?.[0]
-
-    let customerId: string
-
-    const customerData = {
+    // 新規顧客を作成
+    const { result: customerResult } = await squareClient.customersApi.createCustomer({
       givenName: name,
-      familyName: operation === "入会" ? `${carModel}/${carColor}` : "",
+      familyName: `${carModel}/${carColor}`, // 姓に車種/車の色を設定
       emailAddress: email,
       phoneNumber: phone,
-      referenceId: referenceId,
-      note: operation === "入会" ? extractCourseName(course) : "",
+      referenceId: referenceId, // リファレンスIDを設定
+      note: courseName, // コース名を設定
       customAttributes: {
         store: { value: store },
       },
+    })
+
+    if (!customerResult.customer || !customerResult.customer.id) {
+      throw new Error("顧客の作成に失敗しました")
     }
 
-    if (existingCustomer && existingCustomer.id) {
-      // 既存の顧客を更新
-      customerId = existingCustomer.id
-      const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, customerData)
-      console.log("既存の顧客を更新しました:", updateResult.customer?.id)
-    } else {
-      // 新規顧客を作成
-      const { result: customerResult } = await squareClient.customersApi.createCustomer(customerData)
-      if (!customerResult.customer || !customerResult.customer.id) {
-        throw new Error("顧客の作成に失敗しました")
-      }
-      customerId = customerResult.customer.id
-      console.log("新規顧客を作成しました:", customerId)
-    }
+    const customerId = customerResult.customer.id
 
     // Google Sheetsに顧客情報を追加
     try {
@@ -102,11 +67,9 @@ export async function POST(request: Request) {
           name, // 名前
           email, // メールアドレス
           phone, // 電話番号
-          operation === "入会" ? carModel : "", // 車種
-          operation === "入会" ? carColor : "", // 車の色
-          operation === "入会" ? course : "", // コース
-          operation === "洗車コース変更" ? currentCourse : "", // 現在のコース
-          operation === "洗車コース変更" ? newCourse : "", // 新しいコース
+          carModel, // 車種
+          carColor, // 車の色
+          courseName, // コース名
           customerId, // Square顧客ID
           referenceId, // リファレンスID
         ],
