@@ -1,30 +1,31 @@
-import { CheckCircle, MapPin, User, Mail, Phone, Car, Palette, CreditCard } from "react-icons/md"
+import { CheckCircle, MapPin, User, Mail, Phone, Car, Palette, CreditCard } from "lucide-react"
+import type React from "react" // Added import for React
+import type { FormData } from "../types"
 
 interface ConfirmationProps {
-  formData: any
+  formData: FormData
   prevStep: () => void
   submitForm: () => void
 }
 
 interface ConfirmationItemProps {
-  icon: JSX.Element
+  icon: React.ReactNode
   label: string
-  value: string | number | undefined
+  value: string
 }
 
-const ConfirmationItem: React.FC<ConfirmationItemProps> = ({ icon, label, value }) => {
+function ConfirmationItem({ icon, label, value }: ConfirmationItemProps) {
   return (
-    <div className="flex items-center space-x-2">
-      {icon}
-      <div>
-        <p className="font-medium text-gray-900">{label}</p>
-        <p className="text-gray-700">{value ?? "-"}</p>
+    <div className="flex items-start space-x-3">
+      <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 mt-0.5">{icon}</div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs sm:text-sm md:text-base font-medium text-gray-500">{label}</p>
+        <p className="text-sm sm:text-base md:text-lg text-gray-900 break-all">{value}</p>
       </div>
     </div>
   )
 }
 
-// Confirmationコンポーネントを更新
 export function Confirmation({ formData, prevStep, submitForm }: ConfirmationProps) {
   return (
     <div className="flex flex-col min-h-[calc(100vh-16rem)] form-container">
