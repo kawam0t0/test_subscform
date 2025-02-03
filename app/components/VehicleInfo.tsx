@@ -50,72 +50,77 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 form-container">
-      <div>
-        <label htmlFor="carModel" className="select-label">
-          <Car className="w-5 h-5" />
-          車種
-        </label>
-        <div className="select-wrapper min-w-[280px]">
-          <select
-            id="carModel"
-            value={isCustomModel ? "その他" : formData.carModel}
-            onChange={handleCarModelChange}
-            required
-            className="custom-select"
-          >
-            <option value="">選択してください</option>
-            {topCarModels.map((model) => (
-              <option key={model} value={model}>
-                {model}
-              </option>
-            ))}
-            <option value="その他">その他</option>
-          </select>
-        </div>
-      </div>
-
-      {isCustomModel && (
+    <form onSubmit={handleSubmit} className="form-section">
+      <div className="form-grid">
         <div>
-          <label htmlFor="customCarModel" className="select-label">
-            その他の車種
+          <label htmlFor="carModel" className="select-label">
+            <Car className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7" />
+            車種{" "}
+            <span className="text-sm md:text-base lg:text-lg font-normal text-gray-500 ml-2">
+              (無い場合はその他を選択してください)
+            </span>
           </label>
-          <input
-            id="customCarModel"
-            type="text"
-            value={formData.carModel}
-            onChange={(e) => updateFormData({ carModel: e.target.value })}
-            required
-            className="form-input"
-            placeholder="車種を入力してください"
-          />
+          <div className="select-wrapper">
+            <select
+              id="carModel"
+              value={isCustomModel ? "その他" : formData.carModel}
+              onChange={handleCarModelChange}
+              required
+              className="custom-select"
+            >
+              <option value="">選択してください</option>
+              {topCarModels.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+              <option value="その他">その他</option>
+            </select>
+          </div>
         </div>
-      )}
 
-      <div>
-        <label htmlFor="carColor" className="select-label">
-          <Palette className="w-5 h-5" />
-          車の色
-        </label>
-        <div className="select-wrapper min-w-[280px]">
-          <select
-            id="carColor"
-            value={formData.carColor}
-            onChange={(e) => updateFormData({ carColor: e.target.value })}
-            required
-            className="custom-select"
-          >
-            <option value="">選択してください</option>
-            {carColors.map((color) => (
-              <option key={color} value={color}>
-                {color}
-              </option>
-            ))}
-          </select>
+        {isCustomModel && (
+          <div>
+            <label htmlFor="customCarModel" className="form-label">
+              その他の車種
+            </label>
+            <input
+              id="customCarModel"
+              type="text"
+              value={formData.carModel}
+              onChange={(e) => updateFormData({ carModel: e.target.value })}
+              required
+              className="form-input"
+              placeholder="車種を入力してください"
+            />
+          </div>
+        )}
+
+        <div>
+          <label htmlFor="carColor" className="select-label">
+            <Palette className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7" />
+            車の色
+          </label>
+          <div className="select-wrapper">
+            <select
+              id="carColor"
+              value={formData.carColor}
+              onChange={(e) => updateFormData({ carColor: e.target.value })}
+              required
+              className="custom-select"
+            >
+              <option value="">選択してください</option>
+              {carColors.map((color) => (
+                <option key={color} value={color}>
+                  {color}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="pt-4 grid grid-cols-2 gap-3">
+      <div className="flex justify-end gap-4 mt-8">
         <button type="button" onClick={prevStep} className="btn btn-secondary">
           戻る
         </button>
