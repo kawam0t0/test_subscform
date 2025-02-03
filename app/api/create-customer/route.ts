@@ -46,10 +46,7 @@ export async function POST(request: Request) {
       emailAddress: email,
       phoneNumber: phone,
       referenceId: referenceId, // リファレンスIDを設定
-      note: courseName, // コース名を設定
-      customAttributes: {
-        store: { value: store },
-      },
+      note: `店舗: ${store}, コース: ${courseName}`, // 店舗とコース名を設定
     })
 
     if (!customerResult.customer || !customerResult.customer.id) {
