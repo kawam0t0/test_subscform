@@ -30,6 +30,9 @@ export async function POST(request: Request) {
     }
 
     const customerId = customerSearchResult.customers[0].id
+    if (!customerId) {
+      throw new Error("顧客IDが見つかりません")
+    }
 
     // 顧客情報を更新
     const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
@@ -39,7 +42,24 @@ export async function POST(request: Request) {
       note: `車種: ${carModel}, 色: ${carColor}`,
     })
 
-    if (operation === "クレジットカード情報変更") {
+    if (operation === "クレジットカード情報変更" && cardToken) {
+      // 既存のカード情報を取得して無効化
+      try {
+        const { result: cardsResult } = await squareClient.customersApi.listCustomerCards(customerId)
+
+        if (cardsResult.cards && cardsResult.cards.length > 0) {
+          // 既存のカードを無効化
+          for (const card of cardsResult.cards) {
+            if (card.id) {
+              await squareClient.cardsApi.disableCard(card.id)
+              console.log(`既存のカード(${card.id})を無効化しました`)
+            }
+          }
+        }
+      } catch (cardError) {
+        console.error("既存のカード無効化中にエラーが発生:", cardError)
+      }
+
       // 新しいカードを作成
       const { result: cardResult } = await squareClient.cardsApi.createCard({
         idempotencyKey: `${customerId}-${Date.now()}`,
@@ -52,9 +72,6 @@ export async function POST(request: Request) {
       if (!cardResult.card || !cardResult.card.id) {
         throw new Error("カード情報の保存に失敗しました")
       }
-
-      // 古いカードを無効化（オプション）
-      // 注意: これには追加の実装が必要です。古いカードのIDを取得する方法を決定する必要があります。
 
       console.log("新しいカードが作成されました:", cardResult.card.id)
     }
