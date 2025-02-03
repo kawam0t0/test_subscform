@@ -123,7 +123,7 @@ export function CustomerForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="header sticky top-0 z-10">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center flex items-center justify-center py-4 px-2">
           <Droplet className="mr-2 h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />
