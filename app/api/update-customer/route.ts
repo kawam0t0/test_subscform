@@ -40,10 +40,7 @@ export async function POST(request: Request) {
         givenName: name,
         emailAddress: email,
         phoneNumber: phone,
-        note: `車種: ${carModel}, 色: ${carColor}`,
-        customAttributes: {
-          store: { value: store },
-        },
+        note: `車種: ${carModel}, 色: ${carColor}, 店舗: ${store}`,
       })
 
       // 新しいカードを作成
@@ -79,10 +76,7 @@ export async function POST(request: Request) {
         givenName: name,
         emailAddress: email,
         phoneNumber: phone,
-        note: `車種: ${carModel}, 色: ${carColor}, コース: ${course}`,
-        customAttributes: {
-          store: { value: store },
-        },
+        note: `車種: ${carModel}, 色: ${carColor}, コース: ${course}, 店舗: ${store}`,
       })
 
       if (!customerResult.customer || !customerResult.customer.id) {
