@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
     const existingCustomer = emailSearchResult.customers?.[0] || phoneSearchResult.customers?.[0]
 
-    if (!existingCustomer) {
+    if (!existingCustomer || !existingCustomer.id) {
       throw new Error("顧客が見つかりません")
     }
 
@@ -62,9 +62,9 @@ export async function POST(request: Request) {
         familyName: `${newCarModel}/${newCarColor}`, // 新しい車両情報を姓として更新
         emailAddress: email,
         phoneNumber: phone,
-        companyName: currentCustomer.companyName, // 既存の店舗情報を保持
-        nickname: currentCustomer.nickname, // 既存のコース情報を保持
-        referenceId: currentCustomer.referenceId, // 既存のリファレンスIDを保持
+        companyName: currentCustomer.companyName || store, // 既存の店舗情報を保持、ない場合は現在の店舗を使用
+        nickname: currentCustomer.nickname || "", // 既存のコース情報を保持
+        referenceId: currentCustomer.referenceId || "", // 既存のリファレンスIDを保持
         note: `
 店舗: ${store}
 コース: ${currentCustomer.nickname || ""}
@@ -134,49 +134,12 @@ export async function POST(request: Request) {
         customerId: customerId,
         message: "顧客情報が正常に更新されました",
       })
-    } else if (operation === "入会") {
-      // 新規入会の場合は新しい顧客を作成
-      const { result: customerResult } = await squareClient.customersApi.createCustomer({
-        givenName: name,
-        emailAddress: email,
-        phoneNumber: phone,
-        note: `車種: ${carModel}, 色: ${carColor}, コース: ${course}, 店舗: ${store}`,
-      })
-
-      if (!customerResult.customer || !customerResult.customer.id) {
-        throw new Error("顧客の作成に失敗しました")
-      }
-
-      const customerId = customerResult.customer.id
-
-      // カード情報を保存
-      if (cardToken) {
-        const { result: cardResult } = await squareClient.cardsApi.createCard({
-          idempotencyKey: `${customerId}-${Date.now()}`,
-          sourceId: cardToken,
-          card: {
-            customerId: customerId,
-          },
-        })
-
-        if (!cardResult.card || !cardResult.card.id) {
-          throw new Error("カード情報の保存に失敗しました")
-        }
-      }
-
-      // Google Sheetsに新規顧客情報を追加
-      await appendToSheet([
-        [new Date().toISOString(), operation, store, name, email, phone, carModel, carColor, course, customerId],
-      ])
-
-      return NextResponse.json({
-        success: true,
-        customerId: customerId,
-        message: "顧客情報が正常に登録されました",
-      })
     }
 
-    throw new Error("不正な操作が指定されました")
+    return NextResponse.json({
+      success: true,
+      message: "処理が完了しました",
+    })
   } catch (error) {
     console.error("API エラー:", error)
     return NextResponse.json(
