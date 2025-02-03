@@ -143,7 +143,7 @@ export function CustomerForm() {
           return <ThankYou formData={formData} />
         }
       case 6:
-        return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} error={error} />
+        return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
       case 7:
         return <ThankYou formData={formData} />
       default:

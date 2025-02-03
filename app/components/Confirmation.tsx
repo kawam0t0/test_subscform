@@ -29,15 +29,28 @@ const ConfirmationItem = ({ icon, label, value }: ConfirmationItemProps) => (
 
 export function Confirmation({ formData, prevStep, submitForm }: ConfirmationProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async () => {
     if (isSubmitting) return // 既に送信中の場合は何もしない
     setIsSubmitting(true)
-    await submitForm()
+    try {
+      await submitForm()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "エラーが発生しました")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">エラー: </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+      )}
       <div className="text-center space-y-2">
         <CheckCircle className="w-16 h-16 mx-auto text-primary" />
         <h2 className="text-2xl font-bold text-primary">確認</h2>
