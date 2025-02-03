@@ -6,13 +6,13 @@ import { ErrorMessage } from "./ErrorMessage"
 import { OperationSelection } from "./OperationSelection"
 import { PersonalInfo } from "./PersonalInfo"
 import { VehicleInfo } from "./VehicleInfo"
-import { PaymentInfo } from "./PaymentInfo"
 import { Confirmation } from "./Confirmation"
 import { ProgressBar } from "./ProgressBar"
 import { CourseSelection } from "./CourseSelection"
 import { ThankYou } from "./ThankYou"
 import { NewVehicleInfo } from "./NewVehicleInfo"
 import { CourseChangeForm } from "./CourseChangeForm"
+import { NewPaymentInfo } from "./NewPaymentInfo"
 import type { FormData } from "../types"
 
 export function CustomerForm() {
@@ -127,17 +127,27 @@ export function CustomerForm() {
           )
         } else if (formData.operation === "クレジットカード情報変更") {
           return (
-            <PaymentInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
+            <NewPaymentInfo
+              formData={formData}
+              updateFormData={updateFormData}
+              nextStep={nextStep}
+              prevStep={prevStep}
+            />
           )
         } else {
           return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
         }
       case 5:
-        if (formData.operation === "入会" || formData.operation === "クレジットカード情報変更") {
+        if (formData.operation === "入会") {
           return (
-            <PaymentInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
+            <NewPaymentInfo
+              formData={formData}
+              updateFormData={updateFormData}
+              nextStep={nextStep}
+              prevStep={prevStep}
+            />
           )
-        } else if (formData.operation === "登録車両変更") {
+        } else if (formData.operation === "クレジットカード情報変更" || formData.operation === "登録車両変更") {
           return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
         } else {
           return <ThankYou formData={formData} />

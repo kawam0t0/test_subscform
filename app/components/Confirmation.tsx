@@ -99,6 +99,14 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
             />
           </>
         )}
+
+        {formData.operation === "クレジットカード情報変更" && (
+          <ConfirmationItem
+            icon={<CreditCard className="w-6 h-6" />}
+            label="新しいクレジットカード情報"
+            value="登録済み"
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 mt-8">
