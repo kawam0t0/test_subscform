@@ -90,10 +90,8 @@ export async function POST(request: Request) {
       // カードの登録（新規登録時のみ）
       if (operation === "入会" && cardToken) {
         try {
-          const cardIdempotencyKey = randomUUID()
-          await squareClient.customersApi.createCustomerCard(result.customer.id, {
-            cardNonce: cardToken,
-            idempotencyKey: cardIdempotencyKey,
+          const cardResponse = await squareClient.customersApi.createCustomerCard(result.customer.id, {
+            card_nonce: cardToken,
           })
           console.log("カードが正常に登録されました")
         } catch (cardError) {
