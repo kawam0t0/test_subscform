@@ -1,7 +1,52 @@
-/* 前半は同じなので省略 */
+@import url("https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300;400;500;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 213 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 213 100% 60%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 213 100% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 213 100% 96%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 213 100% 50%;
+    --radius: 1rem;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "M PLUS Rounded 1c", sans-serif;
+  }
+}
 
 @layer components {
-  /* 他のスタイルは同じなので省略 */
+  .form-container {
+    @apply w-[100%] mx-auto px-4;
+  }
+
+  .form-input {
+    @apply w-full rounded-xl border border-gray-200 px-4 py-3 text-base
+    focus:border-[#007BFF] focus:outline-none focus:ring-2 focus:ring-[#007BFF]/20 
+    transition-all duration-200 bg-white shadow-sm;
+  }
+
+  .form-label {
+    @apply block text-base font-medium text-gray-700 mb-2;
+  }
 
   .btn {
     @apply rounded-xl transition-all duration-200 
@@ -20,7 +65,29 @@
     hover:text-[#0056b3] hover:border-[#0056b3];
   }
 
-  /* コースカードの選択状態のスタイルも更新 */
+  .header {
+    @apply bg-[#007BFF] text-white shadow-lg w-full py-4;
+  }
+
+  .select-wrapper {
+    @apply relative w-full;
+  }
+
+  .custom-select {
+    @apply w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base
+    shadow-sm transition-all duration-200 hover:border-gray-300 
+    focus:border-[#007BFF] focus:ring-2 focus:ring-[#007BFF]/20 appearance-none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-position: right 1.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 4rem;
+  }
+
+  .select-label {
+    @apply flex items-center gap-2 text-base font-medium text-gray-700 mb-2;
+  }
+
   .course-card {
     @apply relative p-6 rounded-xl border-2 border-gray-200 transition-all duration-200 
     flex flex-col items-center justify-between min-h-[160px] w-full
@@ -31,36 +98,96 @@
     @apply border-[#007BFF] shadow-lg;
   }
 
-  /* プログレスバーの色も更新 */
-  .progress-bar-fill {
-    @apply bg-[#007BFF];
+  .form-grid {
+    @apply grid gap-6;
   }
 
-  /* フォーカス時のリング色も更新 */
-  .form-input,
-  .custom-select {
-    @apply focus:border-[#007BFF] focus:ring-2 focus:ring-[#007BFF]/20;
+  .form-section {
+    @apply space-y-6 w-full mx-auto;
   }
 }
 
-/* メディアクエリ内のボタンスタイル更新 */
+/* タブレット用のスタイル */
 @media (min-width: 768px) {
-  /* 他のスタイルは同じ */
+  .form-container {
+    width: 600px;
+  }
+
+  .form-input {
+    font-size: 1.125rem;
+    padding: 1rem 1.5rem;
+  }
+
+  .form-label {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+  }
 
   .btn {
     font-size: 1.125rem;
     padding: 1rem 2rem;
     min-width: 140px;
   }
+
+  .header {
+    padding: 1.25rem 0;
+  }
+
+  .custom-select {
+    font-size: 1.125rem;
+    padding: 1rem 1.5rem;
+  }
+
+  .select-label {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .course-card {
+    min-height: 180px;
+    padding: 1.75rem;
+  }
 }
 
+/* デスクトップ用のスタイル */
 @media (min-width: 1024px) {
-  /* 他のスタイルは同じ */
+  .form-container {
+    width: 800px;
+  }
+
+  .form-input {
+    font-size: 1.25rem;
+    padding: 1.25rem 2rem;
+  }
+
+  .form-label {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
 
   .btn {
     font-size: 1.25rem;
     padding: 1.25rem 2.5rem;
     min-width: 160px;
+  }
+
+  .header {
+    padding: 1.5rem 0;
+  }
+
+  .custom-select {
+    font-size: 1.25rem;
+    padding: 1.25rem 2rem;
+  }
+
+  .select-label {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .course-card {
+    min-height: 200px;
+    padding: 2rem;
   }
 }
 
