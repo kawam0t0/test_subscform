@@ -51,7 +51,7 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
 
   return (
     <form onSubmit={handleSubmit} className="form-section">
-      <div className="space-y-16">
+      <div className="space-y-8">
         <div className="space-y-4">
           <h3 className="text-2xl font-bold text-gray-900">現ご利用コース</h3>
           <div className="relative">
@@ -75,7 +75,7 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
           </div>
         </div>
 
-        <div className="flex justify-center py-8">
+        <div className="flex justify-center py-4">
           <ChevronDown className="w-24 h-24 text-primary animate-bounce" strokeWidth={3} />
         </div>
 
