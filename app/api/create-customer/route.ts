@@ -7,7 +7,6 @@ const squareClient = new Client({
   environment: Environment.Production,
 })
 
-// リファレンスID生成関数
 function generateReferenceId(store: string): string {
   const storePrefix =
     {
@@ -25,7 +24,6 @@ function generateReferenceId(store: string): string {
   return `${storePrefix}${randomPart}`
 }
 
-// コース名から金額を除去する関数
 function extractCourseName(course: string): string {
   return course.split("（")[0].trim()
 }
@@ -37,80 +35,74 @@ export async function POST(request: Request) {
 
     const { name, email, phone, carModel, carColor, course, store, operation } = formData
 
-    // 入会の場合のみ特別な処理を行う
+    // 入会フローの場合のみ特別な処理を実行
     if (operation === "入会") {
       const referenceId = generateReferenceId(store)
       const courseName = extractCourseName(course)
 
-      // デバッグ用のログ
-      console.log("Creating customer with data:", {
-        name,
+      // デバッグログ
+      console.log("Square API リクエストデータ:", {
+        givenName: name,
         familyName: `${carModel}/${carColor}`,
-        email,
-        phone,
-        referenceId,
-        courseName,
-        store,
+        referenceId: referenceId,
+        note: courseName,
       })
 
-      // 新規顧客を作成
-      const { result: customerResult } = await squareClient.customersApi.createCustomer({
-        idempotencyKey: `${Date.now()}-${Math.random()}`,
+      // Square API呼び出し
+      const { result } = await squareClient.customersApi.createCustomer({
         givenName: name,
-        familyName: `${carModel}/${carColor}`, // 車種/車の色を姓として設定
+        familyName: `${carModel}/${carColor}`,
         emailAddress: email,
         phoneNumber: phone,
-        referenceId: referenceId, // リファレンスIDを設定
-        note: courseName, // コース名をノートとして設定
-        companyName: store, // 店舗名を会社名として設定
+        referenceId: referenceId,
+        note: courseName,
+        idempotencyKey: `${Date.now()}-${Math.random()}`,
       })
 
-      if (!customerResult.customer || !customerResult.customer.id) {
+      if (!result.customer?.id) {
         throw new Error("顧客の作成に失敗しました")
       }
 
-      const customerId = customerResult.customer.id
+      // 成功時のデバッグログ
+      console.log("作成された顧客情報:", result.customer)
 
-      // Google Sheetsに顧客情報を追加
-      try {
-        const sheetData = [
-          [
-            new Date().toISOString(),
-            store,
-            name,
-            email,
-            phone,
-            carModel,
-            carColor,
-            courseName,
-            customerId,
-            referenceId,
-          ],
-        ]
-
-        await appendToSheet(sheetData)
-        console.log("Google Sheetsに顧客情報が追加されました")
-      } catch (sheetError) {
-        console.error("Google Sheetsへの書き込み中にエラーが発生:", sheetError)
-      }
+      // Google Sheetsへの記録
+      await appendToSheet([
+        [
+          new Date().toISOString(),
+          store,
+          name,
+          email,
+          phone,
+          carModel,
+          carColor,
+          courseName,
+          result.customer.id,
+          referenceId,
+        ],
+      ])
 
       return NextResponse.json({
         success: true,
-        customerId: customerId,
+        customerId: result.customer.id,
         referenceId: referenceId,
         message: "顧客情報が正常に登録されました",
       })
-    } else {
-      // 入会以外の操作の場合は別の処理を行う（既存の処理をここに移動）
-      return NextResponse.json({
-        success: false,
-        error: "この操作は入会フロー以外では利用できません",
-      })
     }
+
+    // 入会以外の操作の場合
+    return NextResponse.json({
+      success: false,
+      error: "この操作は入会フロー以外では利用できません",
+    })
   } catch (error) {
-    console.error("API エラー:", error)
+    console.error("Square API エラー:", error)
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "不明なエラーが発生しました" },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "不明なエラーが発生しました",
+        details: error,
+      },
       { status: 500 },
     )
   }
