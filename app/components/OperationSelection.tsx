@@ -30,9 +30,9 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 form-container">
-      <div>
-        <label htmlFor="operation" className="form-label">
+    <form onSubmit={handleSubmit} className="space-y-8 form-container">
+      <div className="space-y-4">
+        <label htmlFor="operation" className="block text-lg sm:text-xl md:text-2xl font-medium text-gray-900">
           問い合わせ内容
         </label>
         <div className="relative">
@@ -41,20 +41,28 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
             value={formData.operation}
             onChange={(e) => updateFormData({ operation: e.target.value })}
             required
-            className="form-input appearance-none"
+            className="w-full h-16 sm:h-20 px-6 text-lg sm:text-xl rounded-2xl border-2 border-gray-200 
+                     bg-white shadow-sm transition-all duration-200 
+                     hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10
+                     appearance-none cursor-pointer"
           >
             <option value="">選択してください</option>
             {operations.map((op) => (
-              <option key={op.value} value={op.value}>
+              <option key={op.value} value={op.value} className="py-2">
                 {op.label}
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-6 h-6" />
         </div>
       </div>
-      <div className="pt-4">
-        <button type="submit" className="btn btn-primary w-full">
+      <div className="pt-8">
+        <button
+          type="submit"
+          className="w-full h-16 sm:h-20 text-lg sm:text-xl font-medium rounded-2xl bg-primary 
+                   text-white shadow-lg transition-all duration-200 
+                   hover:bg-primary/90 hover:shadow-xl active:transform active:scale-[0.98]"
+        >
           次へ
         </button>
       </div>
