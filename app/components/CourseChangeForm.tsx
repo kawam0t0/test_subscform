@@ -2,7 +2,7 @@
 
 import { ArrowDown } from "lucide-react"
 import type { BaseFormProps } from "../types"
-import type React from "react" // Added import for React
+import type React from "react"
 
 const courses = [
   {
@@ -51,57 +51,72 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
 
   return (
     <form onSubmit={handleSubmit} className="form-section">
-      <div className="space-y-12">
+      <div className="space-y-16">
         <div className="space-y-4">
-          <label htmlFor="currentCourse" className="text-xl font-bold block">
-            現ご利用コース
-          </label>
-          <select
-            id="currentCourse"
-            value={formData.currentCourse}
-            onChange={(e) => updateFormData({ currentCourse: e.target.value })}
-            required
-            className="w-full h-16 px-4 rounded-xl border-2 border-gray-200 bg-white text-lg appearance-none cursor-pointer"
-          >
-            <option value="">選択してください</option>
-            {filteredCourses.map((course) => (
-              <option key={course.id} value={formatCourseOption(course)}>
-                {formatCourseOption(course)}
-              </option>
-            ))}
-          </select>
+          <h3 className="text-2xl font-bold text-gray-900">現ご利用コース</h3>
+          <div className="relative">
+            <select
+              id="currentCourse"
+              value={formData.currentCourse}
+              onChange={(e) => updateFormData({ currentCourse: e.target.value })}
+              required
+              className="w-full h-16 px-6 text-lg rounded-2xl border-2 border-gray-200 bg-white
+                       shadow-sm transition-all duration-200
+                       hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10
+                       appearance-none cursor-pointer"
+            >
+              <option value="">選択してください</option>
+              {filteredCourses.map((course) => (
+                <option key={course.id} value={formatCourseOption(course)}>
+                  {formatCourseOption(course)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="flex justify-center py-6">
-          <ArrowDown className="w-12 h-12 text-primary" />
+        <div className="flex justify-center py-8">
+          <ArrowDown className="w-16 h-16 text-primary animate-bounce" />
         </div>
 
         <div className="space-y-4">
-          <label htmlFor="newCourse" className="text-xl font-bold block">
-            新ご利用コース
-          </label>
-          <select
-            id="newCourse"
-            value={formData.newCourse}
-            onChange={(e) => updateFormData({ newCourse: e.target.value })}
-            required
-            className="w-full h-16 px-4 rounded-xl border-2 border-gray-200 bg-white text-lg appearance-none cursor-pointer"
-          >
-            <option value="">選択してください</option>
-            {filteredCourses.map((course) => (
-              <option key={course.id} value={formatCourseOption(course)}>
-                {formatCourseOption(course)}
-              </option>
-            ))}
-          </select>
+          <h3 className="text-2xl font-bold text-gray-900">新ご利用コース</h3>
+          <div className="relative">
+            <select
+              id="newCourse"
+              value={formData.newCourse}
+              onChange={(e) => updateFormData({ newCourse: e.target.value })}
+              required
+              className="w-full h-16 px-6 text-lg rounded-2xl border-2 border-gray-200 bg-white
+                       shadow-sm transition-all duration-200
+                       hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10
+                       appearance-none cursor-pointer"
+            >
+              <option value="">選択してください</option>
+              {filteredCourses.map((course) => (
+                <option key={course.id} value={formatCourseOption(course)}>
+                  {formatCourseOption(course)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-end gap-4 mt-8">
-        <button type="button" onClick={prevStep} className="btn btn-secondary">
+      <div className="flex justify-end gap-4 mt-12">
+        <button
+          type="button"
+          onClick={prevStep}
+          className="px-8 h-14 rounded-xl border-2 border-primary text-primary bg-white
+                   hover:bg-primary/5 transition-colors duration-200"
+        >
           戻る
         </button>
-        <button type="submit" className="btn btn-primary">
+        <button
+          type="submit"
+          className="px-8 h-14 rounded-xl bg-primary text-white
+                   hover:bg-primary/90 transition-colors duration-200"
+        >
           次へ
         </button>
       </div>
