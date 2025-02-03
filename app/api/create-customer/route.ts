@@ -41,53 +41,67 @@ export async function POST(request: Request) {
       const courseName = extractCourseName(course)
 
       // デバッグログ
-      console.log("Square API リクエストデータ:", {
-        givenName: name,
-        familyName: `${carModel}/${carColor}`,
-        referenceId: referenceId,
-        note: courseName,
+      console.log("Square API リクエストデータ作成:", {
+        name,
+        carInfo: `${carModel}/${carColor}`,
+        referenceId,
+        courseName,
       })
 
-      // Square API呼び出し
-      const { result } = await squareClient.customersApi.createCustomer({
-        givenName: name,
-        familyName: `${carModel}/${carColor}`,
-        emailAddress: email,
-        phoneNumber: phone,
-        referenceId: referenceId,
-        note: courseName,
-        idempotencyKey: `${Date.now()}-${Math.random()}`,
-      })
+      try {
+        // Square API呼び出し - より詳細な顧客情報の設定
+        const { result } = await squareClient.customersApi.createCustomer({
+          idempotencyKey: `${Date.now()}-${Math.random()}`,
+          givenName: name,
+          emailAddress: email,
+          phoneNumber: phone,
+          address: {
+            addressLine1: `${carModel}/${carColor}`, // 車種/車の色を住所1行目に保存
+          },
+          companyName: store, // 店舗名を会社名として保存
+          nickname: courseName, // コース名をニックネームとして保存
+          referenceId: referenceId, // リファレンスID
+          note: `
+店舗: ${store}
+コース: ${courseName}
+車種: ${carModel}
+車の色: ${carColor}
+リファレンスID: ${referenceId}
+          `.trim(), // 全情報をノートとしても保存
+        })
 
-      if (!result.customer?.id) {
-        throw new Error("顧客の作成に失敗しました")
+        console.log("Square API レスポンス:", result)
+
+        if (!result.customer?.id) {
+          throw new Error("顧客の作成に失敗しました")
+        }
+
+        // Google Sheetsへの記録
+        await appendToSheet([
+          [
+            new Date().toISOString(),
+            store,
+            name,
+            email,
+            phone,
+            carModel,
+            carColor,
+            courseName,
+            result.customer.id,
+            referenceId,
+          ],
+        ])
+
+        return NextResponse.json({
+          success: true,
+          customerId: result.customer.id,
+          referenceId: referenceId,
+          message: "顧客情報が正常に登録されました",
+        })
+      } catch (squareError) {
+        console.error("Square API エラー詳細:", squareError)
+        throw squareError
       }
-
-      // 成功時のデバッグログ
-      console.log("作成された顧客情報:", result.customer)
-
-      // Google Sheetsへの記録
-      await appendToSheet([
-        [
-          new Date().toISOString(),
-          store,
-          name,
-          email,
-          phone,
-          carModel,
-          carColor,
-          courseName,
-          result.customer.id,
-          referenceId,
-        ],
-      ])
-
-      return NextResponse.json({
-        success: true,
-        customerId: result.customer.id,
-        referenceId: referenceId,
-        message: "顧客情報が正常に登録されました",
-      })
     }
 
     // 入会以外の操作の場合
@@ -96,7 +110,7 @@ export async function POST(request: Request) {
       error: "この操作は入会フロー以外では利用できません",
     })
   } catch (error) {
-    console.error("Square API エラー:", error)
+    console.error("エラー発生:", error)
     return NextResponse.json(
       {
         success: false,
