@@ -30,7 +30,7 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 w-full form-container">
+    <form onSubmit={handleSubmit} className="space-y-6 w-full px-4 sm:px-6 md:px-8 max-w-2xl mx-auto">
       <div>
         <label htmlFor="operation" className="form-label">
           問い合わせ内容
