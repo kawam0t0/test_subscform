@@ -69,8 +69,6 @@ export async function POST(request: Request) {
         message: "顧客情報が正常に更新されました",
       })
     } else if (operation === "クレジットカード情報変更") {
-      // クレジットカード情報変更の場合のみ、既存顧客を検索
-
       // 顧客情報を更新
       await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
@@ -94,6 +92,24 @@ export async function POST(request: Request) {
         }
 
         console.log("新しいカードが作成されました:", cardResult.card.id)
+
+        // 古いカードを削除
+        try {
+          const { result: cardsResult } = await squareClient.customersApi.listCards(customerId)
+
+          // 新しく作成したカード以外の古いカードを削除
+          if (cardsResult.cards) {
+            for (const card of cardsResult.cards) {
+              if (card.id && card.id !== cardResult.card.id) {
+                await squareClient.cardsApi.disableCard(card.id)
+                console.log(`古いカードID: ${card.id} を削除しました`)
+              }
+            }
+          }
+        } catch (deleteError) {
+          console.error("古いカードの削除中にエラーが発生しました:", deleteError)
+          // カードの削除に失敗しても、更新自体は成功とする
+        }
       }
 
       // Google Sheetsに更新情報を追加
