@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       phoneNumber: phone,
       companyName: store, // 会社名に店舗名を設定
       nickname: courseName, // ニックネームにコース名を設定
-      reference_id: referenceId, // リファレンスIDを設定（スネークケースに注意）
+      referenceId: referenceId, // リファレンスIDを設定（キャメルケースに修正）
       note: `店舗: ${store}\nコース: ${courseName}\n車種: ${carModel}\n車の色: ${carColor}`, // 備考欄に詳細情報を設定
     })
 
