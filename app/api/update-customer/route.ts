@@ -95,13 +95,13 @@ export async function POST(request: Request) {
 
         // 古いカードを削除
         try {
-          const { result: cardsResult } = await squareClient.cardsApi.listCards({
+          const { result } = await squareClient.cardsApi.searchCards({
             customerId: customerId,
           })
 
           // 新しく作成したカード以外の古いカードを削除
-          if (cardsResult.cards) {
-            for (const card of cardsResult.cards) {
+          if (result.cards) {
+            for (const card of result.cards) {
               if (card.id && card.id !== cardResult.card.id) {
                 await squareClient.cardsApi.disableCard(card.id)
                 console.log(`古いカードID: ${card.id} を削除しました`)

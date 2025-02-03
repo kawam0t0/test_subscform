@@ -11,11 +11,11 @@ export async function POST(request: Request) {
     const { customerId } = await request.json()
 
     // 顧客の既存のカード情報を取得
-    const { result: cardsResult } = await squareClient.cardsApi.listCards({
+    const { result } = await squareClient.cardsApi.searchCards({
       customerId: customerId,
     })
 
-    if (!cardsResult.cards || cardsResult.cards.length === 0) {
+    if (!result.cards || result.cards.length === 0) {
       return NextResponse.json({
         success: true,
         message: "削除対象のカードが存在しません",
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     // 既存のカードをすべて削除
-    for (const card of cardsResult.cards) {
+    for (const card of result.cards) {
       if (card.id) {
         await squareClient.cardsApi.disableCard(card.id)
         console.log(`カードID: ${card.id} を削除しました`)
