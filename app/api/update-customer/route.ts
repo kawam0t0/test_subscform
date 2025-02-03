@@ -43,23 +43,6 @@ export async function POST(request: Request) {
     })
 
     if (operation === "クレジットカード情報変更" && cardToken) {
-      // 既存のカード情報を取得して無効化
-      try {
-        const { result: cardsResult } = await squareClient.customersApi.listCustomerCards(customerId)
-
-        if (cardsResult.cards && cardsResult.cards.length > 0) {
-          // 既存のカードを無効化
-          for (const card of cardsResult.cards) {
-            if (card.id) {
-              await squareClient.cardsApi.disableCard(card.id)
-              console.log(`既存のカード(${card.id})を無効化しました`)
-            }
-          }
-        }
-      } catch (cardError) {
-        console.error("既存のカード無効化中にエラーが発生:", cardError)
-      }
-
       // 新しいカードを作成
       const { result: cardResult } = await squareClient.cardsApi.createCard({
         idempotencyKey: `${customerId}-${Date.now()}`,
