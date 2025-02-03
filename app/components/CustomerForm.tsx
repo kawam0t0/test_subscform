@@ -39,26 +39,14 @@ export function CustomerForm() {
     setFormData((prev) => ({ ...prev, ...data }))
   }
 
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, 7))
+  const nextStep = () => setStep((prev) => prev + 1)
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1))
 
   const submitForm = async () => {
     try {
       setError(null)
 
-      // 入会の場合のみコースの選択を必須とする
-      if (formData.operation === "入会" && !formData.course) {
-        setError("コースを選択してください")
-        return
-      }
-
-      // 洗車コース変更の場合は現在のコースと新しいコースが必須
-      if (formData.operation === "洗車コース変更" && (!formData.currentCourse || !formData.newCourse)) {
-        setError("現在のコースと新しいコースを選択してください")
-        return
-      }
-
-      const response = await fetch("/api/create-customer", {
+      const response = await fetch("/api/update-customer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -70,9 +58,9 @@ export function CustomerForm() {
       }
 
       if (data.success) {
-        setStep(7)
+        setStep(7) // ThankYou ページへ
       } else {
-        throw new Error(data.error || "登録に失敗しました")
+        throw new Error(data.error || "更新に失敗しました")
       }
     } catch (error) {
       console.error("フォーム送信エラー:", error)
@@ -98,10 +86,15 @@ export function CustomerForm() {
               prevStep={prevStep}
             />
           )
+        } else if (formData.operation === "クレジットカード情報変更") {
+          return (
+            <VehicleInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
+          )
+        } else {
+          return (
+            <VehicleInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
+          )
         }
-        return (
-          <VehicleInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
-        )
       case 4:
         if (formData.operation === "入会") {
           return (
@@ -121,11 +114,15 @@ export function CustomerForm() {
               prevStep={prevStep}
             />
           )
+        } else if (formData.operation === "クレジットカード情報変更") {
+          return (
+            <PaymentInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
+          )
         } else {
           return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
         }
       case 5:
-        if (formData.operation === "入会") {
+        if (formData.operation === "入会" || formData.operation === "クレジットカード情報変更") {
           return (
             <PaymentInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
           )
@@ -135,11 +132,7 @@ export function CustomerForm() {
           return <ThankYou />
         }
       case 6:
-        if (formData.operation === "入会") {
-          return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
-        } else {
-          return <ThankYou />
-        }
+        return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
       case 7:
         return <ThankYou />
       default:

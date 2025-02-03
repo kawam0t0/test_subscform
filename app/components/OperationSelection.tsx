@@ -21,8 +21,8 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
       alert("操作を選択してください")
       return
     }
-    // 入会、登録車両変更、洗車コース変更の場合は次のステップへ進む
-    if (["入会", "登録車両変更", "洗車コース変更"].includes(formData.operation)) {
+    // 入会、登録車両変更、洗車コース変更、クレジットカード情報変更の場合は次のステップへ進む
+    if (["入会", "登録車両変更", "洗車コース変更", "クレジットカード情報変更"].includes(formData.operation)) {
       nextStep()
     } else {
       // その他の操作の場合はAppSheetへ遷移
