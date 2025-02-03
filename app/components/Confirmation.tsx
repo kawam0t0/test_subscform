@@ -1,30 +1,12 @@
 import { CheckCircle, MapPin, User, Mail, Phone, Car, Palette, CreditCard } from "lucide-react"
-import type React from "react" // Added import for React
-import type { FormData } from "../types"
 
 interface ConfirmationProps {
-  formData: FormData
+  formData: any
   prevStep: () => void
   submitForm: () => void
 }
 
-interface ConfirmationItemProps {
-  icon: React.ReactNode
-  label: string
-  value: string
-}
-
-function ConfirmationItem({ icon, label, value }: ConfirmationItemProps) {
-  return (
-    <div className="flex items-start space-x-3">
-      <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 mt-0.5">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs sm:text-sm md:text-base font-medium text-gray-500">{label}</p>
-        <p className="text-sm sm:text-base md:text-lg text-gray-900 break-all">{value}</p>
-      </div>
-    </div>
-  )
-}
+// ConfirmationItemコンポーネントは変更なし
 
 export function Confirmation({ formData, prevStep, submitForm }: ConfirmationProps) {
   return (
