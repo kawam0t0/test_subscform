@@ -145,6 +145,16 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
           )}
         </button>
       </div>
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => (window.location.href = "/")}
+          className="w-full h-14 rounded-xl border-2 border-gray-300 text-gray-600 bg-white
+                   hover:bg-gray-50 transition-colors duration-200"
+        >
+          初めに戻る
+        </button>
+      </div>
     </div>
   )
 }
