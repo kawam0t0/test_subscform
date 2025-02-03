@@ -11,7 +11,11 @@ export async function POST(request: Request) {
     const { customerId } = await request.json()
 
     // 顧客の既存のカード情報を取得
-    const { result } = await squareClient.cardsApi.listCards(undefined, undefined, customerId)
+    const { result } = await squareClient.cardsApi.listCards(
+      undefined, // cursor
+      undefined, // limit
+      customerId, // customer_id
+    )
 
     if (!result.cards || result.cards.length === 0) {
       return NextResponse.json({
