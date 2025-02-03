@@ -41,12 +41,15 @@ export async function POST(request: Request) {
 
     // 新規顧客を作成
     const { result: customerResult } = await squareClient.customersApi.createCustomer({
+      idempotencyKey: `${Date.now()}-${Math.random()}`,
       givenName: name,
       familyName: `${carModel}/${carColor}`, // 姓に車種/車の色を設定
       emailAddress: email,
       phoneNumber: phone,
-      referenceId: referenceId, // リファレンスIDを設定
-      note: `店舗: ${store}, コース: ${courseName}`, // 店舗とコース名を設定
+      companyName: store, // 会社名に店舗名を設定
+      nickname: courseName, // ニックネームにコース名を設定
+      reference_id: referenceId, // リファレンスIDを設定（スネークケースに注意）
+      note: `店舗: ${store}\nコース: ${courseName}\n車種: ${carModel}\n車の色: ${carColor}`, // 備考欄に詳細情報を設定
     })
 
     if (!customerResult.customer || !customerResult.customer.id) {
