@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowDown } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import type { BaseFormProps } from "../types"
 import type React from "react"
 
@@ -76,7 +76,7 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
         </div>
 
         <div className="flex justify-center py-8">
-          <ArrowDown className="w-16 h-16 text-primary animate-bounce" />
+          <ChevronDown className="w-24 h-24 text-primary animate-bounce" strokeWidth={3} />
         </div>
 
         <div className="space-y-4">
