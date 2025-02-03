@@ -1,7 +1,30 @@
-import type React from "react"
-import type { ConfirmationProps } from "../types"
-import { CheckCircle, User, Mail, Phone, Car, Palette, CreditCard, MapPin } from "lucide-react"
+import { CheckCircle, MapPin, User, Mail, Phone, Car, Palette, CreditCard } from "react-icons/md"
 
+interface ConfirmationProps {
+  formData: any
+  prevStep: () => void
+  submitForm: () => void
+}
+
+interface ConfirmationItemProps {
+  icon: JSX.Element
+  label: string
+  value: string | number | undefined
+}
+
+const ConfirmationItem: React.FC<ConfirmationItemProps> = ({ icon, label, value }) => {
+  return (
+    <div className="flex items-center space-x-2">
+      {icon}
+      <div>
+        <p className="font-medium text-gray-900">{label}</p>
+        <p className="text-gray-700">{value ?? "-"}</p>
+      </div>
+    </div>
+  )
+}
+
+// Confirmationコンポーネントを更新
 export function Confirmation({ formData, prevStep, submitForm }: ConfirmationProps) {
   return (
     <div className="flex flex-col min-h-[calc(100vh-16rem)] form-container">
@@ -21,13 +44,33 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
                 value={formData.email}
               />
               <ConfirmationItem icon={<Phone className="text-primary" />} label="電話番号" value={formData.phone} />
-              <ConfirmationItem icon={<Car className="text-primary" />} label="車種" value={formData.carModel} />
-              <ConfirmationItem icon={<Palette className="text-primary" />} label="車の色" value={formData.carColor} />
+              <ConfirmationItem icon={<Car className="text-primary" />} label="現在の車種" value={formData.carModel} />
               <ConfirmationItem
-                icon={<CreditCard className="text-primary" />}
-                label="選択されたコース"
-                value={formData.course}
+                icon={<Palette className="text-primary" />}
+                label="現在の車の色"
+                value={formData.carColor}
               />
+              {formData.operation === "登録車両変更" && (
+                <>
+                  <ConfirmationItem
+                    icon={<Car className="text-primary" />}
+                    label="新しい車種"
+                    value={formData.newCarModel}
+                  />
+                  <ConfirmationItem
+                    icon={<Palette className="text-primary" />}
+                    label="新しい車の色"
+                    value={formData.newCarColor}
+                  />
+                </>
+              )}
+              {formData.operation === "入会" && (
+                <ConfirmationItem
+                  icon={<CreditCard className="text-primary" />}
+                  label="選択されたコース"
+                  value={formData.course}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -41,18 +84,6 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
             送信
           </button>
         </div>
-      </div>
-    </div>
-  )
-}
-
-function ConfirmationItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-start space-x-3">
-      <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 mt-0.5">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs sm:text-sm md:text-base font-medium text-gray-500">{label}</p>
-        <p className="text-sm sm:text-base md:text-lg text-gray-900 break-all">{value}</p>
       </div>
     </div>
   )

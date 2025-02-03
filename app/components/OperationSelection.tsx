@@ -21,8 +21,8 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
       alert("操作を選択してください")
       return
     }
-    // 入会の場合のみ次のステップへ進む
-    if (formData.operation === "入会") {
+    // 入会と登録車両変更の場合は次のステップへ進む
+    if (formData.operation === "入会" || formData.operation === "登録車両変更") {
       nextStep()
     } else {
       window.location.href = APPSHEET_URL

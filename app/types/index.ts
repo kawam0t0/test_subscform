@@ -9,6 +9,9 @@ export interface FormData {
   cardToken: string
   referenceId: string
   course: string
+  // 車両変更用の新しいフィールド
+  newCarModel: string
+  newCarColor: string
 }
 
 export interface ErrorMessageProps {
