@@ -11,7 +11,9 @@ export async function POST(request: Request) {
     const { customerId } = await request.json()
 
     // 顧客の既存のカード情報を取得
-    const { result: cardsResult } = await squareClient.customersApi.listCards(customerId)
+    const { result: cardsResult } = await squareClient.cardsApi.listCards({
+      customerId: customerId,
+    })
 
     if (!cardsResult.cards || cardsResult.cards.length === 0) {
       return NextResponse.json({
