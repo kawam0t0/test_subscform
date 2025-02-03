@@ -6,7 +6,7 @@ import { randomUUID } from "crypto"
 // スクエアクライアントの初期化
 const squareClient = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN || "",
-  environment: Environment.Production, // 本番環境に変更
+  environment: Environment.Production,
 })
 
 export async function POST(request: Request) {
@@ -14,7 +14,20 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { store, name, email, phone, carModel, carColor, cardToken, referenceId, course, operation } = formData
+    const {
+      store,
+      name,
+      email,
+      phone,
+      carModel,
+      carColor,
+      cardToken,
+      referenceId,
+      course,
+      operation,
+      newCarModel,
+      newCarColor,
+    } = formData
 
     // 入力バリデーション
     const missingFields = []
@@ -24,9 +37,19 @@ export async function POST(request: Request) {
     if (!phone) missingFields.push("phone")
     if (!carModel) missingFields.push("carModel")
     if (!carColor) missingFields.push("carColor")
-    if (operation === "入会" && !cardToken) missingFields.push("cardToken")
-    if (!course) missingFields.push("course")
     if (!operation) missingFields.push("operation")
+
+    // 入会時のみ必須
+    if (operation === "入会") {
+      if (!cardToken) missingFields.push("cardToken")
+      if (!course) missingFields.push("course")
+    }
+
+    // 登録車両変更時のみ必須
+    if (operation === "登録車両変更") {
+      if (!newCarModel) missingFields.push("newCarModel")
+      if (!newCarColor) missingFields.push("newCarColor")
+    }
 
     if (missingFields.length > 0) {
       console.error("必須フィールドが不足しています:", missingFields)
@@ -44,21 +67,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // ユニークなidempotency_keyを生成
     const idempotencyKey = randomUUID()
-
-    // referenceIdが無い場合は生成
     const actualReferenceId = referenceId || `${store}-${Date.now()}`
+
+    // コース名を抽出（括弧内の金額を除く）
+    const courseName = course ? course.split("（")[0].trim() : ""
 
     // Square APIを使用して顧客を作成
     const { result } = await squareClient.customersApi.createCustomer({
       idempotencyKey,
       givenName: name,
-      familyName: `${carModel}/${carColor}`,
+      familyName: operation === "登録車両変更" ? `${newCarModel}/${newCarColor}` : `${carModel}/${carColor}`,
       emailAddress: email,
       phoneNumber: phone,
       referenceId: actualReferenceId,
-      note: `${store}/${course.split("（")[0].trim()}`,
+      note: operation === "入会" ? `${store}/${courseName}` : `${store}/車両変更:${carModel}→${newCarModel}`,
     })
 
     if (result.customer && result.customer.id) {
@@ -67,8 +90,10 @@ export async function POST(request: Request) {
       // カードの登録（新規登録時のみ）
       if (operation === "入会" && cardToken) {
         try {
+          const cardIdempotencyKey = randomUUID()
           await squareClient.customersApi.createCustomerCard(result.customer.id, {
             cardNonce: cardToken,
+            idempotencyKey: cardIdempotencyKey,
           })
           console.log("カードが正常に登録されました")
         } catch (cardError) {
@@ -76,14 +101,14 @@ export async function POST(request: Request) {
         }
       }
 
-      // Google Sheetsに顧客情報を追加する部分を修正
+      // Google Sheetsに顧客情報を追加
       try {
         const sheetData = [
           [
             actualReferenceId, // A列: リファレンスID
             operation, // B列: 操作タイプ
             store, // C列: 店舗名
-            "", // D列: コース名（空白に変更）
+            operation === "入会" ? courseName : "", // D列: コース名（括弧内の金額を除いたもの）
             "", // E列: 空白
             "", // F列: 空白
             "", // G列: 空白
@@ -92,6 +117,8 @@ export async function POST(request: Request) {
             phone, // J列: 電話番号
             carModel, // K列: 車種名
             carColor, // L列: 車の色
+            operation === "登録車両変更" ? newCarModel : "", // M列: 新しい車種（車両変更時のみ）
+            operation === "登録車両変更" ? newCarColor : "", // N列: 新しい車の色（車両変更時のみ）
           ],
         ]
 
