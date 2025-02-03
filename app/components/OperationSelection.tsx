@@ -21,10 +21,11 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
       alert("操作を選択してください")
       return
     }
-    // 入会と登録車両変更の場合は次のステップへ進む
-    if (formData.operation === "入会" || formData.operation === "登録車両変更") {
+    // 入会、登録車両変更、洗車コース変更の場合は次のステップへ進む
+    if (["入会", "登録車両変更", "洗車コース変更"].includes(formData.operation)) {
       nextStep()
     } else {
+      // その他の操作の場合はAppSheetへ遷移
       window.location.href = APPSHEET_URL
     }
   }
