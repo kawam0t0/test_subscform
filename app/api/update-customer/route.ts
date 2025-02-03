@@ -48,47 +48,19 @@ export async function POST(request: Request) {
     const customerId = existingCustomer.id
 
     if (operation === "登録車両変更") {
-      // 既存の顧客情報を取得して保持すべき情報を維持
-      const { result: customerResult } = await squareClient.customersApi.retrieveCustomer(customerId)
-      const currentCustomer = customerResult.customer
-
-      if (!currentCustomer) {
-        throw new Error("顧客情報の取得に失敗しました")
-      }
-
-      // 顧客情報を更新（既存の情報を保持しながら車両情報のみ更新）
+      // 顧客情報を更新（姓の部分のみ新しい車両情報で更新）
       const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
         familyName: `${newCarModel}/${newCarColor}`, // 新しい車両情報を姓として更新
         emailAddress: email,
         phoneNumber: phone,
-        companyName: currentCustomer.companyName || store, // 既存の店舗情報を保持、ない場合は現在の店舗を使用
-        nickname: currentCustomer.nickname || "", // 既存のコース情報を保持
-        referenceId: currentCustomer.referenceId || "", // 既存のリファレンスIDを保持
-        note: `
-店舗: ${store}
-コース: ${currentCustomer.nickname || ""}
-車種: ${newCarModel}
-車の色: ${newCarColor}
-        `.trim(),
       })
 
       console.log("顧客情報が更新されました:", updateResult.customer)
 
       // Google Sheetsに更新情報を追加
       await appendToSheet([
-        [
-          new Date().toISOString(),
-          operation,
-          store,
-          name,
-          email,
-          phone,
-          newCarModel,
-          newCarColor,
-          customerId,
-          currentCustomer.referenceId || "",
-        ],
+        [new Date().toISOString(), operation, store, name, email, phone, newCarModel, newCarColor, customerId],
       ])
 
       return NextResponse.json({
