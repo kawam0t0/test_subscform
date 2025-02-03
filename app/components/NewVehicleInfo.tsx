@@ -54,7 +54,10 @@ export function NewVehicleInfo({ formData, updateFormData, nextStep, prevStep }:
       <div>
         <label htmlFor="newCarModel" className="select-label">
           <Car className="w-5 h-5" />
-          新しい車種
+          新しい車種{" "}
+          <span className="text-sm md:text-base lg:text-lg font-normal text-gray-500 ml-2">
+            (無い場合はその他を選択してください)
+          </span>
         </label>
         <div className="select-wrapper min-w-[280px]">
           <select
