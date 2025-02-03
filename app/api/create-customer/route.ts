@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { name, email, phone, carModel, carColor, course, store, operation } = formData
+    const { name, email, phone, carModel, carColor, course, store, operation, cardToken } = formData
 
     // 入会フローの場合のみ特別な処理を実行
     if (operation === "入会") {
@@ -43,37 +43,48 @@ export async function POST(request: Request) {
       // デバッグログ
       console.log("Square API リクエストデータ作成:", {
         name,
-        carInfo: `${carModel}/${carColor}`,
+        familyName: `${carModel}/${carColor}`,
         referenceId,
         courseName,
+        cardToken,
       })
 
       try {
-        // Square API呼び出し - より詳細な顧客情報の設定
-        const { result } = await squareClient.customersApi.createCustomer({
+        // 1. まず顧客を作成
+        const { result: customerResult } = await squareClient.customersApi.createCustomer({
           idempotencyKey: `${Date.now()}-${Math.random()}`,
           givenName: name,
+          familyName: `${carModel}/${carColor}`, // 車種/車の色を姓として保存
           emailAddress: email,
           phoneNumber: phone,
-          address: {
-            addressLine1: `${carModel}/${carColor}`, // 車種/車の色を住所1行目に保存
-          },
           companyName: store, // 店舗名を会社名として保存
           nickname: courseName, // コース名をニックネームとして保存
           referenceId: referenceId, // リファレンスID
           note: `
 店舗: ${store}
 コース: ${courseName}
-車種: ${carModel}
-車の色: ${carColor}
-リファレンスID: ${referenceId}
-          `.trim(), // 全情報をノートとしても保存
+          `.trim(), // リファレンスIDを除外した情報をノートとして保存
         })
 
-        console.log("Square API レスポンス:", result)
-
-        if (!result.customer?.id) {
+        if (!customerResult.customer?.id) {
           throw new Error("顧客の作成に失敗しました")
+        }
+
+        // 2. カード情報を保存（cardTokenが存在する場合のみ）
+        if (cardToken) {
+          const { result: cardResult } = await squareClient.cardsApi.createCard({
+            idempotencyKey: `${customerResult.customer.id}-${Date.now()}`,
+            sourceId: cardToken,
+            card: {
+              customerId: customerResult.customer.id,
+            },
+          })
+
+          if (!cardResult.card || !cardResult.card.id) {
+            throw new Error("カード情報の保存に失敗しました")
+          }
+
+          console.log("カード情報が正常に保存されました:", cardResult.card.id)
         }
 
         // Google Sheetsへの記録
@@ -87,14 +98,14 @@ export async function POST(request: Request) {
             carModel,
             carColor,
             courseName,
-            result.customer.id,
+            customerResult.customer.id,
             referenceId,
           ],
         ])
 
         return NextResponse.json({
           success: true,
-          customerId: result.customer.id,
+          customerId: customerResult.customer.id,
           referenceId: referenceId,
           message: "顧客情報が正常に登録されました",
         })
