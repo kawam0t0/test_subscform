@@ -12,28 +12,92 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { operation, name, email, phone, carModel, carColor, cardToken, store, course } = formData
+    const { operation, name, email, phone, newCarModel, newCarColor, store, carModel, carColor, course, cardToken } =
+      formData
 
-    if (operation === "クレジットカード情報変更") {
-      // クレジットカード情報変更の場合のみ、既存顧客を検索
-      const { result: customerSearchResult } = await squareClient.customersApi.searchCustomers({
-        query: {
-          filter: {
-            emailAddress: {
-              exact: email,
-            },
+    // メールアドレスで顧客を検索
+    const { result: emailSearchResult } = await squareClient.customersApi.searchCustomers({
+      query: {
+        filter: {
+          emailAddress: {
+            exact: email,
           },
         },
+      },
+    })
+
+    // メールアドレスで見つからない場合は電話番号で検索
+    const { result: phoneSearchResult } = !emailSearchResult.customers?.length
+      ? await squareClient.customersApi.searchCustomers({
+          query: {
+            filter: {
+              phoneNumber: {
+                exact: phone,
+              },
+            },
+          },
+        })
+      : { result: { customers: [] } }
+
+    const existingCustomer = emailSearchResult.customers?.[0] || phoneSearchResult.customers?.[0]
+
+    if (!existingCustomer) {
+      throw new Error("顧客が見つかりません")
+    }
+
+    const customerId = existingCustomer.id
+
+    if (operation === "登録車両変更") {
+      // 既存の顧客情報を取得して保持すべき情報を維持
+      const { result: customerResult } = await squareClient.customersApi.retrieveCustomer(customerId)
+      const currentCustomer = customerResult.customer
+
+      if (!currentCustomer) {
+        throw new Error("顧客情報の取得に失敗しました")
+      }
+
+      // 顧客情報を更新（既存の情報を保持しながら車両情報のみ更新）
+      const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
+        givenName: name,
+        familyName: `${newCarModel}/${newCarColor}`, // 新しい車両情報を姓として更新
+        emailAddress: email,
+        phoneNumber: phone,
+        companyName: currentCustomer.companyName, // 既存の店舗情報を保持
+        nickname: currentCustomer.nickname, // 既存のコース情報を保持
+        referenceId: currentCustomer.referenceId, // 既存のリファレンスIDを保持
+        note: `
+店舗: ${store}
+コース: ${currentCustomer.nickname || ""}
+車種: ${newCarModel}
+車の色: ${newCarColor}
+        `.trim(),
       })
 
-      if (!customerSearchResult.customers || customerSearchResult.customers.length === 0) {
-        throw new Error("顧客が見つかりません")
-      }
+      console.log("顧客情報が更新されました:", updateResult.customer)
 
-      const customerId = customerSearchResult.customers[0].id
-      if (!customerId) {
-        throw new Error("顧客IDが見つかりません")
-      }
+      // Google Sheetsに更新情報を追加
+      await appendToSheet([
+        [
+          new Date().toISOString(),
+          operation,
+          store,
+          name,
+          email,
+          phone,
+          newCarModel,
+          newCarColor,
+          customerId,
+          currentCustomer.referenceId || "",
+        ],
+      ])
+
+      return NextResponse.json({
+        success: true,
+        customerId: customerId,
+        message: "顧客情報が正常に更新されました",
+      })
+    } else if (operation === "クレジットカード情報変更") {
+      // クレジットカード情報変更の場合のみ、既存顧客を検索
 
       // 顧客情報を更新
       await squareClient.customersApi.updateCustomer(customerId, {

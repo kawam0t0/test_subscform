@@ -1,7 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import { MapPin, User, Mail, Phone, Car, Palette, CreditCard, CheckCircle } from "lucide-react"
-import type React from "react" // Added import for React
+import type React from "react"
 import type { FormData } from "../types"
 
 interface ConfirmationProps {
@@ -27,6 +28,14 @@ const ConfirmationItem = ({ icon, label, value }: ConfirmationItemProps) => (
 )
 
 export function Confirmation({ formData, prevStep, submitForm }: ConfirmationProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return // 既に送信中の場合は何もしない
+    setIsSubmitting(true)
+    await submitForm()
+  }
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -83,17 +92,44 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         <button
           type="button"
           onClick={prevStep}
+          disabled={isSubmitting}
           className="w-full h-14 rounded-xl border-2 border-gray-200 text-gray-700 bg-white
-                   hover:bg-gray-50 transition-colors duration-200"
+                   hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           戻る
         </button>
         <button
-          onClick={submitForm}
+          onClick={handleSubmit}
+          disabled={isSubmitting}
           className="w-full h-14 rounded-xl bg-primary text-white
-                   hover:bg-primary/90 transition-colors duration-200"
+                   hover:bg-primary/90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+                   flex items-center justify-center"
         >
-          送信
+          {isSubmitting ? (
+            <>
+              <span className="animate-spin mr-2">
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+              </span>
+              送信中...
+            </>
+          ) : (
+            "送信"
+          )}
         </button>
       </div>
     </div>
