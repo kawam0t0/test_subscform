@@ -88,14 +88,15 @@ export async function POST(request: Request) {
         note: `店舗: ${store}, コース: ${newCourseName}`,
       })
     } else if (operation === "登録車両変更") {
+      // 車両情報を更新
+      const vehicleInfo = `${newCarModel}/${newCarColor}`
+
       const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
         familyName: `${newCarModel}/${newCarColor}/${newLicensePlate}`,
         emailAddress: email,
         phoneNumber: phone,
-        customAttributes: {
-          車両情報: { value: `${newCarModel}/${newCarColor}` }, // カスタムフィールドを更新
-        },
+        note: `${matchingCustomer.note || ""}\n車両情報: ${vehicleInfo}`,
       })
 
       console.log("顧客情報が更新されました:", updateResult.customer)

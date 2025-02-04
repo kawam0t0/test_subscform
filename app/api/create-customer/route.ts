@@ -42,6 +42,9 @@ export async function POST(request: Request) {
       const courseName = extractCourseName(course)
 
       try {
+        // まず車両情報のカスタムフィールドを更新
+        const vehicleInfo = `${carModel}/${carColor}`
+
         // 1. まず顧客を作成
         const { result: customerResult } = await squareClient.customersApi.createCustomer({
           idempotencyKey: `${Date.now()}-${Math.random()}`,
@@ -55,10 +58,8 @@ export async function POST(request: Request) {
           note: `
 店舗: ${store}
 コース: ${courseName}
+車両情報: ${vehicleInfo}
           `.trim(),
-          customAttributes: {
-            車両情報: { value: `${carModel}/${carColor}` }, // カスタムフィールドを更新
-          },
         })
 
         if (!customerResult.customer?.id) {
