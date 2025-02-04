@@ -74,7 +74,7 @@ export async function POST(request: Request) {
         givenName: name,
         emailAddress: email,
         phoneNumber: phone,
-        note: `車種: ${carModel}, 色: ${carColor}, 店舗: ${store}`,
+        note: `店舗: ${store}, コース: ${course}`, //変更点1
       })
 
       // 新しいカードを作成
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
 
       // Google Sheetsに更新情報を追加
       await appendToSheet([
-        [new Date().toISOString(), operation, store, name, email, phone, carModel, carColor, customerId],
+        [new Date().toISOString(), operation, store, name, email, phone, store, course, customerId], //変更点2
       ])
 
       return NextResponse.json({
