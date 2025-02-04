@@ -13,11 +13,13 @@ export default function ThankYouPage() {
     phone: "",
     carModel: "",
     carColor: "",
+    licensePlate: "", // 追加
     cardToken: "",
     referenceId: "",
     course: "",
     newCarModel: "",
     newCarColor: "",
+    newLicensePlate: "", // 追加
     currentCourse: "",
     newCourse: "",
   }
