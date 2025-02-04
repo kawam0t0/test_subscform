@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     // 顧客の既存のカード情報を取得
     const { result } = await squareClient.cardsApi.listCards()
 
-    // 顧客IDに紐づくカードをフィルタリング
+    // 指定された顧客IDに紐づくカードをフィルタリング
     const customerCards = result.cards?.filter((card) => card.customerId === customerId) || []
 
     if (customerCards.length === 0) {
