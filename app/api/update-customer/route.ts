@@ -102,14 +102,7 @@ export async function POST(request: Request) {
           throw new Error("カード情報の保存に失敗しました")
         }
 
-        console.log("新しいカードが作成されました:", cardResult.card.id)
-
-        // 3. 新しいカードをデフォルトに設定
-        await squareClient.customersApi.updateCustomer(customerId, {
-          defaultCardId: cardResult.card.id,
-        })
-
-        console.log(`新しいカードID: ${cardResult.card.id} をデフォルトに設定しました`)
+        console.log("新しいカードが正常に追加され、古いカードは無効化されました")
       }
 
       // Google Sheetsに更新情報を追加
