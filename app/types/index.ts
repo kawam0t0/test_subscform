@@ -15,6 +15,7 @@ export interface FormData {
   newLicensePlate: string // 追加
   currentCourse: string
   newCourse: string
+  inquiryDetails?: string // Add this line
 }
 
 export interface ErrorMessageProps {
