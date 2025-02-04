@@ -55,19 +55,13 @@ export async function POST(request: Request) {
           note: `
 店舗: ${store}
 コース: ${courseName}
+車両情報: ${carModel}/${carColor}/${licensePlate}
           `.trim(),
         })
 
         if (!customerResult.customer?.id) {
           throw new Error("顧客の作成に失敗しました")
         }
-
-        // 車両情報のカスタムフィールドを更新
-        await squareClient.customersApi.updateCustomer(customerResult.customer.id, {
-          customAttributes: {
-            車両情報: { value: `${carModel}/${carColor}/${licensePlate}` },
-          },
-        })
 
         // 2. カード情報を保存（cardTokenが存在する場合のみ）
         if (cardToken) {
