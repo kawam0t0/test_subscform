@@ -13,6 +13,7 @@ import { ThankYou } from "./ThankYou"
 import { NewVehicleInfo } from "./NewVehicleInfo"
 import { CourseChangeForm } from "./CourseChangeForm"
 import { NewPaymentInfo } from "./NewPaymentInfo"
+import { OtherInquiryForm } from "./OtherInquiryForm"
 import type { FormData } from "../types"
 
 export function CustomerForm() {
@@ -34,6 +35,7 @@ export function CustomerForm() {
     newLicensePlate: "",
     currentCourse: "",
     newCourse: "",
+    inquiryDetails: "",
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -49,7 +51,12 @@ export function CustomerForm() {
       setError(null)
       console.log("送信データ:", formData)
 
-      const endpoint = formData.operation === "入会" ? "/api/create-customer" : "/api/update-customer"
+      const endpoint =
+        formData.operation === "その他"
+          ? "/api/submit-inquiry"
+          : formData.operation === "入会"
+            ? "/api/create-customer"
+            : "/api/update-customer"
 
       console.log("送信先エンドポイント:", endpoint)
 
@@ -90,12 +97,20 @@ export function CustomerForm() {
           <PersonalInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
         )
       case 3:
-        // すべての操作で車両情報の入力を行う
         return (
           <VehicleInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
         )
       case 4:
-        if (formData.operation === "洗車コース変更") {
+        if (formData.operation === "その他") {
+          return (
+            <OtherInquiryForm
+              formData={formData}
+              updateFormData={updateFormData}
+              nextStep={nextStep}
+              prevStep={prevStep}
+            />
+          )
+        } else if (formData.operation === "洗車コース変更") {
           return (
             <CourseChangeForm
               formData={formData}
@@ -134,7 +149,7 @@ export function CustomerForm() {
         }
         return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
       case 5:
-        if (formData.operation === "洗車コース変更") {
+        if (formData.operation === "その他" || formData.operation === "洗車コース変更") {
           return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
         } else if (formData.operation === "入会") {
           return (

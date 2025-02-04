@@ -61,22 +61,15 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         <ConfirmationItem icon={<User className="w-6 h-6" />} label="お名前" value={formData.name} />
         <ConfirmationItem icon={<Mail className="w-6 h-6" />} label="メールアドレス" value={formData.email} />
         <ConfirmationItem icon={<Phone className="w-6 h-6" />} label="電話番号" value={formData.phone} />
+        <ConfirmationItem icon={<Car className="w-6 h-6" />} label="車種" value={formData.carModel} />
+        <ConfirmationItem icon={<Palette className="w-6 h-6" />} label="車の色" value={formData.carColor} />
 
         {formData.operation === "入会" && (
-          <>
-            <ConfirmationItem icon={<Car className="w-6 h-6" />} label="車種" value={formData.carModel} />
-            <ConfirmationItem icon={<Palette className="w-6 h-6" />} label="車の色" value={formData.carColor} />
-            <ConfirmationItem
-              icon={<FileText className="w-6 h-6" />}
-              label="ナンバープレート（下4桁）"
-              value={formData.licensePlate}
-            />
-            <ConfirmationItem
-              icon={<CreditCard className="w-6 h-6" />}
-              label="選択されたコース"
-              value={formData.course}
-            />
-          </>
+          <ConfirmationItem
+            icon={<CreditCard className="w-6 h-6" />}
+            label="選択されたコース"
+            value={formData.course}
+          />
         )}
 
         {formData.operation === "登録車両変更" && (
@@ -115,6 +108,14 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
             icon={<CreditCard className="w-6 h-6" />}
             label="新しいクレジットカード情報"
             value="登録済み"
+          />
+        )}
+
+        {formData.operation === "その他" && (
+          <ConfirmationItem
+            icon={<FileText className="w-6 h-6" />}
+            label="お問い合わせ内容"
+            value={formData.inquiryDetails || ""}
           />
         )}
       </div>

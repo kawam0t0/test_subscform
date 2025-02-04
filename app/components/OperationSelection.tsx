@@ -12,8 +12,6 @@ const operations = [
   { value: "その他", label: "その他" },
 ]
 
-const APPSHEET_URL = "https://www.appsheet.com/start/0af1bf9f-5cc8-4be2-a73c-26d0e76ac42d"
-
 export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,13 +19,7 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
       alert("操作を選択してください")
       return
     }
-    // 入会、登録車両変更、洗車コース変更、クレジットカード情報変更の場合は次のステップへ進む
-    if (["入会", "登録車両変更", "洗車コース変更", "クレジットカード情報変更"].includes(formData.operation)) {
-      nextStep()
-    } else {
-      // その他の操作の場合はAppSheetへ遷移
-      window.location.href = APPSHEET_URL
-    }
+    nextStep()
   }
 
   return (
