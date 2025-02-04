@@ -25,11 +25,13 @@ export function CustomerForm() {
     phone: "",
     carModel: "",
     carColor: "",
+    licensePlate: "", // Add this
     cardToken: "",
     referenceId: "",
     course: "",
     newCarModel: "",
     newCarColor: "",
+    newLicensePlate: "", // Add this
     currentCourse: "",
     newCourse: "",
   })
