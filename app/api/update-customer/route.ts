@@ -34,7 +34,6 @@ export async function POST(request: Request) {
       newCarModel,
       newCarColor,
       newLicensePlate,
-      referenceId,
     } = formData
 
     // メールアドレスで顧客を検索
@@ -48,12 +47,12 @@ export async function POST(request: Request) {
       },
     })
 
-    // メールアドレスとリファレンスIDで顧客を特定
+    // メールアドレスで顧客を特定
     const existingCustomers = emailSearchResult.customers || []
-    const matchingCustomer = existingCustomers.find((customer) => customer.referenceId === referenceId)
+    const matchingCustomer = existingCustomers[0] // 最初に見つかった顧客を使用
 
     if (!matchingCustomer || !matchingCustomer.id) {
-      throw new Error("指定されたメールアドレスとリファレンスIDに一致する顧客が見つかりません")
+      throw new Error("指定されたメールアドレスに一致する顧客が見つかりません")
     }
 
     const customerId = matchingCustomer.id
@@ -62,7 +61,7 @@ export async function POST(request: Request) {
     const sheetData = [
       formatJapanDateTime(new Date()), // A: タイムスタンプ（日本時間）
       operation, // B: 問い合わせ内容
-      referenceId, // C: リファレンスID
+      matchingCustomer.referenceId || "", // C: リファレンスID（Squareから取得）
       store, // D: 入会店舗
       name, // E: お名前
       email, // F: メールアドレス
@@ -94,6 +93,9 @@ export async function POST(request: Request) {
         familyName: `${newCarModel}/${newCarColor}/${newLicensePlate}`,
         emailAddress: email,
         phoneNumber: phone,
+        customAttributes: {
+          車両情報: { value: `${newCarModel}/${newCarColor}` }, // カスタムフィールドを更新
+        },
       })
 
       console.log("顧客情報が更新されました:", updateResult.customer)

@@ -56,6 +56,9 @@ export async function POST(request: Request) {
 店舗: ${store}
 コース: ${courseName}
           `.trim(),
+          customAttributes: {
+            車両情報: { value: `${carModel}/${carColor}` }, // カスタムフィールドを更新
+          },
         })
 
         if (!customerResult.customer?.id) {

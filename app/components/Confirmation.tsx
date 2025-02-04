@@ -63,6 +63,11 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         <ConfirmationItem icon={<Phone className="w-6 h-6" />} label="電話番号" value={formData.phone} />
         <ConfirmationItem icon={<Car className="w-6 h-6" />} label="車種" value={formData.carModel} />
         <ConfirmationItem icon={<Palette className="w-6 h-6" />} label="車の色" value={formData.carColor} />
+        <ConfirmationItem
+          icon={<FileText className="w-6 h-6" />}
+          label="ナンバープレート（下4桁）"
+          value={formData.licensePlate}
+        />
 
         {formData.operation === "入会" && (
           <ConfirmationItem

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { User, Mail, Phone, MapPin, Hash } from "lucide-react"
+import { User, Mail, Phone, MapPin } from "lucide-react"
 import { useState } from "react"
 import type { BaseFormProps } from "../types"
 
@@ -18,7 +18,6 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
     name: "",
     email: "",
     phone: "",
-    referenceId: "",
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -27,7 +26,6 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
       name: "",
       email: "",
       phone: "",
-      referenceId: "",
     }
 
     if (!/^[ァ-ヶー　]+$/.test(formData.name)) {
@@ -40,10 +38,6 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
 
     if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/[^\d]/g, ""))) {
       newErrors.phone = "電話番号は10桁または11桁の半角数字で入力してください。"
-    }
-
-    if (formData.operation !== "入会" && !/^[A-Za-z0-9-]+$/.test(formData.referenceId)) {
-      newErrors.referenceId = "会員NO.は半角英数字とハイフンのみで入力してください。"
     }
 
     setErrors(newErrors)
@@ -78,26 +72,6 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
             </select>
           </div>
         </div>
-
-        {formData.operation !== "入会" && (
-          <div>
-            <label htmlFor="referenceId" className="form-label flex items-center gap-2">
-              <Hash className="h-6 w-6" />
-              会員NO.
-            </label>
-            <input
-              id="referenceId"
-              type="text"
-              placeholder="半角英数字とハイフン"
-              value={formData.referenceId}
-              onChange={(e) => updateFormData({ referenceId: e.target.value.toUpperCase() })}
-              required
-              className="form-input"
-              pattern="^[A-Za-z0-9-]+$"
-            />
-            {errors.referenceId && <p className="text-red-500 text-sm mt-2">{errors.referenceId}</p>}
-          </div>
-        )}
 
         <div>
           <label htmlFor="name" className="form-label flex items-center gap-2">
