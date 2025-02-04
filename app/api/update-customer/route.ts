@@ -23,15 +23,16 @@ export async function POST(request: Request) {
       name,
       email,
       phone,
-      newCarModel,
-      newCarColor,
-      newLicensePlate,
       store,
+      currentCourse,
+      newCourse,
       carModel,
       carColor,
       licensePlate,
-      course,
       cardToken,
+      newCarModel,
+      newCarColor,
+      newLicensePlate,
     } = formData
 
     const { result: emailSearchResult } = await squareClient.customersApi.searchCustomers({
@@ -55,7 +56,27 @@ export async function POST(request: Request) {
 
     const customerId = matchingCustomer.id
 
-    if (operation === "登録車両変更") {
+    if (operation === "洗車コース変更") {
+      // コース変更の場合は、noteフィールドを新しいコースで更新
+      const newCourseName = newCourse.split("（")[0].trim()
+
+      await squareClient.customersApi.updateCustomer(customerId, {
+        givenName: name,
+        emailAddress: email,
+        phoneNumber: phone,
+        note: `店舗: ${store}, コース: ${newCourseName}`,
+      })
+
+      await appendToSheet([
+        [new Date().toISOString(), operation, store, name, email, phone, currentCourse, newCourse, customerId],
+      ])
+
+      return NextResponse.json({
+        success: true,
+        customerId: customerId,
+        message: "コース情報が正常に更新されました",
+      })
+    } else if (operation === "登録車両変更") {
       const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
         familyName: `${newCarModel}/${newCarColor}/${newLicensePlate}`, // 新しい車両情報を姓として更新

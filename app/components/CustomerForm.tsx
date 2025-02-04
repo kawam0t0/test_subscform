@@ -136,9 +136,11 @@ export function CustomerForm() {
               prevStep={prevStep}
             />
           )
-        } else {
+        } else if (formData.operation === "洗車コース変更") {
+          // コース変更の場合は直接確認画面へ
           return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
         }
+        return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
       case 5:
         if (formData.operation === "入会") {
           return (
