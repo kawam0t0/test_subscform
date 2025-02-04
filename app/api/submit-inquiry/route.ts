@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { appendToSheet } from "../../utils/google-sheets"
+import { formatJapanDateTime } from "../../utils/date-utils"
 
 export async function POST(request: Request) {
   try {
@@ -9,24 +10,25 @@ export async function POST(request: Request) {
     const { operation, store, name, email, phone, carModel, carColor, licensePlate, inquiryDetails } = formData
 
     // Google Sheetsにデータを追加
-    // A~O列のデータを配列として準備
+    // A~P列のデータを配列として準備
     await appendToSheet([
       [
-        new Date().toISOString(), // A: タイムスタンプ
+        formatJapanDateTime(new Date()), // A: タイムスタンプ（日本時間）
         operation, // B: 問い合わせ内容
-        store, // C: 入会店舗
-        name, // D: お名前
-        email, // E: メールアドレス
-        phone, // F: 電話番号
-        carModel, // G: 車種
-        carColor, // H: 車の色
-        licensePlate, // I: ナンバープレート
-        "", // J: 入会コース（その他の場合は空欄）
-        "", // K: 新しい車種（その他の場合は空欄）
-        "", // L: 新しい車の色（その他の場合は空欄）
-        "", // M: 新しいナンバープレート（その他の場合は空欄）
-        "", // N: 新ご利用コース（その他の場合は空欄）
-        inquiryDetails, // O: お問い合わせ内容
+        "", // C: リファレンスID（その他の問い合わせの場合は空欄）
+        store, // D: 入会店舗
+        name, // E: お名前
+        email, // F: メールアドレス
+        phone, // G: 電話番号
+        carModel, // H: 車種
+        carColor, // I: 車の色
+        licensePlate, // J: ナンバープレート
+        "", // K: 入会コース（その他の場合は空欄）
+        "", // L: 新しい車種（その他の場合は空欄）
+        "", // M: 新しい車の色（その他の場合は空欄）
+        "", // N: 新しいナンバープレート（その他の場合は空欄）
+        "", // O: 新ご利用コース（その他の場合は空欄）
+        inquiryDetails, // P: お問い合わせ内容
       ],
     ])
 

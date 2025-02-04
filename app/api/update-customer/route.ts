@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { Client, Environment } from "square"
 import { appendToSheet } from "../../utils/google-sheets"
+import { formatJapanDateTime } from "../../utils/date-utils"
 
 const squareClient = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
@@ -60,21 +61,22 @@ export async function POST(request: Request) {
 
     // Google Sheetsに記録するデータを準備
     const sheetData = [
-      new Date().toISOString(), // A: タイムスタンプ
+      formatJapanDateTime(new Date()), // A: タイムスタンプ（日本時間）
       operation, // B: 問い合わせ内容
-      store, // C: 入会店舗
-      name, // D: お名前
-      email, // E: メールアドレス
-      phone, // F: 電話番号
-      carModel, // G: 車種
-      carColor, // H: 車の色
-      licensePlate, // I: ナンバープレート
-      currentCourse || "", // J: 現在のコース
-      newCarModel || "", // K: 新しい車種
-      newCarColor || "", // L: 新しい車の色
-      newLicensePlate || "", // M: 新しいナンバープレート
-      newCourse || "", // N: 新ご利用コース
-      "", // O: お問い合わせ内容（更新の場合は空欄）
+      "", // C: リファレンスID（更新の場合は空欄）
+      store, // D: 入会店舗
+      name, // E: お名前
+      email, // F: メールアドレス
+      phone, // G: 電話番号
+      carModel, // H: 車種
+      carColor, // I: 車の色
+      licensePlate, // J: ナンバープレート
+      currentCourse || "", // K: 現在のコース
+      newCarModel || "", // L: 新しい車種
+      newCarColor || "", // M: 新しい車の色
+      newLicensePlate || "", // N: 新しいナンバープレート
+      newCourse || "", // O: 新ご利用コース
+      "", // P: お問い合わせ内容（更新の場合は空欄）
     ]
 
     if (operation === "洗車コース変更") {
