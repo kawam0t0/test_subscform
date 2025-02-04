@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     const existingCustomers = emailSearchResult.customers || []
     const matchingCustomer = existingCustomers.find(
-      (customer) => customer.familyName === `${carModel}/${carColor}/${licensePlate}`,
+      (customer) => customer.familyName && customer.familyName.split("/")[2] === licensePlate,
     )
 
     if (!matchingCustomer || !matchingCustomer.id) {

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { name, email, phone, carModel, carColor, course, store, operation, cardToken } = formData
+    const { name, email, phone, carModel, carColor, course, store, operation, cardToken, licensePlate } = formData
 
     // 入会フローの場合のみ特別な処理を実行
     if (operation === "入会") {
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       // デバッグログ
       console.log("Square API リクエストデータ作成:", {
         name,
-        familyName: `${carModel}/${carColor}`,
+        familyName: `${carModel}/${carColor}/${licensePlate}`,
         referenceId,
         courseName,
         cardToken,
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         const { result: customerResult } = await squareClient.customersApi.createCustomer({
           idempotencyKey: `${Date.now()}-${Math.random()}`,
           givenName: name,
-          familyName: `${carModel}/${carColor}`, // 車種/車の色を姓として保存
+          familyName: `${carModel}/${carColor}/${licensePlate}`, // 車種/車の色/ナンバープレートを姓として保存
           emailAddress: email,
           phoneNumber: phone,
           companyName: store, // 店舗名を会社名として保存
