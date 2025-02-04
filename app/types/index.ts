@@ -6,12 +6,13 @@ export interface FormData {
   phone: string
   carModel: string
   carColor: string
+  licensePlate: string // 追加
   cardToken: string
   referenceId: string
   course: string
   newCarModel: string
   newCarColor: string
-  // コース変更用のフィールドを追加
+  newLicensePlate: string // 追加
   currentCourse: string
   newCourse: string
 }

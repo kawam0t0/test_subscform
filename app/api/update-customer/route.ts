@@ -7,8 +7,7 @@ const squareClient = new Client({
   environment: Environment.Production,
 })
 
-// コース名を抽出する関数
-function extractExistingCourse(note: string | undefined): string {
+function extractExistingCourse(note: string | null | undefined): string {
   if (!note) return ""
   const courseMatch = note.match(/コース: (.+?)(?:,|$)/)
   return courseMatch ? courseMatch[1].trim() : ""
@@ -19,10 +18,22 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { operation, name, email, phone, newCarModel, newCarColor, store, carModel, carColor, course, cardToken } =
-      formData
+    const {
+      operation,
+      name,
+      email,
+      phone,
+      newCarModel,
+      newCarColor,
+      newLicensePlate,
+      store,
+      carModel,
+      carColor,
+      licensePlate,
+      course,
+      cardToken,
+    } = formData
 
-    // メールアドレスで顧客を検索
     const { result: emailSearchResult } = await squareClient.customersApi.searchCustomers({
       query: {
         filter: {
@@ -33,41 +44,40 @@ export async function POST(request: Request) {
       },
     })
 
-    // メールアドレスで見つからない場合は電話番号で検索
-    const { result: phoneSearchResult } = !emailSearchResult.customers?.length
-      ? await squareClient.customersApi.searchCustomers({
-          query: {
-            filter: {
-              phoneNumber: {
-                exact: phone,
-              },
-            },
-          },
-        })
-      : { result: { customers: [] } }
+    const existingCustomers = emailSearchResult.customers || []
+    const matchingCustomer = existingCustomers.find(
+      (customer) => customer.familyName === `${carModel}/${carColor}/${licensePlate}`,
+    )
 
-    const existingCustomer = emailSearchResult.customers?.[0] || phoneSearchResult.customers?.[0]
-
-    if (!existingCustomer || !existingCustomer.id) {
+    if (!matchingCustomer || !matchingCustomer.id) {
       throw new Error("顧客が見つかりません")
     }
 
-    const customerId = existingCustomer.id
+    const customerId = matchingCustomer.id
 
     if (operation === "登録車両変更") {
-      // 顧客情報を更新（姓の部分のみ新しい車両情報で更新）
       const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
-        familyName: `${newCarModel}/${newCarColor}`, // 新しい車両情報を姓として更新
+        familyName: `${newCarModel}/${newCarColor}/${newLicensePlate}`, // 新しい車両情報を姓として更新
         emailAddress: email,
         phoneNumber: phone,
       })
 
       console.log("顧客情報が更新されました:", updateResult.customer)
 
-      // Google Sheetsに更新情報を追加
       await appendToSheet([
-        [new Date().toISOString(), operation, store, name, email, phone, newCarModel, newCarColor, customerId],
+        [
+          new Date().toISOString(),
+          operation,
+          store,
+          name,
+          email,
+          phone,
+          newCarModel,
+          newCarColor,
+          newLicensePlate,
+          customerId,
+        ],
       ])
 
       return NextResponse.json({
@@ -76,20 +86,16 @@ export async function POST(request: Request) {
         message: "顧客情報が正常に更新されました",
       })
     } else if (operation === "クレジットカード情報変更") {
-      // 既存のコース名を取得
-      const existingCourse = extractExistingCourse(existingCustomer.note)
+      const existingCourse = extractExistingCourse(matchingCustomer.note)
 
-      // 顧客情報を更新
       await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
         emailAddress: email,
         phoneNumber: phone,
-        note: `店舗: ${store}, コース: ${existingCourse}`, // 既存のコース名を使用
+        note: `店舗: ${store}, コース: ${existingCourse}`,
       })
 
-      // 新しいカードを作成
       if (cardToken) {
-        // 1. 既存のカードを無効化
         const { result: existingCards } = await squareClient.cardsApi.listCards()
         const customerCards = existingCards.cards?.filter((card) => card.customerId === customerId) || []
         for (const card of customerCards) {
@@ -99,7 +105,6 @@ export async function POST(request: Request) {
           }
         }
 
-        // 2. 新しいカードを追加
         const { result: cardResult } = await squareClient.cardsApi.createCard({
           idempotencyKey: `${customerId}-${Date.now()}`,
           sourceId: cardToken,
@@ -115,9 +120,8 @@ export async function POST(request: Request) {
         console.log("新しいカードが正常に追加され、古いカードは無効化されました")
       }
 
-      // Google Sheetsに更新情報を追加
       await appendToSheet([
-        [new Date().toISOString(), operation, store, name, email, phone, store, existingCourse, customerId], // 既存のコース名を使用
+        [new Date().toISOString(), operation, store, name, email, phone, store, existingCourse, customerId],
       ])
 
       return NextResponse.json({

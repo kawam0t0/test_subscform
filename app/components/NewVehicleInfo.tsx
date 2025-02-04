@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Car, Palette } from "lucide-react"
+import { Car, Palette, FileText } from "lucide-react"
 import type { BaseFormProps } from "../types"
 
 const topCarModels = [
@@ -47,6 +47,11 @@ export function NewVehicleInfo({ formData, updateFormData, nextStep, prevStep }:
       setIsCustomModel(false)
       updateFormData({ newCarModel: value })
     }
+  }
+
+  const handleLicensePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^\d]/g, "").slice(0, 4)
+    updateFormData({ newLicensePlate: value })
   }
 
   return (
@@ -116,6 +121,24 @@ export function NewVehicleInfo({ formData, updateFormData, nextStep, prevStep }:
             ))}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="newLicensePlate" className="form-label flex items-center gap-2">
+          <FileText className="w-5 h-5" />
+          新しいナンバープレート（下4桁）
+        </label>
+        <input
+          id="newLicensePlate"
+          type="text"
+          value={formData.newLicensePlate || ""}
+          onChange={handleLicensePlateChange}
+          required
+          className="form-input"
+          placeholder="例：1234"
+          maxLength={4}
+          pattern="\d{4}"
+        />
       </div>
 
       <div className="pt-4 grid grid-cols-2 gap-3">

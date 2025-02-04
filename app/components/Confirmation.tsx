@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { MapPin, User, Mail, Phone, Car, Palette, CreditCard, CheckCircle } from "lucide-react"
+import { MapPin, User, Mail, Phone, Car, Palette, CreditCard, CheckCircle, FileText } from "lucide-react"
 import type React from "react"
 import type { FormData } from "../types"
 
@@ -67,6 +67,11 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
             <ConfirmationItem icon={<Car className="w-6 h-6" />} label="車種" value={formData.carModel} />
             <ConfirmationItem icon={<Palette className="w-6 h-6" />} label="車の色" value={formData.carColor} />
             <ConfirmationItem
+              icon={<FileText className="w-6 h-6" />}
+              label="ナンバープレート（下4桁）"
+              value={formData.licensePlate}
+            />
+            <ConfirmationItem
               icon={<CreditCard className="w-6 h-6" />}
               label="選択されたコース"
               value={formData.course}
@@ -81,6 +86,11 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
               icon={<Palette className="w-6 h-6" />}
               label="新しい車の色"
               value={formData.newCarColor}
+            />
+            <ConfirmationItem
+              icon={<FileText className="w-6 h-6" />}
+              label="新しいナンバープレート（下4桁）"
+              value={formData.newLicensePlate}
             />
           </>
         )}
