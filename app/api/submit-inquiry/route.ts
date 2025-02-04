@@ -6,11 +6,28 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { operation, store, name, email, phone, carModel, carColor, inquiryDetails } = formData
+    const { operation, store, name, email, phone, carModel, carColor, licensePlate, inquiryDetails } = formData
 
-    // Google Sheetsに問い合わせ内容を追加
+    // Google Sheetsにデータを追加
+    // A~O列のデータを配列として準備
     await appendToSheet([
-      [new Date().toISOString(), operation, store, name, email, phone, carModel, carColor, inquiryDetails],
+      [
+        new Date().toISOString(), // A: タイムスタンプ
+        operation, // B: 問い合わせ内容
+        store, // C: 入会店舗
+        name, // D: お名前
+        email, // E: メールアドレス
+        phone, // F: 電話番号
+        carModel, // G: 車種
+        carColor, // H: 車の色
+        licensePlate, // I: ナンバープレート
+        "", // J: 入会コース（その他の場合は空欄）
+        "", // K: 新しい車種（その他の場合は空欄）
+        "", // L: 新しい車の色（その他の場合は空欄）
+        "", // M: 新しいナンバープレート（その他の場合は空欄）
+        "", // N: 新ご利用コース（その他の場合は空欄）
+        inquiryDetails, // O: お問い合わせ内容
+      ],
     ])
 
     return NextResponse.json({

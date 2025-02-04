@@ -40,30 +40,21 @@ export async function POST(request: Request) {
       const referenceId = generateReferenceId(store)
       const courseName = extractCourseName(course)
 
-      // デバッグログ
-      console.log("Square API リクエストデータ作成:", {
-        name,
-        familyName: `${carModel}/${carColor}/${licensePlate}`,
-        referenceId,
-        courseName,
-        cardToken,
-      })
-
       try {
         // 1. まず顧客を作成
         const { result: customerResult } = await squareClient.customersApi.createCustomer({
           idempotencyKey: `${Date.now()}-${Math.random()}`,
           givenName: name,
-          familyName: `${carModel}/${carColor}/${licensePlate}`, // 車種/車の色/ナンバープレートを姓として保存
+          familyName: `${carModel}/${carColor}/${licensePlate}`,
           emailAddress: email,
           phoneNumber: phone,
-          companyName: store, // 店舗名を会社名として保存
-          nickname: courseName, // コース名をニックネームとして保存
-          referenceId: referenceId, // リファレンスID
+          companyName: store,
+          nickname: courseName,
+          referenceId: referenceId,
           note: `
 店舗: ${store}
 コース: ${courseName}
-          `.trim(), // リファレンスIDを除外した情報をノートとして保存
+          `.trim(),
         })
 
         if (!customerResult.customer?.id) {
@@ -87,19 +78,24 @@ export async function POST(request: Request) {
           console.log("カード情報が正常に保存されました:", cardResult.card.id)
         }
 
-        // Google Sheetsへの記録
+        // Google Sheetsにデータを追加
         await appendToSheet([
           [
-            new Date().toISOString(),
-            store,
-            name,
-            email,
-            phone,
-            carModel,
-            carColor,
-            courseName,
-            customerResult.customer.id,
-            referenceId,
+            new Date().toISOString(), // A: タイムスタンプ
+            operation, // B: 問い合わせ内容
+            store, // C: 入会店舗
+            name, // D: お名前
+            email, // E: メールアドレス
+            phone, // F: 電話番号
+            carModel, // G: 車種
+            carColor, // H: 車の色
+            licensePlate, // I: ナンバープレート
+            courseName, // J: 入会コース
+            "", // K: 新しい車種
+            "", // L: 新しい車の色
+            "", // M: 新しいナンバープレート
+            "", // N: 新ご利用コース
+            "", // O: お問い合わせ内容
           ],
         ])
 

@@ -58,6 +58,25 @@ export async function POST(request: Request) {
 
     const customerId = matchingCustomer.id
 
+    // Google Sheetsに記録するデータを準備
+    const sheetData = [
+      new Date().toISOString(), // A: タイムスタンプ
+      operation, // B: 問い合わせ内容
+      store, // C: 入会店舗
+      name, // D: お名前
+      email, // E: メールアドレス
+      phone, // F: 電話番号
+      carModel, // G: 車種
+      carColor, // H: 車の色
+      licensePlate, // I: ナンバープレート
+      currentCourse || "", // J: 現在のコース
+      newCarModel || "", // K: 新しい車種
+      newCarColor || "", // L: 新しい車の色
+      newLicensePlate || "", // M: 新しいナンバープレート
+      newCourse || "", // N: 新ご利用コース
+      "", // O: お問い合わせ内容（更新の場合は空欄）
+    ]
+
     if (operation === "洗車コース変更") {
       // コース変更の場合は、noteフィールドを新しいコースで更新
       const newCourseName = newCourse.split("（")[0].trim()
@@ -68,29 +87,6 @@ export async function POST(request: Request) {
         phoneNumber: phone,
         note: `店舗: ${store}, コース: ${newCourseName}`,
       })
-
-      await appendToSheet([
-        [
-          new Date().toISOString(),
-          operation,
-          store,
-          name,
-          email,
-          phone,
-          carModel,
-          carColor,
-          licensePlate,
-          currentCourse,
-          newCourse,
-          customerId,
-        ],
-      ])
-
-      return NextResponse.json({
-        success: true,
-        customerId: customerId,
-        message: "コース情報が正常に更新されました",
-      })
     } else if (operation === "登録車両変更") {
       const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
@@ -100,27 +96,6 @@ export async function POST(request: Request) {
       })
 
       console.log("顧客情報が更新されました:", updateResult.customer)
-
-      await appendToSheet([
-        [
-          new Date().toISOString(),
-          operation,
-          store,
-          name,
-          email,
-          phone,
-          newCarModel,
-          newCarColor,
-          newLicensePlate,
-          customerId,
-        ],
-      ])
-
-      return NextResponse.json({
-        success: true,
-        customerId: customerId,
-        message: "顧客情報が正常に更新されました",
-      })
     } else if (operation === "クレジットカード情報変更") {
       const existingCourse = extractExistingCourse(matchingCustomer.note)
 
@@ -155,21 +130,15 @@ export async function POST(request: Request) {
 
         console.log("新しいカードが正常に追加され、古いカードは無効化されました")
       }
-
-      await appendToSheet([
-        [new Date().toISOString(), operation, store, name, email, phone, store, existingCourse, customerId],
-      ])
-
-      return NextResponse.json({
-        success: true,
-        customerId: customerId,
-        message: "顧客情報とクレジットカード情報が正常に更新されました",
-      })
     }
+
+    // Google Sheetsにデータを追加
+    await appendToSheet([sheetData])
 
     return NextResponse.json({
       success: true,
-      message: "処理が完了しました",
+      customerId: customerId,
+      message: "顧客情報が正常に更新されました",
     })
   } catch (error) {
     console.error("API エラー:", error)
