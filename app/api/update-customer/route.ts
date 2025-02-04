@@ -92,12 +92,11 @@ export async function POST(request: Request) {
         givenName: name,
         emailAddress: email,
         phoneNumber: phone,
-        note: `店舗: ${store}, コース: ${extractExistingCourse(matchingCustomer.note)}`,
-        custom_attribute_values: {
-          車両情報: {
-            value: `${newCarModel}/${newCarColor}/${newLicensePlate}`,
-          },
-        },
+        note: `
+店舗: ${store}
+コース: ${extractExistingCourse(matchingCustomer.note)}
+車両情報: ${newCarModel}/${newCarColor}/${newLicensePlate}
+        `.trim(),
       })
 
       console.log("顧客情報が更新されました:", updateResult.customer)
