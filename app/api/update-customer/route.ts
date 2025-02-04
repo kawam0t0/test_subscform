@@ -7,6 +7,13 @@ const squareClient = new Client({
   environment: Environment.Production,
 })
 
+// コース名を抽出する関数
+function extractExistingCourse(note: string | undefined): string {
+  if (!note) return ""
+  const courseMatch = note.match(/コース: (.+?)(?:,|$)/)
+  return courseMatch ? courseMatch[1].trim() : ""
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.json()
@@ -69,12 +76,15 @@ export async function POST(request: Request) {
         message: "顧客情報が正常に更新されました",
       })
     } else if (operation === "クレジットカード情報変更") {
+      // 既存のコース名を取得
+      const existingCourse = extractExistingCourse(existingCustomer.note)
+
       // 顧客情報を更新
       await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
         emailAddress: email,
         phoneNumber: phone,
-        note: `店舗: ${store}, コース: ${course}`, //変更点1
+        note: `店舗: ${store}, コース: ${existingCourse}`, // 既存のコース名を使用
       })
 
       // 新しいカードを作成
@@ -107,7 +117,7 @@ export async function POST(request: Request) {
 
       // Google Sheetsに更新情報を追加
       await appendToSheet([
-        [new Date().toISOString(), operation, store, name, email, phone, store, course, customerId], //変更点2
+        [new Date().toISOString(), operation, store, name, email, phone, store, existingCourse, customerId], // 既存のコース名を使用
       ])
 
       return NextResponse.json({
