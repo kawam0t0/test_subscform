@@ -19,21 +19,21 @@ export async function POST(request: Request) {
     if (customerCards.length === 0) {
       return NextResponse.json({
         success: true,
-        message: "削除対象のカードが存在しません",
+        message: "無効化対象のカードが存在しません",
       })
     }
 
-    // 既存のカードをすべて削除
+    // 既存のカードをすべて無効化
     for (const card of customerCards) {
       if (card.id) {
         await squareClient.cardsApi.disableCard(card.id)
-        console.log(`カードID: ${card.id} を削除しました`)
+        console.log(`カードID: ${card.id} を無効化しました`)
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: "古いカード情報が正常に削除されました",
+      message: "古いカード情報が正常に無効化されました",
     })
   } catch (error) {
     console.error("カード削除エラー:", error)

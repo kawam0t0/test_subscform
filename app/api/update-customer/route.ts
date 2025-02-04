@@ -93,24 +93,23 @@ export async function POST(request: Request) {
 
         console.log("新しいカードが作成されました:", cardResult.card.id)
 
-        // 古いカードを削除
+        // 古いカードを無効化
         try {
-          const { result } = await squareClient.cardsApi.listCards({
-            customerId: customerId,
-          })
+          const { result } = await squareClient.cardsApi.listCards()
 
-          // 新しく作成したカード以外の古いカードを削除
-          if (result.cards) {
-            for (const card of result.cards) {
-              if (card.id && card.id !== cardResult.card.id) {
-                await squareClient.cardsApi.disableCard(card.id)
-                console.log(`古いカードID: ${card.id} を削除しました`)
-              }
+          // 新しく作成したカード以外の、この顧客の古いカードを無効化
+          const oldCards =
+            result.cards?.filter((card) => card.customerId === customerId && card.id !== cardResult.card?.id) || []
+
+          for (const card of oldCards) {
+            if (card.id) {
+              await squareClient.cardsApi.disableCard(card.id)
+              console.log(`古いカードID: ${card.id} を無効化しました`)
             }
           }
-        } catch (deleteError) {
-          console.error("古いカードの削除中にエラーが発生しました:", deleteError)
-          // カードの削除に失敗しても、更新自体は成功とする
+        } catch (disableError) {
+          console.error("古いカードの無効化中にエラーが発生しました:", disableError)
+          // カードの無効化に失敗しても、更新自体は成功とする
         }
       }
 
