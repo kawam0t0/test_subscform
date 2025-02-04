@@ -79,6 +79,17 @@ export async function POST(request: Request) {
 
       // 新しいカードを作成
       if (cardToken) {
+        // 1. 既存のカードを無効化
+        const { result: existingCards } = await squareClient.cardsApi.listCards()
+        const customerCards = existingCards.cards?.filter((card) => card.customerId === customerId) || []
+        for (const card of customerCards) {
+          if (card.id) {
+            await squareClient.cardsApi.disableCard(card.id)
+            console.log(`古いカードID: ${card.id} を無効化しました`)
+          }
+        }
+
+        // 2. 新しいカードを追加
         const { result: cardResult } = await squareClient.cardsApi.createCard({
           idempotencyKey: `${customerId}-${Date.now()}`,
           sourceId: cardToken,
@@ -93,24 +104,12 @@ export async function POST(request: Request) {
 
         console.log("新しいカードが作成されました:", cardResult.card.id)
 
-        // 古いカードを無効化
-        try {
-          const { result } = await squareClient.cardsApi.listCards()
+        // 3. 新しいカードをデフォルトに設定
+        await squareClient.customersApi.updateCustomer(customerId, {
+          defaultCardId: cardResult.card.id,
+        })
 
-          // 新しく作成したカード以外の、この顧客の古いカードを無効化
-          const oldCards =
-            result.cards?.filter((card) => card.customerId === customerId && card.id !== cardResult.card?.id) || []
-
-          for (const card of oldCards) {
-            if (card.id) {
-              await squareClient.cardsApi.disableCard(card.id)
-              console.log(`古いカードID: ${card.id} を無効化しました`)
-            }
-          }
-        } catch (disableError) {
-          console.error("古いカードの無効化中にエラーが発生しました:", disableError)
-          // カードの無効化に失敗しても、更新自体は成功とする
-        }
+        console.log(`新しいカードID: ${cardResult.card.id} をデフォルトに設定しました`)
       }
 
       // Google Sheetsに更新情報を追加
@@ -121,7 +120,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         customerId: customerId,
-        message: "顧客情報が正常に更新されました",
+        message: "顧客情報とクレジットカード情報が正常に更新されました",
       })
     }
 
