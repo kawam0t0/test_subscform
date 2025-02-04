@@ -42,9 +42,6 @@ export async function POST(request: Request) {
       const courseName = extractCourseName(course)
 
       try {
-        // まず車両情報のカスタムフィールドを更新
-        const vehicleInfo = `${carModel}/${carColor}`
-
         // 1. まず顧客を作成
         const { result: customerResult } = await squareClient.customersApi.createCustomer({
           idempotencyKey: `${Date.now()}-${Math.random()}`,
@@ -58,13 +55,19 @@ export async function POST(request: Request) {
           note: `
 店舗: ${store}
 コース: ${courseName}
-車両情報: ${vehicleInfo}
           `.trim(),
         })
 
         if (!customerResult.customer?.id) {
           throw new Error("顧客の作成に失敗しました")
         }
+
+        // 車両情報のカスタムフィールドを更新
+        await squareClient.customersApi.updateCustomer(customerResult.customer.id, {
+          customAttributes: {
+            車両情報: { value: `${carModel}/${carColor}/${licensePlate}` },
+          },
+        })
 
         // 2. カード情報を保存（cardTokenが存在する場合のみ）
         if (cardToken) {
