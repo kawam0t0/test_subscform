@@ -35,6 +35,7 @@ export async function POST(request: Request) {
       newLicensePlate,
     } = formData
 
+    // メールアドレスで顧客を検索
     const { result: emailSearchResult } = await squareClient.customersApi.searchCustomers({
       query: {
         filter: {
@@ -45,13 +46,14 @@ export async function POST(request: Request) {
       },
     })
 
+    // メールアドレスとナンバープレートで顧客を特定
     const existingCustomers = emailSearchResult.customers || []
     const matchingCustomer = existingCustomers.find(
       (customer) => customer.familyName && customer.familyName.split("/")[2] === licensePlate,
     )
 
     if (!matchingCustomer || !matchingCustomer.id) {
-      throw new Error("顧客が見つかりません")
+      throw new Error("指定されたメールアドレスとナンバープレートに一致する顧客が見つかりません")
     }
 
     const customerId = matchingCustomer.id
@@ -68,7 +70,20 @@ export async function POST(request: Request) {
       })
 
       await appendToSheet([
-        [new Date().toISOString(), operation, store, name, email, phone, currentCourse, newCourse, customerId],
+        [
+          new Date().toISOString(),
+          operation,
+          store,
+          name,
+          email,
+          phone,
+          carModel,
+          carColor,
+          licensePlate,
+          currentCourse,
+          newCourse,
+          customerId,
+        ],
       ])
 
       return NextResponse.json({
@@ -79,7 +94,7 @@ export async function POST(request: Request) {
     } else if (operation === "登録車両変更") {
       const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
-        familyName: `${newCarModel}/${newCarColor}/${newLicensePlate}`, // 新しい車両情報を姓として更新
+        familyName: `${newCarModel}/${newCarColor}/${newLicensePlate}`,
         emailAddress: email,
         phoneNumber: phone,
       })

@@ -25,13 +25,13 @@ export function CustomerForm() {
     phone: "",
     carModel: "",
     carColor: "",
-    licensePlate: "", // Add this
+    licensePlate: "",
     cardToken: "",
     referenceId: "",
     course: "",
     newCarModel: "",
     newCarColor: "",
-    newLicensePlate: "", // Add this
+    newLicensePlate: "",
     currentCourse: "",
     newCourse: "",
   })
@@ -90,6 +90,11 @@ export function CustomerForm() {
           <PersonalInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
         )
       case 3:
+        // すべての操作で車両情報の入力を行う
+        return (
+          <VehicleInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
+        )
+      case 4:
         if (formData.operation === "洗車コース変更") {
           return (
             <CourseChangeForm
@@ -99,17 +104,7 @@ export function CustomerForm() {
               prevStep={prevStep}
             />
           )
-        } else if (formData.operation === "クレジットカード情報変更") {
-          return (
-            <VehicleInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
-          )
-        } else {
-          return (
-            <VehicleInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
-          )
-        }
-      case 4:
-        if (formData.operation === "入会") {
+        } else if (formData.operation === "入会") {
           return (
             <CourseSelection
               formData={formData}
@@ -136,13 +131,12 @@ export function CustomerForm() {
               prevStep={prevStep}
             />
           )
-        } else if (formData.operation === "洗車コース変更") {
-          // コース変更の場合は直接確認画面へ
-          return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
         }
         return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
       case 5:
-        if (formData.operation === "入会") {
+        if (formData.operation === "洗車コース変更") {
+          return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
+        } else if (formData.operation === "入会") {
           return (
             <NewPaymentInfo
               formData={formData}
@@ -153,9 +147,8 @@ export function CustomerForm() {
           )
         } else if (formData.operation === "クレジットカード情報変更" || formData.operation === "登録車両変更") {
           return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
-        } else {
-          return <ThankYou formData={formData} />
         }
+        return <ThankYou formData={formData} />
       case 6:
         return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
       case 7:
