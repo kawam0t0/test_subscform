@@ -1,21 +1,22 @@
 export interface FormData {
   operation: string
   store: string
+  referenceId: string
   name: string
   email: string
   phone: string
   carModel: string
   carColor: string
-  licensePlate: string // 追加
+  licensePlate: string
   cardToken: string
-  referenceId: string
   course: string
   newCarModel: string
   newCarColor: string
-  newLicensePlate: string // 追加
+  newLicensePlate: string
   currentCourse: string
   newCourse: string
-  inquiryDetails?: string // Add this line
+  inquiryDetails?: string
+  newEmail: string // Add this line for email change functionality
 }
 
 export interface ErrorMessageProps {
