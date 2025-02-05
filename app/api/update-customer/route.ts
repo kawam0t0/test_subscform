@@ -14,6 +14,16 @@ function extractExistingCourse(note: string | null | undefined): string {
   return courseMatch ? courseMatch[1].trim() : ""
 }
 
+function extractIdentifierAndVehicleInfo(familyName: string): { identifier: string; vehicleInfo: string } {
+  const identifiers = ["CE", "ME", "YK", "MB"]
+  for (const id of identifiers) {
+    if (familyName.startsWith(id)) {
+      return { identifier: id, vehicleInfo: familyName.slice(id.length) }
+    }
+  }
+  return { identifier: "", vehicleInfo: familyName }
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.json()
@@ -102,9 +112,12 @@ export async function POST(request: Request) {
         note: `店舗: ${store}, コース: ${newCourseName}`,
       })
     } else if (operation === "登録車両変更") {
+      const { identifier, vehicleInfo } = extractIdentifierAndVehicleInfo(matchingCustomer.familyName || "")
+      const newFamilyName = `${identifier}${newCarModel}/${newCarColor}/${newLicensePlate}`
+
       const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
-        familyName: `${newCarModel}/${newCarColor}/${newLicensePlate}`,
+        familyName: newFamilyName,
         emailAddress: email,
         phoneNumber: phone,
         note: `店舗: ${store}, コース: ${extractExistingCourse(matchingCustomer.note)}`,
@@ -148,7 +161,7 @@ export async function POST(request: Request) {
     } else if (operation === "メールアドレス変更") {
       await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
-        familyName: `${carModel}/${carColor}/${licensePlate}`,
+        familyName: matchingCustomer.familyName, // 既存の familyName を保持
         emailAddress: newEmail,
         phoneNumber: phone,
         note: `店舗: ${store}, コース: ${extractExistingCourse(matchingCustomer.note)}`,
