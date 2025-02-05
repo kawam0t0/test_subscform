@@ -37,29 +37,32 @@ export async function POST(request: Request) {
       newEmail,
     } = formData
 
-    // メールアドレスまたは電話番号で顧客を検索
-    const { result: searchResult } = await squareClient.customersApi.searchCustomers({
+    // First try searching by email
+    const { result: emailSearchResult } = await squareClient.customersApi.searchCustomers({
       query: {
         filter: {
-          or: [
-            {
-              emailAddress: {
-                exact: email,
-              },
-            },
-            {
-              phoneNumber: {
-                exact: phone,
-              },
-            },
-          ],
+          emailAddress: {
+            exact: email,
+          },
         },
       },
     })
 
-    // 顧客を特定
-    const existingCustomers = searchResult.customers || []
-    const matchingCustomer = existingCustomers[0] // 最初に見つかった顧客を使用
+    // If no results found by email, try searching by phone
+    const { result: phoneSearchResult } = !emailSearchResult.customers?.length
+      ? await squareClient.customersApi.searchCustomers({
+          query: {
+            filter: {
+              phoneNumber: {
+                exact: phone,
+              },
+            },
+          },
+        })
+      : { result: { customers: [] } }
+
+    // Use the first matching customer from either search
+    const matchingCustomer = emailSearchResult.customers?.[0] || phoneSearchResult.customers?.[0]
 
     if (!matchingCustomer || !matchingCustomer.id) {
       throw new Error("指定されたメールアドレスまたは電話番号に一致する顧客が見つかりません")
