@@ -46,16 +46,13 @@ export async function POST(request: Request) {
         const { result: customerResult } = await squareClient.customersApi.createCustomer({
           idempotencyKey: `${Date.now()}-${Math.random()}`,
           givenName: name,
-          familyName: `${carModel}/${carColor}/${licensePlate}`,
+          familyName: carModel, // 車種のみを姓として設定
           emailAddress: email,
           phoneNumber: phone,
-          companyName: store,
-          nickname: courseName,
+          companyName: `${carModel}/${carColor}/${licensePlate}`, // 車両情報をスラッシュ区切りで設定
           referenceId: referenceId,
-          note: `
-店舗: ${store}
-コース: ${courseName}
-          `.trim(),
+          note: store, // 店舗名のみを設定
+          nickname: courseName,
         })
 
         if (!customerResult.customer?.id) {
@@ -82,22 +79,23 @@ export async function POST(request: Request) {
         // Google Sheetsにデータを追加
         await appendToSheet([
           [
-            formatJapanDateTime(new Date()), // A: タイムスタンプ（日本時間）
-            operation, // B: 問い合わせ内容
-            referenceId, // C: リファレンスID（入会の場合）
-            store, // D: 入会店舗
-            name, // E: お名前
-            email, // F: メールアドレス
-            phone, // G: 電話番号
-            carModel, // H: 車種
-            carColor, // I: 車の色
-            licensePlate, // J: ナンバープレート
-            courseName, // K: 入会コース
-            "", // L: 新しい車種
-            "", // M: 新しい車の色
-            "", // N: 新しいナンバープレート
-            "", // O: 新ご利用コース
-            "", // P: お問い合わせ内容
+            formatJapanDateTime(new Date()),
+            operation,
+            referenceId,
+            store,
+            name,
+            email,
+            phone,
+            carModel,
+            carColor,
+            licensePlate,
+            courseName,
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
           ],
         ])
 
