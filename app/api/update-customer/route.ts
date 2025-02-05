@@ -77,17 +77,18 @@ export async function POST(request: Request) {
       matchingCustomer.referenceId || "", // C: リファレンスID（Squareから取得）
       store, // D: 入会店舗
       name, // E: お名前
-      email, // F: メールアドレス
-      phone, // G: 電話番号
-      carModel, // H: 車種
-      carColor, // I: 車の色
-      licensePlate, // J: ナンバープレート
-      currentCourse || "", // K: 現在のコース
-      newCarModel || "", // L: 新しい車種
-      newCarColor || "", // M: 新しい車の色
-      newLicensePlate || "", // N: 新しいナンバープレート
-      newCourse || "", // O: 新ご利用コース
-      "", // P: お問い合わせ内容（更新の場合は空欄）
+      email, // F: 現在のメールアドレス
+      newEmail || email, // G: 新しいメールアドレス（変更がない場合は現在のメールアドレス）
+      phone, // H: 電話番号（1列右にシフト）
+      carModel, // I: 車種（1列右にシフト）
+      carColor, // J: 車の色（1列右にシフト）
+      licensePlate, // K: ナンバープレート（1列右にシフト）
+      currentCourse || "", // L: 現在のコース（1列右にシフト）
+      newCarModel || "", // M: 新しい車種（1列右にシフト）
+      newCarColor || "", // N: 新しい車の色（1列右にシフト）
+      newLicensePlate || "", // O: 新しいナンバープレート（1列右にシフト）
+      newCourse || "", // P: 新ご利用コース（1列右にシフト）
+      "", // Q: お問い合わせ内容（1列右にシフト）
     ]
 
     if (operation === "洗車コース変更") {
