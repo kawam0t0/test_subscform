@@ -13,12 +13,10 @@ function extractIdentifierAndModel(familyName: string): { identifier: string; mo
   for (const id of identifiers) {
     if (familyName.startsWith(id)) {
       const remainingPart = familyName.slice(id.length)
-      // 車種のみを抽出（スラッシュ以降は無視）
       const model = remainingPart.split("/")[0].trim()
       return { identifier: id, model }
     }
   }
-  // 識別子がない場合も、車種のみを抽出
   const model = familyName.split("/")[0].trim()
   return { identifier: "", model }
 }
@@ -154,7 +152,7 @@ export async function POST(request: Request) {
       store,
       name,
       email,
-      newEmail || email,
+      "", // G列は空欄にする
       phone,
       carModel || newCarModel,
       carColor || newCarColor,

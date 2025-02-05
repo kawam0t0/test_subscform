@@ -7,28 +7,29 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { operation, store, name, email, phone, carModel, carColor, licensePlate, inquiryDetails } = formData
+    const { operation, store, name, email, phone, carModel, carColor, licensePlate, inquiryDetails, referenceId } =
+      formData
 
     // Google Sheetsにデータを追加
-    // A~P列のデータを配列として準備
     await appendToSheet([
       [
         formatJapanDateTime(new Date()), // A: タイムスタンプ（日本時間）
         operation, // B: 問い合わせ内容
-        "", // C: リファレンスID（その他の問い合わせの場合は空欄）
+        referenceId, // C: リファレンスID
         store, // D: 入会店舗
         name, // E: お名前
         email, // F: メールアドレス
-        phone, // G: 電話番号
-        carModel, // H: 車種
-        carColor, // I: 車の色
-        licensePlate, // J: ナンバープレート
-        "", // K: 入会コース（その他の場合は空欄）
-        "", // L: 新しい車種（その他の場合は空欄）
-        "", // M: 新しい車の色（その他の場合は空欄）
-        "", // N: 新しいナンバープレート（その他の場合は空欄）
-        "", // O: 新ご利用コース（その他の場合は空欄）
-        inquiryDetails, // P: お問い合わせ内容
+        "", // G: 新しいメールアドレス（空欄）
+        phone, // H: 電話番号
+        carModel, // I: 車種
+        carColor, // J: 車の色
+        licensePlate, // K: ナンバープレート
+        "", // L: 入会コース（空欄）
+        "", // M: 新しい車種（空欄）
+        "", // N: 新しい車の色（空欄）
+        "", // O: 新しいナンバープレート（空欄）
+        "", // P: 新ご利用コース（空欄）
+        inquiryDetails, // Q: お問い合わせ内容
       ],
     ])
 
