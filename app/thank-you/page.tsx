@@ -13,16 +13,19 @@ export default function ThankYouPage() {
     phone: "",
     carModel: "",
     carColor: "",
-    licensePlate: "", // 追加
+    licensePlate: "",
     cardToken: "",
     referenceId: "",
     course: "",
     newCarModel: "",
     newCarColor: "",
-    newLicensePlate: "", // 追加
+    newLicensePlate: "",
     currentCourse: "",
     newCourse: "",
+    inquiryDetails: "",
+    newEmail: "", // Add the newEmail property with an empty string as default value
   }
 
   return <ThankYou formData={dummyFormData} />
 }
+
