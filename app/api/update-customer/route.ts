@@ -34,25 +34,35 @@ export async function POST(request: Request) {
       newCarModel,
       newCarColor,
       newLicensePlate,
+      newEmail,
     } = formData
 
-    // メールアドレスで顧客を検索
-    const { result: emailSearchResult } = await squareClient.customersApi.searchCustomers({
+    // メールアドレスまたは電話番号で顧客を検索
+    const { result: searchResult } = await squareClient.customersApi.searchCustomers({
       query: {
         filter: {
-          emailAddress: {
-            exact: email,
-          },
+          or: [
+            {
+              emailAddress: {
+                exact: email,
+              },
+            },
+            {
+              phoneNumber: {
+                exact: phone,
+              },
+            },
+          ],
         },
       },
     })
 
-    // メールアドレスで顧客を特定
-    const existingCustomers = emailSearchResult.customers || []
+    // 顧客を特定
+    const existingCustomers = searchResult.customers || []
     const matchingCustomer = existingCustomers[0] // 最初に見つかった顧客を使用
 
     if (!matchingCustomer || !matchingCustomer.id) {
-      throw new Error("指定されたメールアドレスに一致する顧客が見つかりません")
+      throw new Error("指定されたメールアドレスまたは電話番号に一致する顧客が見つかりません")
     }
 
     const customerId = matchingCustomer.id
@@ -131,6 +141,16 @@ export async function POST(request: Request) {
 
         console.log("新しいカードが正常に追加され、古いカードは無効化されました")
       }
+    } else if (operation === "メールアドレス変更") {
+      await squareClient.customersApi.updateCustomer(customerId, {
+        givenName: name,
+        familyName: `${carModel}/${carColor}/${licensePlate}`,
+        emailAddress: newEmail,
+        phoneNumber: phone,
+        note: `店舗: ${store}, コース: ${extractExistingCourse(matchingCustomer.note)}`,
+      })
+
+      console.log("メールアドレスが更新されました:", newEmail)
     }
 
     // Google Sheetsにデータを追加

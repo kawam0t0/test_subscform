@@ -14,6 +14,7 @@ import { NewVehicleInfo } from "./NewVehicleInfo"
 import { CourseChangeForm } from "./CourseChangeForm"
 import { NewPaymentInfo } from "./NewPaymentInfo"
 import { OtherInquiryForm } from "./OtherInquiryForm"
+import { EmailChangeForm } from "./EmailChangeForm"
 import type { FormData } from "../types"
 
 export function CustomerForm() {
@@ -36,6 +37,7 @@ export function CustomerForm() {
     currentCourse: "",
     newCourse: "",
     inquiryDetails: "",
+    newEmail: "",
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -146,10 +148,19 @@ export function CustomerForm() {
               prevStep={prevStep}
             />
           )
+        } else if (formData.operation === "メールアドレス変更") {
+          return (
+            <EmailChangeForm
+              formData={formData}
+              updateFormData={updateFormData}
+              nextStep={nextStep}
+              prevStep={prevStep}
+            />
+          )
         }
         return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
       case 5:
-        if (formData.operation === "その他" || formData.operation === "洗車コース変更") {
+        if (["その他", "洗車コース変更", "メールアドレス変更"].includes(formData.operation)) {
           return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
         } else if (formData.operation === "入会") {
           return (
