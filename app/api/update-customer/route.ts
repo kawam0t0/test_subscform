@@ -13,16 +13,14 @@ function extractIdentifierAndModel(familyName: string): { identifier: string; mo
   for (const id of identifiers) {
     if (familyName.startsWith(id)) {
       const remainingPart = familyName.slice(id.length)
+      // 車種のみを抽出（スラッシュ以降は無視）
       const model = remainingPart.split("/")[0].trim()
       return { identifier: id, model }
     }
   }
+  // 識別子がない場合も、車種のみを抽出
   const model = familyName.split("/")[0].trim()
   return { identifier: "", model }
-}
-
-function formatVehicleDetailsForCompany(model: string, color: string, plate: string): string {
-  return `${model}/${color}/${plate}`
 }
 
 function constructFamilyName(identifier: string, model: string): string {
@@ -102,16 +100,15 @@ export async function POST(request: Request) {
       // familyNameには識別子（存在する場合）と車種のみを設定
       updateData.familyName = constructFamilyName(identifier, targetModel)
 
-      // companyNameに車両詳細を"車種/色/ナンバー"の形式で設定
-      updateData.companyName = formatVehicleDetailsForCompany(targetModel, targetColor, targetPlate)
+      // companyNameに車両詳細を設定（車種/色/ナンバー形式）
+      updateData.companyName = `${targetModel}/${targetColor}/${targetPlate}`
     }
     // コース変更時
     else if (operation === "洗車コース変更") {
-      const newCourseName = newCourse.split("（")[0].trim()
       // 既存の車両情報を保持
       updateData.familyName = matchingCustomer.familyName
       updateData.companyName = matchingCustomer.companyName
-      updateData.note = `${store}, コース: ${newCourseName}`
+      updateData.note = `${store}, コース: ${newCourse.split("（")[0].trim()}`
     }
     // その他の操作（メールアドレス変更、クレジットカード情報変更など）
     else {
