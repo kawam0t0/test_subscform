@@ -14,14 +14,14 @@ function extractExistingCourse(note: string | null | undefined): string {
   return courseMatch ? courseMatch[1].trim() : ""
 }
 
-function extractIdentifierAndVehicleInfo(familyName: string): { identifier: string; vehicleInfo: string } {
+function extractIdentifierAndModel(familyName: string): { identifier: string; model: string } {
   const identifiers = ["CE", "ME", "YK", "MB"]
   for (const id of identifiers) {
     if (familyName.startsWith(id)) {
-      return { identifier: id, vehicleInfo: familyName.slice(id.length) }
+      return { identifier: id, model: familyName.slice(id.length).split("/")[0] }
     }
   }
-  return { identifier: "", vehicleInfo: familyName }
+  return { identifier: "", model: familyName.split("/")[0] }
 }
 
 export async function POST(request: Request) {
@@ -89,51 +89,44 @@ export async function POST(request: Request) {
       name, // E: お名前
       email, // F: 現在のメールアドレス
       newEmail || email, // G: 新しいメールアドレス（変更がない場合は現在のメールアドレス）
-      phone, // H: 電話番号（1列右にシフト）
-      carModel, // I: 車種（1列右にシフト）
-      carColor, // J: 車の色（1列右にシフト）
-      licensePlate, // K: ナンバープレート（1列右にシフト）
-      currentCourse || "", // L: 現在のコース（1列右にシフト）
-      newCarModel || "", // M: 新しい車種（1列右にシフト）
-      newCarColor || "", // N: 新しい車の色（1列右にシフト）
-      newLicensePlate || "", // O: 新しいナンバープレート（1列右にシフト）
-      newCourse || "", // P: 新ご利用コース（1列右にシフト）
-      "", // Q: お問い合わせ内容（1列右にシフト）
+      phone, // H: 電話番号
+      carModel || newCarModel, // I: 車種
+      carColor || newCarColor, // J: 車の色
+      licensePlate || newLicensePlate, // K: ナンバープレート
+      currentCourse || "", // L: 現在のコース
+      newCarModel || "", // M: 新しい車種
+      newCarColor || "", // N: 新しい車の色
+      newLicensePlate || "", // O: 新しいナンバープレート
+      newCourse || "", // P: 新ご利用コース
+      "", // Q: お問い合わせ内容
     ]
 
-    if (operation === "洗車コース変更") {
-      // コース変更の場合は、noteフィールドを新しいコースで更新
-      const newCourseName = newCourse.split("（")[0].trim()
-
-      await squareClient.customersApi.updateCustomer(customerId, {
-        givenName: name,
-        emailAddress: email,
-        phoneNumber: phone,
-        note: `店舗: ${store}, コース: ${newCourseName}`,
-      })
-    } else if (operation === "登録車両変更") {
-      const { identifier, vehicleInfo } = extractIdentifierAndVehicleInfo(matchingCustomer.familyName || "")
-      const newFamilyName = `${identifier}${newCarModel}/${newCarColor}/${newLicensePlate}`
+    if (operation === "登録車両変更" || operation === "入会") {
+      const { identifier, model } = extractIdentifierAndModel(matchingCustomer?.familyName || "")
+      const newFamilyName = `${identifier}${newCarModel || carModel}`
+      const vehicleDetails = `車種: ${newCarModel || carModel}, 色: ${newCarColor || carColor}, ナンバー: ${newLicensePlate || licensePlate}`
 
       const { result: updateResult } = await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
         familyName: newFamilyName,
         emailAddress: email,
         phoneNumber: phone,
-        note: `店舗: ${store}, コース: ${extractExistingCourse(matchingCustomer.note)}`,
+        note: `店舗: ${store}, ${vehicleDetails}, コース: ${extractExistingCourse(matchingCustomer?.note)}`,
       })
 
       console.log("顧客情報が更新されました:", updateResult.customer)
-    } else if (operation === "クレジットカード情報変更") {
-      const existingCourse = extractExistingCourse(matchingCustomer.note)
+    } else if (operation === "洗車コース変更") {
+      const newCourseName = newCourse.split("（")[0].trim()
+      const existingNote = matchingCustomer?.note || ""
+      const updatedNote = existingNote.replace(/コース: .+?(,|$)/, `コース: ${newCourseName}$1`)
 
       await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
         emailAddress: email,
         phoneNumber: phone,
-        note: `店舗: ${store}, コース: ${existingCourse}`,
+        note: updatedNote,
       })
-
+    } else if (operation === "クレジットカード情報変更") {
       if (cardToken) {
         const { result: existingCards } = await squareClient.cardsApi.listCards()
         const customerCards = existingCards.cards?.filter((card) => card.customerId === customerId) || []
@@ -161,10 +154,8 @@ export async function POST(request: Request) {
     } else if (operation === "メールアドレス変更") {
       await squareClient.customersApi.updateCustomer(customerId, {
         givenName: name,
-        familyName: matchingCustomer.familyName, // 既存の familyName を保持
         emailAddress: newEmail,
         phoneNumber: phone,
-        note: `店舗: ${store}, コース: ${extractExistingCourse(matchingCustomer.note)}`,
       })
 
       console.log("メールアドレスが更新されました:", newEmail)
