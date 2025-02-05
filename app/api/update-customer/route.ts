@@ -34,6 +34,19 @@ function formatVehicleDetails(model: string, color: string, plate: string): stri
   return `車両詳細: 車種=${model}, 色=${color}, ナンバー=${plate}`
 }
 
+function formatVehicleDetailsForCompany(model: string, color: string, plate: string): string {
+  return `${model}/${color}/${plate}`
+}
+
+function extractVehicleDetailsFromNote(note: string): { model: string; color: string; plate: string } {
+  const regex = /車両詳細: 車種=(.+?), 色=(.+?), ナンバー=(.+?)(?:,|$)/
+  const match = note.match(regex)
+  if (match) {
+    return { model: match[1], color: match[2], plate: match[3] }
+  }
+  return { model: "", color: "", plate: "" }
+}
+
 function constructFamilyName(identifier: string, model: string): string {
   return identifier ? `${identifier}${model}` : model
 }
@@ -116,22 +129,35 @@ export async function POST(request: Request) {
       // familyNameには識別子（存在する場合）と車種のみを設定
       updateData.familyName = constructFamilyName(identifier, targetModel)
 
-      // noteフィールドに店舗名、車両詳細、コース情報を設定
+      // companyNameに車両詳細を設定
+      updateData.companyName = formatVehicleDetailsForCompany(targetModel, targetColor, targetPlate)
+
+      // noteフィールドに店舗名とコース情報を設定
       const existingCourse = extractExistingCourse(matchingCustomer.note)
-      updateData.note = constructNote(store, targetModel, targetColor, targetPlate, existingCourse)
+      updateData.note = `店舗: ${store}${existingCourse ? `, コース: ${existingCourse}` : ""}`
     }
     // コース変更時
     else if (operation === "洗車コース変更") {
       const newCourseName = newCourse.split("（")[0].trim()
-      // 既存のnoteから車両詳細を保持しつつ、コース情報のみを更新
-      const currentNote = matchingCustomer.note || ""
-      const updatedNote = currentNote.replace(/コース: .+?(,|$)/, `コース: ${newCourseName}$1`)
-      updateData.note = updatedNote
+      // 既存のnoteからコース情報のみを更新
+      updateData.note = `店舗: ${store}, コース: ${newCourseName}`
     }
-    // メールアドレス変更時やクレジットカード情報変更時は既存の車両情報を保持
+    // その他の操作（メールアドレス変更、クレジットカード情報変更など）
     else {
+      // 既存の車両情報を保持
       updateData.familyName = matchingCustomer.familyName
-      updateData.note = matchingCustomer.note
+      updateData.companyName = matchingCustomer.companyName
+
+      // 既存のnoteから店舗名とコース情報を抽出して保持
+      const existingStore = matchingCustomer.note?.match(/店舗: (.+?)(?:,|$)/)?.[1] || store
+      const existingCourse = extractExistingCourse(matchingCustomer.note)
+      updateData.note = `店舗: ${existingStore}${existingCourse ? `, コース: ${existingCourse}` : ""}`
+    }
+
+    // 既存のnoteに車両詳細が含まれている場合、companyNameに移動
+    if (matchingCustomer.note && matchingCustomer.note.includes("車両詳細:")) {
+      const { model, color, plate } = extractVehicleDetailsFromNote(matchingCustomer.note)
+      updateData.companyName = formatVehicleDetailsForCompany(model, color, plate)
     }
 
     // 顧客情報を更新
