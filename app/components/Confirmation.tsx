@@ -32,7 +32,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async () => {
-    if (isSubmitting) return // 既に送信中の場合は何もしない
+    if (isSubmitting) return
     setIsSubmitting(true)
     try {
       await submitForm()
@@ -60,6 +60,13 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         <ConfirmationItem icon={<MapPin className="w-6 h-6" />} label="入会店舗" value={formData.store} />
         <ConfirmationItem icon={<User className="w-6 h-6" />} label="お名前" value={formData.name} />
         <ConfirmationItem icon={<Mail className="w-6 h-6" />} label="メールアドレス" value={formData.email} />
+        {formData.operation === "メールアドレス変更" && (
+          <ConfirmationItem
+            icon={<Mail className="w-6 h-6" />}
+            label="新しいメールアドレス"
+            value={formData.newEmail}
+          />
+        )}
         <ConfirmationItem icon={<Phone className="w-6 h-6" />} label="電話番号" value={formData.phone} />
         <ConfirmationItem icon={<Car className="w-6 h-6" />} label="車種" value={formData.carModel} />
         <ConfirmationItem icon={<Palette className="w-6 h-6" />} label="車の色" value={formData.carColor} />

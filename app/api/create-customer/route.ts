@@ -36,22 +36,20 @@ export async function POST(request: Request) {
 
     const { name, email, phone, carModel, carColor, course, store, operation, cardToken, licensePlate } = formData
 
-    // 入会フローの場合のみ特別な処理を実行
     if (operation === "入会") {
       const referenceId = generateReferenceId(store)
       const courseName = extractCourseName(course)
 
       try {
-        // 1. まず顧客を作成
         const { result: customerResult } = await squareClient.customersApi.createCustomer({
           idempotencyKey: `${Date.now()}-${Math.random()}`,
           givenName: name,
-          familyName: carModel, // 車種のみを姓として設定
+          familyName: carModel,
           emailAddress: email,
           phoneNumber: phone,
-          companyName: `${carModel}/${carColor}/${licensePlate}`, // 車両情報をスラッシュ区切りで設定
+          companyName: `${carModel}/${carColor}/${licensePlate}`,
           referenceId: referenceId,
-          note: store, // 店舗名のみを設定
+          note: store,
           nickname: courseName,
         })
 
@@ -59,7 +57,6 @@ export async function POST(request: Request) {
           throw new Error("顧客の作成に失敗しました")
         }
 
-        // 2. カード情報を保存（cardTokenが存在する場合のみ）
         if (cardToken) {
           const { result: cardResult } = await squareClient.cardsApi.createCard({
             idempotencyKey: `${customerResult.customer.id}-${Date.now()}`,
@@ -76,26 +73,25 @@ export async function POST(request: Request) {
           console.log("カード情報が正常に保存されました:", cardResult.card.id)
         }
 
-        // Google Sheetsにデータを追加
         await appendToSheet([
           [
-            formatJapanDateTime(new Date()),
-            operation,
-            referenceId,
-            store,
-            name,
-            email,
-            phone,
-            carModel,
-            carColor,
-            licensePlate,
-            courseName,
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
+            formatJapanDateTime(new Date()), // A列: タイムスタンプ
+            operation, // B列: 操作
+            referenceId, // C列: リファレンスID
+            store, // D列: 店舗
+            name, // E列: 名前
+            email, // F列: メールアドレス
+            "", // G列: 新しいメールアドレス
+            phone, // H列: 電話番号
+            carModel, // I列: 車種
+            carColor, // J列: 車の色
+            licensePlate, // K列: ナンバー
+            courseName, // L列: 洗車コース名
+            "", // M列: 新しい車種
+            "", // N列: 新しい車の色
+            "", // O列: 新しいナンバープレート
+            "", // P列: 新しいコース
+            "", // Q列: その他
           ],
         ])
 
@@ -111,7 +107,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // 入会以外の操作の場合
     return NextResponse.json({
       success: false,
       error: "この操作は入会フロー以外では利用できません",
