@@ -152,7 +152,7 @@ export async function POST(request: Request) {
       store,
       name,
       email,
-      "", // G列は空欄にする
+      operation === "メールアドレス変更" ? newEmail : "", // G列: 新しいメールアドレス（メールアドレス変更の場合のみ）
       phone,
       carModel || newCarModel,
       carColor || newCarColor,
