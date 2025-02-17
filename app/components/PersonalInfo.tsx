@@ -90,7 +90,6 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
             onChange={(e) => updateFormData({ familyName: e.target.value })}
             required
             className="form-input"
-            pattern="^[ァ-ヶー　]+$"
           />
           {errors.familyName && <p className="text-red-500 text-sm mt-2">{errors.familyName}</p>}
         </div>
@@ -107,7 +106,6 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
             onChange={(e) => updateFormData({ givenName: e.target.value })}
             required
             className="form-input"
-            pattern="^[ァ-ヶー　]+$"
           />
           {errors.givenName && <p className="text-red-500 text-sm mt-2">{errors.givenName}</p>}
         </div>
@@ -145,7 +143,6 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
             }}
             required
             className="form-input"
-            pattern="^[0-9]{10,11}$"
           />
           {errors.phone && <p className="text-red-500 text-sm mt-2">{errors.phone}</p>}
         </div>
