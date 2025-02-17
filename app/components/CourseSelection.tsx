@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Check } from "lucide-react"
 import type { BaseFormProps } from "../types"
 import type React from "react"
@@ -28,8 +28,19 @@ const courses = [
   },
 ]
 
+const limitedCourseStores = ["SPLASH'N'GO!前橋50号店", "SPLASH'N'GO!伊勢崎韮塚店", "SPLASH'N'GO!足利緑町店"]
+
 export function CourseSelection({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
+  const [availableCourses, setAvailableCourses] = useState(courses)
+
+  useEffect(() => {
+    if (formData.operation === "入会" && limitedCourseStores.includes(formData.store)) {
+      setAvailableCourses(courses.filter((course) => ["980", "1280"].includes(course.id)))
+    } else {
+      setAvailableCourses(courses)
+    }
+  }, [formData.operation, formData.store])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +56,7 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
     <form onSubmit={handleSubmit} className="space-y-8">
       <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">洗車コースを選択</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {courses.map((course) => (
+        {availableCourses.map((course) => (
           <div
             key={course.id}
             className={`relative overflow-hidden rounded-2xl shadow-lg transition-all duration-300 ${
