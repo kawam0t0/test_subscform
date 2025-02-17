@@ -7,9 +7,9 @@ export function generateReferenceId(store: string): string {
         "SPLASH'N'GO!足利緑町店": "1004",
       }[store] || "1000"
   
-    const randomPart = Math.floor(Math.random() * 1000000000)
+    const randomPart = Math.floor(Math.random() * 1000000000000)
       .toString()
-      .padStart(9, "0")
+      .padStart(12, "0")
   
     return `${storePrefix}${randomPart}`
   }
