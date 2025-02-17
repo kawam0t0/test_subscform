@@ -23,7 +23,7 @@ const courses = [
   },
   {
     id: "2980",
-    name: "セラミックコーティングタートルシェル",
+    name: ["セラミックコーティングタートル", "シェル"],
     price: "2980円",
   },
 ]
@@ -54,17 +54,27 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
           <div
             key={course.id}
             className={`relative overflow-hidden rounded-xl shadow-md transition-all duration-300 ${
-              selectedCourse === course.name
+              selectedCourse === (Array.isArray(course.name) ? course.name.join("") : course.name)
                 ? "border-4 border-primary bg-primary/5"
                 : "border border-gray-200 hover:border-primary/50"
             }`}
-            onClick={() => setSelectedCourse(course.name)}
+            onClick={() => setSelectedCourse(Array.isArray(course.name) ? course.name.join("") : course.name)}
           >
             <div className="p-6 cursor-pointer flex flex-col items-center justify-center h-full">
-              <h4 className="text-lg font-semibold text-gray-800 mb-3 text-center">{course.name}</h4>
+              <h4 className="text-lg font-semibold text-gray-800 mb-3 text-center">
+                {Array.isArray(course.name) ? (
+                  <>
+                    {course.name[0]}
+                    <br />
+                    {course.name[1]}
+                  </>
+                ) : (
+                  course.name
+                )}
+              </h4>
               <p className="text-2xl font-bold text-primary">月額{course.price}</p>
             </div>
-            {selectedCourse === course.name && (
+            {selectedCourse === (Array.isArray(course.name) ? course.name.join("") : course.name) && (
               <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
                 <Check className="w-4 h-4" />
               </div>
