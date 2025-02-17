@@ -1,15 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { MapPin, User, Mail, Phone, Car, Palette, CreditCard, CheckCircle } from "lucide-react"
-import type React from "react"
-import type { FormData } from "../types"
+import React from "react"
 
-interface ConfirmationProps {
-  formData: FormData
-  prevStep: () => void
-  submitForm: () => void
-}
+import { useState } from "react"
+import { MapPin, User, Mail, Phone, CreditCard } from "lucide-react"
+import { loadSquareSdk } from "../utils/square-sdk"
+import type { BaseFormProps } from "../types"
 
 interface ConfirmationItemProps {
   icon: React.ReactNode
@@ -27,143 +23,138 @@ const ConfirmationItem = ({ icon, label, value }: ConfirmationItemProps) => (
   </div>
 )
 
-export function Confirmation({ formData, prevStep, submitForm }: ConfirmationProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
+  const [card, setCard] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isFocused, setIsFocused] = useState(false)
+  const cardContainerRef = React.useRef<HTMLDivElement>(null)
 
-  const handleSubmit = async () => {
-    if (isSubmitting) return // 既に送信中の場合は何もしない
-    setIsSubmitting(true)
+  React.useEffect(() => {
+    let isMounted = true
+
+    const initializeSquare = async () => {
+      try {
+        setError(null)
+        console.log("Square初期化を開始します")
+
+        if (!cardContainerRef.current) {
+          throw new Error("カードコンテナが見つかりません")
+        }
+
+        const payments = await loadSquareSdk()
+        if (!payments || !isMounted) return
+
+        console.log("Square SDKが正常に読み込まれました。カードを初期化します")
+        const card = await payments.card({
+          style: {
+            input: {
+              fontSize: "16px",
+              color: "#374151",
+            },
+            "input::placeholder": {
+              color: "#9CA3AF",
+            },
+          },
+        })
+        await card.attach(cardContainerRef.current)
+
+        if (isMounted) {
+          setCard(card)
+          setIsLoading(false)
+          console.log("カードが正常に初期化されました")
+        }
+      } catch (error) {
+        console.error("支払い初期化エラー:", error)
+        if (error instanceof Error) {
+          setError(`初期化エラー: ${error.message}`)
+        } else {
+          setError("支払いフォームの初期化中に不明なエラーが発生しました")
+        }
+        setIsLoading(false)
+      }
+    }
+
+    initializeSquare()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!card) return
+
     try {
-      await submitForm()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "エラーが発生しました")
+      setIsLoading(true)
+      setError(null)
+      const result = await card.tokenize()
+      if (result.status === "OK") {
+        updateFormData({ cardToken: result.token })
+        nextStep()
+      } else {
+        throw new Error(result.errors[0].message)
+      }
+    } catch (error) {
+      console.error("カードの処理中にエラーが発生しました:", error)
+      setError("カードの処理中にエラーが発生しました")
     } finally {
-      setIsSubmitting(false)
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <strong className="font-bold">エラー: </strong>
-          <span className="block sm:inline">{error}</span>
-        </div>
-      )}
-      <div className="text-center space-y-2">
-        <CheckCircle className="w-16 h-16 mx-auto text-primary" />
-        <h2 className="text-2xl font-bold text-primary">確認</h2>
-      </div>
-
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-blue-50/80 rounded-2xl p-6 space-y-6">
         <ConfirmationItem icon={<MapPin className="w-6 h-6" />} label="入会店舗" value={formData.store} />
-        <ConfirmationItem icon={<User className="w-6 h-6" />} label="お名前" value={formData.name} />
+        <ConfirmationItem
+          icon={<User className="w-6 h-6" />}
+          label="お名前"
+          value={`${formData.familyName} ${formData.givenName}`}
+        />
         <ConfirmationItem icon={<Mail className="w-6 h-6" />} label="メールアドレス" value={formData.email} />
         <ConfirmationItem icon={<Phone className="w-6 h-6" />} label="電話番号" value={formData.phone} />
 
-        {formData.operation === "入会" && (
-          <>
-            <ConfirmationItem icon={<Car className="w-6 h-6" />} label="車種" value={formData.carModel} />
-            <ConfirmationItem icon={<Palette className="w-6 h-6" />} label="車の色" value={formData.carColor} />
-            <ConfirmationItem
-              icon={<CreditCard className="w-6 h-6" />}
-              label="選択されたコース"
-              value={formData.course}
-            />
-          </>
-        )}
+        <div>
+          <label htmlFor="card-container" className="form-label flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            クレジットカード情報
+          </label>
+          <div
+            className={`card-input-wrapper ${isFocused ? "focused" : ""}`}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+          >
+            <div ref={cardContainerRef} id="card-container" className="min-h-[44px]" />
+          </div>
+        </div>
 
-        {formData.operation === "登録車両変更" && (
-          <>
-            <ConfirmationItem icon={<Car className="w-6 h-6" />} label="新しい車種" value={formData.newCarModel} />
-            <ConfirmationItem
-              icon={<Palette className="w-6 h-6" />}
-              label="新しい車の色"
-              value={formData.newCarColor}
-            />
-          </>
-        )}
-
-        {formData.operation === "洗車コース変更" && (
-          <>
-            <ConfirmationItem
-              icon={<CreditCard className="w-6 h-6" />}
-              label="現在のコース"
-              value={formData.currentCourse}
-            />
-            <ConfirmationItem
-              icon={<CreditCard className="w-6 h-6" />}
-              label="新しいコース"
-              value={formData.newCourse}
-            />
-          </>
-        )}
-
-        {formData.operation === "クレジットカード情報変更" && (
-          <ConfirmationItem
-            icon={<CreditCard className="w-6 h-6" />}
-            label="新しいクレジットカード情報"
-            value="登録済み"
-          />
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl">
+            <p className="text-sm">{error}</p>
+          </div>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mt-8">
+      <div className="flex justify-end gap-4">
         <button
           type="button"
           onClick={prevStep}
-          disabled={isSubmitting}
-          className="w-full h-14 rounded-xl border-2 border-gray-200 text-gray-700 bg-white
-                   hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isLoading}
+          className="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
         >
           戻る
         </button>
         <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full h-14 rounded-xl bg-primary text-white
-                   hover:bg-primary/90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed
-                   flex items-center justify-center"
+          type="submit"
+          disabled={isLoading || !card}
+          className="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary hover:bg-primary/90"
         >
-          {isSubmitting ? (
-            <>
-              <span className="animate-spin mr-2">
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-              </span>
-              送信中...
-            </>
-          ) : (
-            "送信"
-          )}
+          {isLoading ? "処理中..." : "次へ"}
         </button>
       </div>
-      <div className="mt-4">
-        <button
-          type="button"
-          onClick={() => (window.location.href = "/")}
-          className="w-full h-14 rounded-xl border-2 border-gray-300 text-gray-600 bg-white
-                   hover:bg-gray-50 transition-colors duration-200"
-        >
-          初めに戻る
-        </button>
-      </div>
-    </div>
+    </form>
   )
 }
 
