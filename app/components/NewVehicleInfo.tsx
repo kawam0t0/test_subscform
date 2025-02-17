@@ -128,7 +128,7 @@ export function NewVehicleInfo({ formData, updateFormData, nextStep, prevStep }:
           <FileText className="w-5 h-5" />
           新しいナンバープレート（下4桁）
         </label>
-        <p className="text-sm text-gray-500 mb-2">＊4桁以外の方は合計で4桁になるよう0を加えて下さい</p>
+        <p className="text-sm text-gray-500 mb-2">＊4桁以外の方は合計で4桁になるよう0を加えて下さい（例：10➛0010）</p>
         <input
           id="newLicensePlate"
           type="text"
