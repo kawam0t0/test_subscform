@@ -10,32 +10,21 @@ const courses = [
     id: "980",
     name: "プレミアムスタンダード",
     price: "980円",
-    features: ["ボディ洗浄", "水垢除去", "タイヤ洗浄"],
   },
   {
     id: "1280",
     name: "コーティングプラス",
     price: "1280円",
-    features: ["ボディ洗浄", "水垢除去", "タイヤ洗浄", "ワックス塗布"],
   },
   {
     id: "1480",
     name: "スーパーシャンプーナイアガラ",
     price: "1480円",
-    features: ["ボディ洗浄", "水垢除去", "タイヤ洗浄", "ワックス塗布", "ホイールクリーニング"],
   },
   {
     id: "2980",
     name: "セラミックコーティングタートルシェル",
     price: "2980円",
-    features: [
-      "ボディ洗浄",
-      "水垢除去",
-      "タイヤ洗浄",
-      "ワックス塗布",
-      "ホイールクリーニング",
-      "セラミックコーティング",
-    ],
   },
 ]
 
@@ -71,17 +60,9 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
             }`}
             onClick={() => setSelectedCourse(course.name)}
           >
-            <div className="p-4 cursor-pointer">
-              <h4 className="text-lg font-semibold text-gray-800 mb-2">{course.name}</h4>
-              <p className="text-2xl font-bold text-primary mb-3">月額{course.price}</p>
-              <ul className="space-y-1 text-sm">
-                {course.features.map((feature, index) => (
-                  <li key={index} className="flex items-center text-gray-600">
-                    <Check className="w-4 h-4 mr-2 text-green-500" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
+            <div className="p-6 cursor-pointer flex flex-col items-center justify-center h-full">
+              <h4 className="text-lg font-semibold text-gray-800 mb-3 text-center">{course.name}</h4>
+              <p className="text-2xl font-bold text-primary">月額{course.price}</p>
             </div>
             {selectedCourse === course.name && (
               <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
