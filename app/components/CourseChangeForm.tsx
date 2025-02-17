@@ -1,6 +1,7 @@
 "use client"
 
-import { ChevronDown } from "lucide-react"
+import { useState } from "react"
+import { Check, ChevronDown } from "lucide-react"
 import type { BaseFormProps } from "../types"
 import type React from "react"
 
@@ -9,91 +10,101 @@ const courses = [
     id: "980",
     name: "プレミアムスタンダード",
     price: "980円",
+    features: ["ボディ洗浄", "水垢除去", "タイヤ洗浄"],
   },
   {
     id: "1280",
     name: "コーティングプラス",
     price: "1280円",
+    features: ["ボディ洗浄", "水垢除去", "タイヤ洗浄", "ワックス塗布"],
   },
   {
     id: "1480",
     name: "スーパーシャンプーナイアガラ",
     price: "1480円",
+    features: ["ボディ洗浄", "水垢除去", "タイヤ洗浄", "ワックス塗布", "ホイールクリーニング"],
   },
   {
     id: "2980",
     name: "セラミックコーティングタートルシェル",
     price: "2980円",
+    features: [
+      "ボディ洗浄",
+      "水垢除去",
+      "タイヤ洗浄",
+      "ワックス塗布",
+      "ホイールクリーニング",
+      "セラミックコーティング",
+    ],
   },
 ]
 
 export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
+  const [currentCourse, setCurrentCourse] = useState<string | null>(null)
+  const [newCourse, setNewCourse] = useState<string | null>(null)
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.currentCourse || !formData.newCourse) {
+    if (!currentCourse || !newCourse) {
       alert("現在のコースと新しいコースを選択してください")
       return
     }
+    updateFormData({ currentCourse, newCourse })
     nextStep()
   }
 
-  const formatCourseOption = (course: (typeof courses)[0]) => `${course.name}（月額${course.price}）`
+  const renderCourseSelection = (
+    title: string,
+    selectedCourse: string | null,
+    setSelectedCourse: (course: string) => void,
+  ) => (
+    <div className="space-y-4">
+      <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {courses.map((course) => (
+          <div
+            key={course.id}
+            className={`relative overflow-hidden rounded-xl shadow-md transition-all duration-300 ${
+              selectedCourse === course.name
+                ? "border-4 border-primary bg-primary/5"
+                : "border border-gray-200 hover:border-primary/50"
+            }`}
+            onClick={() => setSelectedCourse(course.name)}
+          >
+            <div className="p-4 cursor-pointer">
+              <h4 className="text-lg font-semibold text-gray-800 mb-2">{course.name}</h4>
+              <p className="text-2xl font-bold text-primary mb-3">月額{course.price}</p>
+              <ul className="space-y-1 text-sm">
+                {course.features.map((feature, index) => (
+                  <li key={index} className="flex items-center text-gray-600">
+                    <Check className="w-4 h-4 mr-2 text-green-500" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {selectedCourse === course.name && (
+              <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
+                <Check className="w-4 h-4" />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 
   return (
-    <form onSubmit={handleSubmit} className="form-section">
-      <div className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-2xl font-bold text-gray-900">現ご利用コース</h3>
-          <div className="relative">
-            <select
-              id="currentCourse"
-              value={formData.currentCourse}
-              onChange={(e) => updateFormData({ currentCourse: e.target.value })}
-              required
-              className="w-full h-16 px-6 text-lg rounded-2xl border-2 border-gray-200 bg-white
-                       shadow-sm transition-all duration-200
-                       hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10
-                       appearance-none cursor-pointer"
-            >
-              <option value="">選択してください</option>
-              {courses.map((course) => (
-                <option key={course.id} value={formatCourseOption(course)}>
-                  {formatCourseOption(course)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {renderCourseSelection("現ご利用コース", currentCourse, setCurrentCourse)}
 
-        <div className="flex justify-center py-2">
-          <ChevronDown className="w-24 h-24 text-primary animate-bounce" strokeWidth={3} />
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="text-2xl font-bold text-gray-900">新ご利用コース</h3>
-          <div className="relative">
-            <select
-              id="newCourse"
-              value={formData.newCourse}
-              onChange={(e) => updateFormData({ newCourse: e.target.value })}
-              required
-              className="w-full h-16 px-6 text-lg rounded-2xl border-2 border-gray-200 bg-white
-                       shadow-sm transition-all duration-200
-                       hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10
-                       appearance-none cursor-pointer"
-            >
-              <option value="">選択してください</option>
-              {courses.map((course) => (
-                <option key={course.id} value={formatCourseOption(course)}>
-                  {formatCourseOption(course)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+      <div className="flex justify-center py-4">
+        <ChevronDown className="w-16 h-16 text-primary animate-bounce" strokeWidth={3} />
       </div>
 
-      <div className="flex justify-end gap-4 mt-12">
+      {renderCourseSelection("新ご利用コース", newCourse, setNewCourse)}
+
+      <div className="flex justify-end gap-4 mt-8">
         <button
           type="button"
           onClick={prevStep}
