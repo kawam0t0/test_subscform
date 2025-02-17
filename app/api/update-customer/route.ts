@@ -32,7 +32,8 @@ export async function POST(request: Request) {
 
     const {
       operation,
-      name,
+      familyName,
+      givenName,
       email,
       phone,
       store,
@@ -83,10 +84,11 @@ export async function POST(request: Request) {
 
     // 更新データの準備
     const updateData: any = {
-      givenName: name,
+      givenName: givenName,
+      familyName: familyName,
       emailAddress: operation === "メールアドレス変更" ? newEmail : email,
       phoneNumber: phone,
-      note: store, // 店舗名をnoteフィールドに格納
+      note: store,
     }
 
     // 車両情報の更新（入会時と車両変更時）
@@ -150,9 +152,9 @@ export async function POST(request: Request) {
       operation,
       matchingCustomer.referenceId || "",
       store,
-      name,
+      `${familyName} ${givenName}`,
       email,
-      operation === "メールアドレス変更" ? newEmail : "", // G列: 新しいメールアドレス（メールアドレス変更の場合のみ）
+      operation === "メールアドレス変更" ? newEmail : "",
       phone,
       carModel || newCarModel,
       carColor || newCarColor,

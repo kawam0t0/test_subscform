@@ -1,14 +1,15 @@
 export interface FormData {
   operation: string
   store: string
-  referenceId: string
-  name: string
+  familyName: string
+  givenName: string
   email: string
   phone: string
   carModel: string
   carColor: string
   licensePlate: string
   cardToken: string
+  referenceId: string
   course: string
   newCarModel: string
   newCarColor: string
@@ -16,8 +17,9 @@ export interface FormData {
   currentCourse: string
   newCourse: string
   inquiryDetails?: string
-  newEmail: string // Add this line for email change functionality
+  newEmail: string
 }
+
 
 export interface ErrorMessageProps {
   message: string

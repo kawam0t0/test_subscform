@@ -10,12 +10,12 @@ const stores = [
   "SPLASH'N'GO!伊勢崎韮塚店",
   "SPLASH'N'GO!高崎棟高店",
   "SPLASH'N'GO!足利緑町店",
-  //"SPLASH'N'GO!新前橋店",
 ]
 
 export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [errors, setErrors] = useState({
-    name: "",
+    familyName: "",
+    givenName: "",
     email: "",
     phone: "",
   })
@@ -23,13 +23,18 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors = {
-      name: "",
+      familyName: "",
+      givenName: "",
       email: "",
       phone: "",
     }
 
-    if (!/^[ァ-ヶー　]+$/.test(formData.name)) {
-      newErrors.name = "お名前は全角カタカナで入力してください。"
+    if (!/^[ァ-ヶー　]+$/.test(formData.familyName)) {
+      newErrors.familyName = "姓は全角カタカナで入力してください。"
+    }
+
+    if (!/^[ァ-ヶー　]+$/.test(formData.givenName)) {
+      newErrors.givenName = "名は全角カタカナで入力してください。"
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -74,21 +79,37 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
         </div>
 
         <div>
-          <label htmlFor="name" className="form-label flex items-center gap-2">
-            <User className="h-6 w-6" />
-            お名前(姓と名の間は開けずに入力して下さい)
+          <label htmlFor="familyName" className="form-label flex items-center gap-2">
+            <User className="h-6 w-6" />姓
           </label>
           <input
-            id="name"
+            id="familyName"
             type="text"
             placeholder="全角カタカナ"
-            value={formData.name}
-            onChange={(e) => updateFormData({ name: e.target.value })}
+            value={formData.familyName}
+            onChange={(e) => updateFormData({ familyName: e.target.value })}
             required
             className="form-input"
             pattern="^[ァ-ヶー　]+$"
           />
-          {errors.name && <p className="text-red-500 text-sm mt-2">{errors.name}</p>}
+          {errors.familyName && <p className="text-red-500 text-sm mt-2">{errors.familyName}</p>}
+        </div>
+
+        <div>
+          <label htmlFor="givenName" className="form-label flex items-center gap-2">
+            <User className="h-6 w-6" />名
+          </label>
+          <input
+            id="givenName"
+            type="text"
+            placeholder="全角カタカナ"
+            value={formData.givenName}
+            onChange={(e) => updateFormData({ givenName: e.target.value })}
+            required
+            className="form-input"
+            pattern="^[ァ-ヶー　]+$"
+          />
+          {errors.givenName && <p className="text-red-500 text-sm mt-2">{errors.givenName}</p>}
         </div>
 
         <div>

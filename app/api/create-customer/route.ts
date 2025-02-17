@@ -2,28 +2,12 @@ import { NextResponse } from "next/server"
 import { Client, Environment } from "square"
 import { appendToSheet } from "../../utils/google-sheets"
 import { formatJapanDateTime } from "../../utils/date-utils"
+import { generateReferenceId } from "../../utils/reference-id"
 
 const squareClient = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
   environment: Environment.Production,
 })
-
-function generateReferenceId(store: string): string {
-  const storePrefix =
-    {
-      "SPLASH'N'GO!前橋50号店": "001",
-      "SPLASH'N'GO!伊勢崎韮塚店": "002",
-      "SPLASH'N'GO!高崎棟高店": "003",
-      "SPLASH'N'GO!足利緑町店": "004",
-      "SPLASH'N'GO!新前橋店": "005",
-    }[store] || "000"
-
-  const randomPart = Math.floor(Math.random() * 1000000000)
-    .toString()
-    .padStart(9, "0")
-
-  return `${storePrefix}${randomPart}`
-}
 
 function extractCourseName(course: string): string {
   return course.split("（")[0].trim()
@@ -34,7 +18,19 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { name, email, phone, carModel, carColor, course, store, operation, cardToken, licensePlate } = formData
+    const {
+      familyName,
+      givenName,
+      email,
+      phone,
+      carModel,
+      carColor,
+      course,
+      store,
+      operation,
+      cardToken,
+      licensePlate,
+    } = formData
 
     if (operation === "入会") {
       const referenceId = generateReferenceId(store)
@@ -43,8 +39,8 @@ export async function POST(request: Request) {
       try {
         const { result: customerResult } = await squareClient.customersApi.createCustomer({
           idempotencyKey: `${Date.now()}-${Math.random()}`,
-          givenName: name,
-          familyName: carModel,
+          givenName: givenName,
+          familyName: familyName,
           emailAddress: email,
           phoneNumber: phone,
           companyName: `${carModel}/${carColor}/${licensePlate}`,
@@ -79,7 +75,7 @@ export async function POST(request: Request) {
             operation, // B列: 操作
             referenceId, // C列: リファレンスID
             store, // D列: 店舗
-            name, // E列: 名前
+            `${familyName} ${givenName}`, // E列: 名前
             email, // F列: メールアドレス
             "", // G列: 新しいメールアドレス
             phone, // H列: 電話番号
