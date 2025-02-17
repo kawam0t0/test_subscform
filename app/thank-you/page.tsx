@@ -8,7 +8,8 @@ export default function ThankYouPage() {
   const dummyFormData: FormData = {
     operation: "",
     store: "",
-    name: "",
+    familyName: "",
+    givenName: "",
     email: "",
     phone: "",
     carModel: "",
@@ -23,7 +24,7 @@ export default function ThankYouPage() {
     currentCourse: "",
     newCourse: "",
     inquiryDetails: "",
-    newEmail: "", // Add the newEmail property with an empty string as default value
+    newEmail: "",
   }
 
   return <ThankYou formData={dummyFormData} />
