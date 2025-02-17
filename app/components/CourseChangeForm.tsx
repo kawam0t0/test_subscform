@@ -8,30 +8,24 @@ const courses = [
   {
     id: "980",
     name: "プレミアムスタンダード",
-    displayName: ["プレミアム", "スタンダード"],
     price: "980円",
   },
   {
     id: "1280",
     name: "コーティングプラス",
-    displayName: ["コーティング", "プラス"],
     price: "1280円",
   },
   {
     id: "1480",
     name: "スーパーシャンプーナイアガラ",
-    displayName: ["スーパー", "シャンプー", "ナイアガラ"],
     price: "1480円",
   },
   {
     id: "2980",
     name: "セラミックコーティングタートルシェル",
-    displayName: ["セラミック", "コーティング", "タートルシェル"],
     price: "2980円",
   },
 ]
-
-const limitedCourseStores = ["SPLASH'N'GO!前橋50号店", "SPLASH'N'GO!伊勢崎韮塚店", "SPLASH'N'GO!足利緑町店"]
 
 export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
@@ -42,10 +36,6 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
     }
     nextStep()
   }
-
-  const filteredCourses = limitedCourseStores.includes(formData.store)
-    ? courses.filter((course) => ["980", "1280"].includes(course.id))
-    : courses
 
   const formatCourseOption = (course: (typeof courses)[0]) => `${course.name}（月額${course.price}）`
 
@@ -66,7 +56,7 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
                        appearance-none cursor-pointer"
             >
               <option value="">選択してください</option>
-              {filteredCourses.map((course) => (
+              {courses.map((course) => (
                 <option key={course.id} value={formatCourseOption(course)}>
                   {formatCourseOption(course)}
                 </option>
@@ -93,7 +83,7 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
                        appearance-none cursor-pointer"
             >
               <option value="">選択してください</option>
-              {filteredCourses.map((course) => (
+              {courses.map((course) => (
                 <option key={course.id} value={formatCourseOption(course)}>
                   {formatCourseOption(course)}
                 </option>
