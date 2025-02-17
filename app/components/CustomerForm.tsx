@@ -22,7 +22,8 @@ export function CustomerForm() {
   const [formData, setFormData] = useState<FormData>({
     operation: "",
     store: "",
-    name: "",
+    familyName: "",
+    givenName: "",
     email: "",
     phone: "",
     carModel: "",
