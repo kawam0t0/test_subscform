@@ -68,7 +68,7 @@ export function CustomerForm() {
       }
 
       if (data.success) {
-        setStep(6) // ThankYou コンポーネントを表示
+        setStep(7) // ThankYou コンポーネントを表示
       } else {
         throw new Error(data.error || "更新に失敗しました")
       }
