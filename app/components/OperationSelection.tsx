@@ -4,23 +4,34 @@ import type React from "react"
 import { ChevronDown } from "lucide-react"
 import type { BaseFormProps } from "../types"
 
-const operations = [
+// 全ての問い合わせ内容
+const allOperations = [
   { value: "入会", label: "ご入会" },
-  // { value: "登録車両変更", label: "登録車両変更" },
-  // { value: "洗車コース変更", label: "洗車コース変更" },
-  // { value: "クレジットカード情報変更", label: "クレジットカード情報変更" },
-  // { value: "メールアドレス変更", label: "メールアドレス変更" },
-  // { value: "その他", label: "その他" },
+  { value: "登録車両変更", label: "登録車両変更" },
+  { value: "洗車コース変更", label: "洗車コース変更" },
+  { value: "クレジットカード情報変更", label: "クレジットカード情報変更" },
+  { value: "メールアドレス変更", label: "メールアドレス変更" },
+  { value: "その他", label: "その他" },
 ]
+
+// 入会のみの問い合わせ内容
+const membershipOnly = [{ value: "入会", label: "ご入会" }]
 
 const stores = [
   "SPLASH'N'GO!前橋50号店",
   "SPLASH'N'GO!伊勢崎韮塚店",
   "SPLASH'N'GO!高崎棟高店",
   "SPLASH'N'GO!足利緑町店",
+  "SPLASH'N'GO!新前橋店",
 ]
 
 export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
+  // 選択された店舗が新前橋店かどうかを判定
+  const isNewMaebashiStore = formData.store === "SPLASH'N'GO!新前橋店"
+
+  // 表示する問い合わせ内容を決定
+  const operations = isNewMaebashiStore ? allOperations : membershipOnly
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.operation || !formData.store) {
@@ -28,6 +39,17 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
       return
     }
     nextStep()
+  }
+
+  // 店舗が変更された時の処理
+  const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStore = e.target.value
+    // 店舗が新前橋店以外に変更された場合、問い合わせ内容を入会にリセット
+    if (newStore !== "SPLASH'N'GO!新前橋店" && formData.operation !== "入会") {
+      updateFormData({ store: newStore, operation: "" })
+    } else {
+      updateFormData({ store: newStore })
+    }
   }
 
   return (
@@ -40,7 +62,7 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
           <select
             id="store"
             value={formData.store}
-            onChange={(e) => updateFormData({ store: e.target.value })}
+            onChange={handleStoreChange}
             required
             className="w-full h-16 sm:h-20 px-6 text-lg sm:text-xl rounded-2xl border-2 border-gray-200 
                      bg-white shadow-sm transition-all duration-200 
