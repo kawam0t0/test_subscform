@@ -6,11 +6,11 @@ import type { BaseFormProps } from "../types"
 
 const operations = [
   { value: "入会", label: "ご入会" },
-  { value: "登録車両変更", label: "登録車両変更" },
-  { value: "洗車コース変更", label: "洗車コース変更" },
-  { value: "クレジットカード情報変更", label: "クレジットカード情報変更" },
-  { value: "メールアドレス変更", label: "メールアドレス変更" },
-  { value: "その他", label: "その他" },
+  //{ value: "登録車両変更", label: "登録車両変更" },
+  //{ value: "洗車コース変更", label: "洗車コース変更" },
+  //{ value: "クレジットカード情報変更", label: "クレジットカード情報変更" },
+  //{ value: "メールアドレス変更", label: "メールアドレス変更" },
+  //{ value: "その他", label: "その他" },
 ]
 
 export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
