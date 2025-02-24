@@ -5,6 +5,7 @@ export function generateReferenceId(store: string): string {
       "SPLASH'N'GO!伊勢崎韮塚店": "1002",
       "SPLASH'N'GO!高崎棟高店": "1003",
       "SPLASH'N'GO!足利緑町店": "1004",
+      "SPLASH'N'GO!新前橋店": "1005",
     }[store] || "1000"
 
   const randomPart = Math.floor(Math.random() * 1000000000)
