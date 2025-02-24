@@ -17,8 +17,7 @@ const allOperations = [
 // 入会のみの問い合わせ内容
 const membershipOnly = [{ value: "入会", label: "ご入会" }]
 
-// 全ての店舗（新前橋店を含む）
-const allStores = [
+const stores = [
   "SPLASH'N'GO!前橋50号店",
   "SPLASH'N'GO!伊勢崎韮塚店",
   "SPLASH'N'GO!高崎棟高店",
@@ -26,19 +25,7 @@ const allStores = [
   "SPLASH'N'GO!新前橋店",
 ]
 
-// 新前橋店のオープン日
-const newMaebashiOpenDate = new Date("2025-04-20")
-
 export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
-  // 現在の日付を取得
-  const currentDate = new Date()
-
-  // 新前橋店がオープンしているかどうかを判定
-  const isNewMaebashiOpen = currentDate >= newMaebashiOpenDate
-
-  // 表示する店舗リストを決定
-  const stores = isNewMaebashiOpen ? allStores : allStores.filter((store) => store !== "SPLASH'N'GO!新前橋店")
-
   // 選択された店舗が新前橋店かどうかを判定
   const isNewMaebashiStore = formData.store === "SPLASH'N'GO!新前橋店"
 
