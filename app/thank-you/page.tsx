@@ -25,6 +25,7 @@ export default function ThankYouPage() {
     newCourse: "",
     inquiryDetails: "",
     newEmail: "",
+    isLimitedProductStore: false, // 追加
   }
 
   return <ThankYou formData={dummyFormData} />

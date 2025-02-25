@@ -28,11 +28,14 @@ const allCourses = [
   },
 ]
 
+// 制限付き商品を提供する店舗
+const limitedStores = ["SPLASH'N'GO!前橋50号店", "SPLASH'N'GO!伊勢崎韮塚店", "SPLASH'N'GO!足利緑町店"]
+
 export function CourseSelection({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
 
-  // 制限付き商品を提供する店舗かどうかに基づいてコースをフィルタリング
-  const courses = formData.isLimitedProductStore
+  // 店舗に基づいてコースをフィルタリング
+  const courses = limitedStores.includes(formData.store)
     ? allCourses.filter((course) => ["980", "1280"].includes(course.id))
     : allCourses
 
