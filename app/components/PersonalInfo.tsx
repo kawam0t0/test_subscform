@@ -1,9 +1,16 @@
 "use client"
 
 import type React from "react"
-import { User, Mail, Phone } from "lucide-react"
 import { useState } from "react"
+import { User, Mail, Phone, MapPin } from "lucide-react"
 import type { BaseFormProps } from "../types"
+
+const stores = [
+  "SPLASH'N'GO!前橋50号店",
+  "SPLASH'N'GO!伊勢崎韮塚店",
+  "SPLASH'N'GO!高崎棟高店",
+  "SPLASH'N'GO!足利緑町店",
+]
 
 export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [errors, setErrors] = useState({
@@ -48,6 +55,29 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
   return (
     <form onSubmit={handleSubmit} className="form-section">
       <div className="form-grid">
+        <div>
+          <label htmlFor="store" className="select-label">
+            <MapPin className="h-6 w-6" />
+            入会店舗
+          </label>
+          <div className="select-wrapper">
+            <select
+              id="store"
+              value={formData.store}
+              onChange={(e) => updateFormData({ store: e.target.value })}
+              required
+              className="custom-select"
+            >
+              <option value="">選択してください</option>
+              {stores.map((store) => (
+                <option key={store} value={store}>
+                  {store}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div>
           <label htmlFor="familyName" className="form-label flex items-center gap-2">
             <User className="h-6 w-6" />姓
