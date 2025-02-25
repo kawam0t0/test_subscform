@@ -14,6 +14,9 @@ const allOperations = [
   // { value: "その他", label: "その他" },
 ]
 
+// 入会のみの問い合わせ内容
+const membershipOnly = [{ value: "入会", label: "ご入会" }]
+
 const stores = [
   "SPLASH'N'GO!前橋50号店",
   "SPLASH'N'GO!伊勢崎韮塚店",
@@ -21,6 +24,9 @@ const stores = [
   "SPLASH'N'GO!足利緑町店",
   "SPLASH'N'GO!新前橋店",
 ]
+
+// 制限付き商品を提供する店舗
+const limitedProductStores = ["SPLASH'N'GO!前橋50号店", "SPLASH'N'GO!伊勢崎韮塚店", "SPLASH'N'GO!足利緑町店"]
 
 export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
   // 表示する問い合わせ内容を決定
@@ -38,7 +44,10 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
   // 店舗が変更された時の処理
   const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newStore = e.target.value
-    updateFormData({ store: newStore })
+    updateFormData({
+      store: newStore,
+      isLimitedProductStore: limitedProductStores.includes(newStore),
+    })
   }
 
   return (

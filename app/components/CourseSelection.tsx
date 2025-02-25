@@ -1,109 +1,93 @@
 "use client"
 
-import type React from "react"
-import { ChevronDown } from "lucide-react"
+import { useState } from "react"
+import { Check } from "lucide-react"
 import type { BaseFormProps } from "../types"
+import type React from "react"
 
-// 全ての問い合わせ内容
-const allOperations = [
-  { value: "入会", label: "ご入会" },
-  // { value: "登録車両変更", label: "登録車両変更" },
-  // { value: "洗車コース変更", label: "洗車コース変更" },
-  // { value: "クレジットカード情報変更", label: "クレジットカード情報変更" },
-  // { value: "メールアドレス変更", label: "メールアドレス変更" },
-  // { value: "その他", label: "その他" },
+const allCourses = [
+  {
+    id: "980",
+    name: "プレミアムスタンダード",
+    price: "980円",
+  },
+  {
+    id: "1280",
+    name: "コーティングプラス",
+    price: "1280円",
+  },
+  {
+    id: "1480",
+    name: "スーパーシャンプーナイアガラ",
+    price: "1480円",
+  },
+  {
+    id: "2980",
+    name: ["セラミックコーティングタートル", "シェル"],
+    price: "2980円",
+  },
 ]
 
-// 入会のみの問い合わせ内容
-const membershipOnly = [{ value: "入会", label: "ご入会" }]
+export function CourseSelection({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
 
-const stores = [
-  "SPLASH'N'GO!前橋50号店",
-  "SPLASH'N'GO!伊勢崎韮塚店",
-  "SPLASH'N'GO!高崎棟高店",
-  "SPLASH'N'GO!足利緑町店",
-  "SPLASH'N'GO!新前橋店",
-]
-
-export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
-  // 表示する問い合わせ内容を決定
-  const operations = allOperations
+  // 制限付き商品を提供する店舗かどうかに基づいてコースをフィルタリング
+  const courses = formData.isLimitedProductStore
+    ? allCourses.filter((course) => ["980", "1280"].includes(course.id))
+    : allCourses
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.operation || !formData.store) {
-      alert("店舗と問い合わせ内容を選択してください")
-      return
+    if (selectedCourse) {
+      updateFormData({ course: selectedCourse })
+      nextStep()
+    } else {
+      alert("コースを選択してください")
     }
-    nextStep()
-  }
-
-  // 店舗が変更された時の処理
-  const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newStore = e.target.value
-    updateFormData({ store: newStore })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 form-container">
-      <div className="space-y-4">
-        <label htmlFor="store" className="block text-lg sm:text-xl md:text-2xl font-medium text-gray-900">
-          店舗選択
-        </label>
-        <div className="relative">
-          <select
-            id="store"
-            value={formData.store}
-            onChange={handleStoreChange}
-            required
-            className="w-full h-16 sm:h-20 px-6 text-lg sm:text-xl rounded-2xl border-2 border-gray-200 
-                     bg-white shadow-sm transition-all duration-200 
-                     hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10
-                     appearance-none cursor-pointer"
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">洗車コースを選択</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {courses.map((course) => (
+          <div
+            key={course.id}
+            className={`relative overflow-hidden rounded-2xl shadow-lg transition-all duration-300 ${
+              selectedCourse === (Array.isArray(course.name) ? course.name.join("") : course.name)
+                ? "border-4 border-primary bg-primary/5"
+                : "border border-gray-200 hover:border-primary/50"
+            }`}
+            onClick={() => setSelectedCourse(Array.isArray(course.name) ? course.name.join("") : course.name)}
           >
-            <option value="">店舗を選択してください</option>
-            {stores.map((store) => (
-              <option key={store} value={store} className="py-2">
-                {store}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-6 h-6" />
-        </div>
+            <div className="p-6 cursor-pointer flex flex-col items-center justify-center h-full">
+              <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">
+                {Array.isArray(course.name) ? (
+                  <>
+                    {course.name[0]}
+                    <br />
+                    {course.name[1]}
+                  </>
+                ) : (
+                  course.name
+                )}
+              </h3>
+              <p className="text-3xl font-bold text-primary">月額{course.price}</p>
+            </div>
+            {selectedCourse === (Array.isArray(course.name) ? course.name.join("") : course.name) && (
+              <div className="absolute top-4 right-4 bg-primary text-white rounded-full p-2">
+                <Check className="w-6 h-6" />
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
-      <div className="space-y-4">
-        <label htmlFor="operation" className="block text-lg sm:text-xl md:text-2xl font-medium text-gray-900">
-          問い合わせ内容
-        </label>
-        <div className="relative">
-          <select
-            id="operation"
-            value={formData.operation}
-            onChange={(e) => updateFormData({ operation: e.target.value })}
-            required
-            className="w-full h-16 sm:h-20 px-6 text-lg sm:text-xl rounded-2xl border-2 border-gray-200 
-                     bg-white shadow-sm transition-all duration-200 
-                     hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10
-                     appearance-none cursor-pointer"
-          >
-            <option value="">選択してください</option>
-            {operations.map((op) => (
-              <option key={op.value} value={op.value} className="py-2">
-                {op.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-6 h-6" />
-        </div>
-      </div>
-      <div className="pt-8">
-        <button
-          type="submit"
-          className="w-full h-16 sm:h-20 text-lg sm:text-xl font-medium rounded-2xl bg-primary 
-                   text-white shadow-lg transition-all duration-200 
-                   hover:bg-primary/90 hover:shadow-xl active:transform active:scale-[0.98]"
-        >
+      <div className="flex justify-end gap-4 mt-8">
+        <button type="button" onClick={prevStep} className="btn btn-secondary">
+          戻る
+        </button>
+        <button type="submit" className="btn btn-primary">
           次へ
         </button>
       </div>
