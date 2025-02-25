@@ -11,6 +11,7 @@ export interface FormData {
   cardToken: string
   referenceId: string
   course: string
+  planId: string // 追加
   newCarModel: string
   newCarColor: string
   newLicensePlate: string

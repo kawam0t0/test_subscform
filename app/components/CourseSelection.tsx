@@ -1,58 +1,42 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { Check } from "lucide-react"
 import type { BaseFormProps } from "../types"
 import type React from "react"
 
-const allCourses = [
+const courses = [
   {
     id: "980",
     name: "プレミアムスタンダード",
     price: "980円",
-    planId: process.env.NEXT_PUBLIC_PLAN_ID_980,
   },
   {
     id: "1280",
     name: "コーティングプラス",
     price: "1280円",
-    planId: process.env.NEXT_PUBLIC_PLAN_ID_1280,
   },
   {
     id: "1480",
     name: "スーパーシャンプーナイアガラ",
     price: "1480円",
-    planId: process.env.NEXT_PUBLIC_PLAN_ID_1480,
   },
   {
     id: "2980",
     name: ["セラミックコーティングタートル", "シェル"],
     price: "2980円",
-    planId: process.env.NEXT_PUBLIC_PLAN_ID_2980,
   },
 ]
-
-const limitedStores = ["SPLASH'N'GO!前橋50号店", "SPLASH'N'GO!伊勢崎韮塚店", "SPLASH'N'GO!足利緑町店"]
 
 export function CourseSelection({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
 
-  const courses = useMemo(() => {
-    if (limitedStores.includes(formData.store)) {
-      return allCourses.filter((course) => ["980", "1280"].includes(course.id))
-    }
-    return allCourses
-  }, [formData.store])
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (selectedCourse) {
-      const selectedPlan = courses.find((course) =>
-        Array.isArray(course.name) ? course.name.join("") === selectedCourse : course.name === selectedCourse,
-      )
       updateFormData({
         course: selectedCourse,
-        planId: selectedPlan?.planId || "",
+        planId: selectedCourse, // planIdとしてselectedCourseを使用
       })
       nextStep()
     } else {
