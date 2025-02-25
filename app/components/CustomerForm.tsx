@@ -35,6 +35,7 @@ export function CustomerForm() {
     newCourse: "",
     inquiryDetails: "",
     newEmail: "",
+    isLimitedProductStore: false, // 追加
   })
   const [error, setError] = useState<string | null>(null)
 
