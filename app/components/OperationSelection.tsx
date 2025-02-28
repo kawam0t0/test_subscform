@@ -22,7 +22,7 @@ const stores = [
   "SPLASH'N'GO!伊勢崎韮塚店",
   "SPLASH'N'GO!高崎棟高店",
   "SPLASH'N'GO!足利緑町店",
-  "SPLASH'N'GO!新前橋店",
+  //"SPLASH'N'GO!新前橋店",
 ]
 
 // 制限付き商品を提供する店舗
