@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { MapPin, User, Mail, Phone, Car, Palette, CreditCard, CheckCircle, FileText } from "lucide-react"
+import Link from "next/link"
 import type React from "react"
 import type { FormData } from "../types"
 
@@ -30,9 +31,10 @@ const ConfirmationItem = ({ icon, label, value }: ConfirmationItemProps) => (
 export function Confirmation({ formData, prevStep, submitForm }: ConfirmationProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isAgreed, setIsAgreed] = useState(false)
 
   const handleSubmit = async () => {
-    if (isSubmitting) return
+    if (isSubmitting || !isAgreed) return
     setIsSubmitting(true)
     try {
       await submitForm()
@@ -133,6 +135,37 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         )}
       </div>
 
+      <div className="flex items-start space-x-2 mt-6">
+        <input
+          type="checkbox"
+          id="agreement"
+          checked={isAgreed}
+          onChange={(e) => setIsAgreed(e.target.checked)}
+          className="mt-1 w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+        />
+        <label htmlFor="agreement" className="text-sm text-gray-700">
+          <span>私は</span>
+          <Link
+            href="https://drive.google.com/file/d/1KMf0TG7SIyCtvYiVZEqh-XEY4Jg5e-Lr/view"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline font-medium"
+          >
+            会員規約
+          </Link>
+          <span>および</span>
+          <Link
+            href="https://drive.google.com/file/d/1FASj-HEA44iBE4tgfvAbCpj8sMW2PJqy/view"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline font-medium"
+          >
+            プライバシーポリシー
+          </Link>
+          <span>を読み、理解し、これらに基づいて利用契約を締結することに同意します。</span>
+        </label>
+      </div>
+
       <div className="grid grid-cols-2 gap-4 mt-8">
         <button
           type="button"
@@ -145,10 +178,11 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         </button>
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isAgreed}
           className="w-full h-14 rounded-xl bg-primary text-white
-                   hover:bg-primary/90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed
-                   flex items-center justify-center"
+             hover:bg-primary/90 transition-colors duration-200 
+             disabled:opacity-50 disabled:cursor-not-allowed
+             flex items-center justify-center"
         >
           {isSubmitting ? (
             <>
@@ -173,7 +207,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
               送信中...
             </>
           ) : (
-            "送信"
+            "同意して送信"
           )}
         </button>
       </div>
