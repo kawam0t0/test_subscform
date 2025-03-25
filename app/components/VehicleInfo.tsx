@@ -124,24 +124,28 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
           </div>
         </div>
 
-        <div>
-          <label htmlFor="licensePlate" className="form-label flex items-center gap-2">
-            <FileText className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7" />
-            ナンバープレート（下4桁）
-          </label>
-          <p className="text-sm text-gray-500 mb-2">＊4桁以外の方は合計で4桁になるよう0を加えて下さい（例：10➛0010）</p>
-          <input
-            id="licensePlate"
-            type="text"
-            value={formData.licensePlate || ""}
-            onChange={handleLicensePlateChange}
-            required
-            className="form-input"
-            placeholder="例：1234"
-            maxLength={4}
-            pattern="\d{4}"
-          />
-        </div>
+        {formData.operation !== "入会" && (
+          <div>
+            <label htmlFor="licensePlate" className="form-label flex items-center gap-2">
+              <FileText className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7" />
+              ナンバープレート（下4桁）
+            </label>
+            <p className="text-sm text-gray-500 mb-2">
+              ＊4桁以外の方は合計で4桁になるよう0を加えて下さい（例：10➛0010）
+            </p>
+            <input
+              id="licensePlate"
+              type="text"
+              value={formData.licensePlate || ""}
+              onChange={handleLicensePlateChange}
+              required
+              className="form-input"
+              placeholder="例：1234"
+              maxLength={4}
+              pattern="\d{4}"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-4 mt-8">

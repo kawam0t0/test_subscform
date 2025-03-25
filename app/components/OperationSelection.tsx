@@ -22,11 +22,8 @@ const stores = [
   "SPLASH'N'GO!伊勢崎韮塚店",
   "SPLASH'N'GO!高崎棟高店",
   "SPLASH'N'GO!足利緑町店",
-  //"SPLASH'N'GO!新前橋店",
+  "SPLASH'N'GO!新前橋店",
 ]
-
-// 制限付き商品を提供する店舗
-const limitedProductStores = ["SPLASH'N'GO!前橋50号店", "SPLASH'N'GO!伊勢崎韮塚店", "SPLASH'N'GO!足利緑町店"]
 
 export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
   // 表示する問い合わせ内容を決定
@@ -44,17 +41,15 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
   // 店舗が変更された時の処理
   const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newStore = e.target.value
-    updateFormData({
-      store: newStore,
-      isLimitedProductStore: limitedProductStores.includes(newStore),
-    })
+    updateFormData({ store: newStore })
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 form-container">
       <div className="space-y-4">
         <label htmlFor="store" className="block text-lg sm:text-xl md:text-2xl font-medium text-gray-900">
-          店舗選択
+          店舗選択{" "}
+          <span className="text-xs sm:text-sm text-gray-500 font-normal">[＊SPLASH'N'GO!新前橋店は4/18より申込可]</span>
         </label>
         <div className="relative">
           <select

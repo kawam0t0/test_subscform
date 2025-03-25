@@ -1,3 +1,4 @@
+import type React from "react"
 export interface FormData {
   operation: string
   store: string
@@ -18,28 +19,21 @@ export interface FormData {
   newCourse: string
   inquiryDetails?: string
   newEmail: string
-  isLimitedProductStore: boolean // 追加
-}
-
-
-export interface ErrorMessageProps {
-  message: string
-}
-
-export interface SuccessMessageProps {
-  message: string
 }
 
 export interface BaseFormProps {
   formData: FormData
   updateFormData: (data: Partial<FormData>) => void
   nextStep: () => void
-  prevStep?: () => void
+  prevStep: () => void
 }
 
-export interface NavButtonProps {
-  icon: JSX.Element
-  label: string
+export interface ErrorMessageProps {
+  message: string | null
+}
+
+export interface SuccessMessageProps {
+  message: string
 }
 
 export interface ProgressBarProps {
@@ -47,9 +41,8 @@ export interface ProgressBarProps {
   totalSteps: number
 }
 
-export interface ConfirmationProps {
-  formData: FormData
-  prevStep: () => void
-  submitForm: () => void
+export interface NavButtonProps {
+  icon: React.ReactNode
+  label: string
 }
 
