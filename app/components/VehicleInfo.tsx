@@ -5,48 +5,26 @@ import { useState } from "react"
 import { Car, Palette, FileText } from "lucide-react"
 import type { BaseFormProps } from "../types"
 
-const topCarModels = [
-  "カローラ",
-  "プリウス",
-  "ノート",
-  "フィット",
-  "アクア",
-  "スイフト",
-  "タント",
-  "ヤリス",
-  "ステップワゴン",
-  "シエンタ",
-  "CX-5",
-  "インプレッサ",
-  "セレナ",
-  "ヴォクシー",
-  "ヴェゼル",
-  "ワゴンR",
-  "ハリアー",
-  "デイズ",
-  "N-BOX",
-  "ライズ",
-]
-
 const carColors = ["白系", "黒系", "赤系", "青系", "黄系", "紫系", "緑系", "茶系", "紺系", "グレー系", "シルバー系"]
 
 export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
-  const [isCustomModel, setIsCustomModel] = useState(false)
+  const [carModelError, setCarModelError] = useState<string>("")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // 車種の全角カタカナバリデーション
+    if (!/^[ァ-ヶー　]+$/.test(formData.carModel)) {
+      setCarModelError("車種は全角カタカナで入力してください。")
+      return
+    }
+
     nextStep()
   }
 
-  const handleCarModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value
-    if (value === "その他") {
-      setIsCustomModel(true)
-      updateFormData({ carModel: "" })
-    } else {
-      setIsCustomModel(false)
-      updateFormData({ carModel: value })
-    }
+  const handleCarModelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateFormData({ carModel: e.target.value })
+    setCarModelError("")
   }
 
   const handleLicensePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,48 +36,24 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
     <form onSubmit={handleSubmit} className="form-section">
       <div className="form-grid">
         <div>
-          <label htmlFor="carModel" className="select-label">
+          <label htmlFor="carModel" className="form-label flex items-center gap-2">
             <Car className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7" />
-            車種{" "}
+            車種
             <span className="text-sm md:text-base lg:text-lg font-normal text-gray-500 ml-2">
-              (無い場合はその他を選択してください)
+              (全角カタカナで入力してください)
             </span>
           </label>
-          <div className="select-wrapper">
-            <select
-              id="carModel"
-              value={isCustomModel ? "その他" : formData.carModel}
-              onChange={handleCarModelChange}
-              required
-              className="custom-select"
-            >
-              <option value="">選択してください</option>
-              {topCarModels.map((model) => (
-                <option key={model} value={model}>
-                  {model}
-                </option>
-              ))}
-              <option value="その他">その他</option>
-            </select>
-          </div>
+          <input
+            id="carModel"
+            type="text"
+            value={formData.carModel}
+            onChange={handleCarModelChange}
+            required
+            className="form-input"
+            placeholder="例：タント、プリウス"
+          />
+          {carModelError && <p className="text-red-500 text-sm mt-2">{carModelError}</p>}
         </div>
-
-        {isCustomModel && (
-          <div>
-            <label htmlFor="customCarModel" className="form-label">
-              その他の車種
-            </label>
-            <input
-              id="customCarModel"
-              type="text"
-              value={formData.carModel}
-              onChange={(e) => updateFormData({ carModel: e.target.value })}
-              required
-              className="form-input"
-              placeholder="車種を入力してください"
-            />
-          </div>
-        )}
 
         <div>
           <label htmlFor="carColor" className="select-label">

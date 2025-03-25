@@ -22,7 +22,7 @@ const stores = [
   "SPLASH'N'GO!伊勢崎韮塚店",
   "SPLASH'N'GO!高崎棟高店",
   "SPLASH'N'GO!足利緑町店",
-  "SPLASH'N'GO!新前橋店",
+  //"SPLASH'N'GO!新前橋店",
 ]
 
 export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
@@ -49,7 +49,7 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
       <div className="space-y-4">
         <label htmlFor="store" className="block text-lg sm:text-xl md:text-2xl font-medium text-gray-900">
           店舗選択{" "}
-          <span className="text-xs sm:text-sm text-gray-500 font-normal">[＊SPLASH'N'GO!新前橋店は4/18より申込可]</span>
+          <span className="text-xs sm:text-sm text-gray-500 font-normal">＊SPLASH'N'GO!新前橋店は4/18より申込可</span>
         </label>
         <div className="relative">
           <select
