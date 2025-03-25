@@ -19,14 +19,14 @@ export interface FormData {
   newCourse: string
   inquiryDetails?: string
   newEmail: string
-  isLimitedProductStore: boolean // 追加
+  isLimitedProductStore: boolean
 }
 
 export interface BaseFormProps {
   formData: FormData
   updateFormData: (data: Partial<FormData>) => void
   nextStep: () => void
-  prevStep: () => void
+  prevStep?: () => void // オプショナルに変更
 }
 
 export interface ErrorMessageProps {
