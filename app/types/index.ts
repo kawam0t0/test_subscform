@@ -19,6 +19,7 @@ export interface FormData {
   newCourse: string
   inquiryDetails?: string
   newEmail: string
+  isLimitedProductStore: boolean // 追加
 }
 
 export interface BaseFormProps {
