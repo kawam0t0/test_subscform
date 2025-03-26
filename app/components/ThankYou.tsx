@@ -18,6 +18,8 @@ export function ThankYou({ formData }: ThankYouProps) {
         お客様の情報が正常に登録されました。
         <br />
         ご利用ありがとうございます。
+        <br />
+        お申し込み頂きました店舗にて会員カードをお受け取り下さいませ。
       </p>
       <div className="pt-4">
         <a href="/" className="btn btn-primary">
