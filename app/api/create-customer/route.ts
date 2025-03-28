@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
           // APIエラーの場合は詳細なエラーメッセージを取得
           if (cardError instanceof ApiError) {
-            const errorDetail = cardError.errors[0]?.detail || cardError.message
+            const errorDetail = cardError.errors?.[0]?.detail || cardError.message
             throw new Error(`クレジットカードエラー: ${errorDetail}`)
           } else {
             throw new Error("クレジットカード情報が無効です。正しい情報を入力してください。")
