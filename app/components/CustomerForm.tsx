@@ -76,6 +76,7 @@ export function CustomerForm() {
     } catch (error) {
       console.error("フォーム送信エラー:", error)
       setError(error instanceof Error ? error.message : "お客様情報の登録がありません。初めから再度ご入力ください")
+      throw error // エラーを再スローして、Confirmationコンポーネントでキャッチできるようにする
     }
   }
 

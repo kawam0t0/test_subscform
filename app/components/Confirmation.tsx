@@ -36,9 +36,12 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
   const handleSubmit = async () => {
     if (isSubmitting || !isAgreed) return
     setIsSubmitting(true)
+    setError(null)
+
     try {
       await submitForm()
     } catch (err) {
+      console.error("送信エラー:", err)
       setError(err instanceof Error ? err.message : "エラーが発生しました")
     } finally {
       setIsSubmitting(false)
