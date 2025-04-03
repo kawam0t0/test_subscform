@@ -36,12 +36,9 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
   const handleSubmit = async () => {
     if (isSubmitting || !isAgreed) return
     setIsSubmitting(true)
-    setError(null)
-
     try {
       await submitForm()
     } catch (err) {
-      console.error("送信エラー:", err)
       setError(err instanceof Error ? err.message : "エラーが発生しました")
     } finally {
       setIsSubmitting(false)
@@ -63,7 +60,11 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
 
       <div className="bg-blue-50/80 rounded-2xl p-6 space-y-6">
         <ConfirmationItem icon={<MapPin className="w-6 h-6" />} label="入会店舗" value={formData.store} />
-        <ConfirmationItem icon={<User className="w-6 h-6" />} label="姓" value={formData.familyName} />
+        <ConfirmationItem
+          icon={<User className="w-6 h-6" />}
+          label="姓"
+          value={`${formData.carModel}/${formData.familyName}`}
+        />
         <ConfirmationItem icon={<User className="w-6 h-6" />} label="名" value={formData.givenName} />
         <ConfirmationItem icon={<Mail className="w-6 h-6" />} label="メールアドレス" value={formData.email} />
         {formData.operation === "メールアドレス変更" && (
@@ -76,11 +77,15 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         <ConfirmationItem icon={<Phone className="w-6 h-6" />} label="電話番号" value={formData.phone} />
         <ConfirmationItem icon={<Car className="w-6 h-6" />} label="車種" value={formData.carModel} />
         <ConfirmationItem icon={<Palette className="w-6 h-6" />} label="車の色" value={formData.carColor} />
-        <ConfirmationItem
-          icon={<FileText className="w-6 h-6" />}
-          label="ナンバープレート（下4桁）"
-          value={formData.licensePlate}
-        />
+
+        {/* ナンバープレートの表示を入会以外の場合のみに制限 */}
+        {formData.operation !== "入会" && (
+          <ConfirmationItem
+            icon={<FileText className="w-6 h-6" />}
+            label="ナンバープレート（下4桁）"
+            value={formData.licensePlate}
+          />
+        )}
 
         {formData.operation === "入会" && (
           <ConfirmationItem
@@ -175,7 +180,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
           onClick={prevStep}
           disabled={isSubmitting}
           className="w-full h-14 rounded-xl border-2 border-gray-200 text-gray-700 bg-white
-                   hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           戻る
         </button>
@@ -183,9 +188,9 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
           onClick={handleSubmit}
           disabled={isSubmitting || !isAgreed}
           className="w-full h-14 rounded-xl bg-primary text-white
-             hover:bg-primary/90 transition-colors duration-200 
-             disabled:opacity-50 disabled:cursor-not-allowed
-             flex items-center justify-center"
+           hover:bg-primary/90 transition-colors duration-200 
+           disabled:opacity-50 disabled:cursor-not-allowed
+           flex items-center justify-center"
         >
           {isSubmitting ? (
             <>
@@ -219,7 +224,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
           type="button"
           onClick={() => (window.location.href = "/")}
           className="w-full h-14 rounded-xl border-2 border-gray-300 text-gray-600 bg-white
-                   hover:bg-gray-50 transition-colors duration-200"
+                 hover:bg-gray-50 transition-colors duration-200"
         >
           初めに戻る
         </button>
