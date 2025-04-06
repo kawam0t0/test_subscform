@@ -63,7 +63,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         <ConfirmationItem
           icon={<User className="w-6 h-6" />}
           label="姓"
-          value={`${formData.carModel}/${formData.familyName}`}
+          value={`${formData.familyName}`}
         />
         <ConfirmationItem icon={<User className="w-6 h-6" />} label="名" value={formData.givenName} />
         <ConfirmationItem icon={<Mail className="w-6 h-6" />} label="メールアドレス" value={formData.email} />
