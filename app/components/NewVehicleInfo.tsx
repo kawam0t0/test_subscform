@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Car, Palette, FileText } from "lucide-react"
+import { Car, Palette } from "lucide-react"
 import type { BaseFormProps } from "../types"
 
 const carColors = ["白系", "黒系", "赤系", "青系", "黄系", "紫系", "緑系", "茶系", "紺系", "グレー系", "シルバー系"]
@@ -25,11 +25,6 @@ export function NewVehicleInfo({ formData, updateFormData, nextStep, prevStep }:
   const handleCarModelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateFormData({ newCarModel: e.target.value })
     setCarModelError("")
-  }
-
-  const handleLicensePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^\d]/g, "").slice(0, 4)
-    updateFormData({ newLicensePlate: value })
   }
 
   return (
@@ -75,25 +70,6 @@ export function NewVehicleInfo({ formData, updateFormData, nextStep, prevStep }:
             ))}
           </select>
         </div>
-      </div>
-
-      <div>
-        <label htmlFor="newLicensePlate" className="form-label flex items-center gap-2">
-          <FileText className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7" />
-          新しいナンバープレート（下4桁）
-        </label>
-        <p className="text-sm text-gray-500 mb-2">＊4桁以外の方は合計で4桁になるよう0を加えて下さい（例：10➛0010）</p>
-        <input
-          id="newLicensePlate"
-          type="text"
-          value={formData.newLicensePlate || ""}
-          onChange={handleLicensePlateChange}
-          required
-          className="form-input"
-          placeholder="例：1234"
-          maxLength={4}
-          pattern="\d{4}"
-        />
       </div>
 
       <div className="pt-4 grid grid-cols-2 gap-3">

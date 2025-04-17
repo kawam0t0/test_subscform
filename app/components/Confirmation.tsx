@@ -74,15 +74,6 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         <ConfirmationItem icon={<Car className="w-6 h-6" />} label="車種" value={formData.carModel} />
         <ConfirmationItem icon={<Palette className="w-6 h-6" />} label="車の色" value={formData.carColor} />
 
-        {/* ナンバープレートの表示を入会以外の場合のみに制限 */}
-        {formData.operation !== "入会" && (
-          <ConfirmationItem
-            icon={<FileText className="w-6 h-6" />}
-            label="ナンバープレート（下4桁）"
-            value={formData.licensePlate}
-          />
-        )}
-
         {formData.operation === "入会" && (
           <ConfirmationItem
             icon={<CreditCard className="w-6 h-6" />}
@@ -98,11 +89,6 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
               icon={<Palette className="w-6 h-6" />}
               label="新しい車の色"
               value={formData.newCarColor}
-            />
-            <ConfirmationItem
-              icon={<FileText className="w-6 h-6" />}
-              label="新しいナンバープレート（下4桁）"
-              value={formData.newLicensePlate}
             />
           </>
         )}
