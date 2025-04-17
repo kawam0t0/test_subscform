@@ -4,14 +4,14 @@ import type React from "react"
 import { ChevronDown } from "lucide-react"
 import type { BaseFormProps } from "../types"
 
-// 全ての問い合わせ内容
+// 全ての問い合わせ内容を定義
 const allOperations = [
   { value: "入会", label: "ご入会" },
-  // { value: "登録車両変更", label: "登録車両変更" },
-  // { value: "洗車コース変更", label: "洗車コース変更" },
-  // { value: "クレジットカード情報変更", label: "クレジットカード情報変更" },
-  // { value: "メールアドレス変更", label: "メールアドレス変更" },
-  // { value: "その他", label: "その他" },
+  { value: "登録車両変更", label: "登録車両変更" },
+  { value: "洗車コース変更", label: "洗車コース変更" },
+  { value: "クレジットカード情報変更", label: "クレジットカード情報変更" },
+  { value: "メールアドレス変更", label: "メールアドレス変更" },
+  { value: "各種手続き", label: "各種手続き" }, // 「その他」から「各種手続き」に変更
 ]
 
 // 入会のみの問い合わせ内容
@@ -22,12 +22,13 @@ const stores = [
   "SPLASH'N'GO!伊勢崎韮塚店",
   "SPLASH'N'GO!高崎棟高店",
   "SPLASH'N'GO!足利緑町店",
-  //"SPLASH'N'GO!新前橋店",
+  "SPLASH'N'GO!新前橋店",
 ]
 
 export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
   // 表示する問い合わせ内容を決定
-  const operations = allOperations
+  // 新前橋店を選択した場合のみ全ての問い合わせ内容を表示
+  const operations = formData.store === "SPLASH'N'GO!新前橋店" ? allOperations : membershipOnly
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,15 +42,18 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
   // 店舗が変更された時の処理
   const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newStore = e.target.value
-    updateFormData({ store: newStore })
+    updateFormData({
+      store: newStore,
+      // 店舗が変更されたとき、新前橋店以外に変更された場合は問い合わせ内容を入会のみにリセット
+      operation: newStore !== "SPLASH'N'GO!新前橋店" && formData.operation !== "入会" ? "" : formData.operation,
+    })
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 form-container">
       <div className="space-y-4">
         <label htmlFor="store" className="block text-lg sm:text-xl md:text-2xl font-medium text-gray-900">
-          店舗選択{" "}
-          <span className="text-xs sm:text-sm text-gray-500 font-normal">＊SPLASH'N'GO!新前橋店は4/18より申込可</span>
+          店舗選択
         </label>
         <div className="relative">
           <select
@@ -111,4 +115,3 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
     </form>
   )
 }
-

@@ -1,7 +1,6 @@
 export function formatJapanDateTime(date: Date): string {
-  // 日本時間に変換（UTCから9時間進める）
-  const japanTime = new Date(date.getTime() + 9 * 60 * 60 * 1000)
-  return japanTime
+  // UTC+9の変換を削除し、そのままのDateオブジェクトを使用
+  return date
     .toLocaleString("ja-JP", {
       year: "numeric",
       month: "2-digit",
@@ -14,4 +13,3 @@ export function formatJapanDateTime(date: Date): string {
     .replace(/[/]/g, "/")
     .replace(/,/g, "")
 }
-  

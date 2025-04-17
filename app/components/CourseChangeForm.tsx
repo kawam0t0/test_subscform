@@ -23,7 +23,7 @@ const courses = [
   },
   {
     id: "2980",
-    name: ["セラミックコーティングタートル", "シェル"],
+    name: "セラミックコーティングタートルシェル",
     price: "2980円",
   },
 ]
@@ -54,27 +54,17 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
           <div
             key={course.id}
             className={`relative overflow-hidden rounded-xl shadow-md transition-all duration-300 ${
-              selectedCourse === (Array.isArray(course.name) ? course.name.join("") : course.name)
+              selectedCourse === course.name
                 ? "border-4 border-primary bg-primary/5"
                 : "border border-gray-200 hover:border-primary/50"
             }`}
-            onClick={() => setSelectedCourse(Array.isArray(course.name) ? course.name.join("") : course.name)}
+            onClick={() => setSelectedCourse(course.name)}
           >
             <div className="p-6 cursor-pointer flex flex-col items-center justify-center h-full">
-              <h4 className="text-lg font-semibold text-gray-800 mb-3 text-center">
-                {Array.isArray(course.name) ? (
-                  <>
-                    {course.name[0]}
-                    <br />
-                    {course.name[1]}
-                  </>
-                ) : (
-                  course.name
-                )}
-              </h4>
+              <h4 className="text-lg font-semibold text-gray-800 mb-3 text-center">{course.name}</h4>
               <p className="text-2xl font-bold text-primary">月額{course.price}</p>
             </div>
-            {selectedCourse === (Array.isArray(course.name) ? course.name.join("") : course.name) && (
+            {selectedCourse === course.name && (
               <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
                 <Check className="w-4 h-4" />
               </div>
@@ -95,24 +85,14 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
 
       {renderCourseSelection("新ご利用コース", newCourse, setNewCourse)}
 
-      <div className="flex justify-end gap-4 mt-8">
-        <button
-          type="button"
-          onClick={prevStep}
-          className="px-8 h-14 rounded-xl border-2 border-primary text-primary bg-white
-                   hover:bg-primary/5 transition-colors duration-200"
-        >
+      <div className="pt-4 grid grid-cols-2 gap-3">
+        <button type="button" onClick={prevStep} className="btn btn-secondary">
           戻る
         </button>
-        <button
-          type="submit"
-          className="px-8 h-14 rounded-xl bg-primary text-white
-                   hover:bg-primary/90 transition-colors duration-200"
-        >
+        <button type="submit" className="btn btn-primary">
           次へ
         </button>
       </div>
     </form>
   )
 }
-

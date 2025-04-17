@@ -11,6 +11,11 @@ import { ProgressBar } from "./ProgressBar"
 import { CourseSelection } from "./CourseSelection"
 import { ThankYou } from "./ThankYou"
 import { NewPaymentInfo } from "./NewPaymentInfo"
+import { OtherInquiryForm } from "./OtherInquiryForm"
+import { NewVehicleInfo } from "./NewVehicleInfo"
+import { CourseChangeForm } from "./CourseChangeForm"
+import { NewPaymentInfo as CreditCardChangeForm } from "./NewPaymentInfo" // 同じコンポーネントを再利用
+import { EmailChangeForm } from "./EmailChangeForm"
 import type { FormData } from "../types"
 
 export function CustomerForm() {
@@ -35,7 +40,7 @@ export function CustomerForm() {
     newCourse: "",
     inquiryDetails: "",
     newEmail: "",
-    isLimitedProductStore: false, // 追加
+    isLimitedProductStore: false,
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -51,7 +56,14 @@ export function CustomerForm() {
       setError(null)
       console.log("送信データ:", formData)
 
-      const endpoint = "/api/create-customer"
+      // 操作タイプに応じたエンドポイントを選択
+      let endpoint = "/api/create-customer"
+
+      if (formData.operation === "各種手続き") {
+        endpoint = "/api/submit-inquiry"
+      } else if (formData.operation !== "入会") {
+        endpoint = "/api/update-customer"
+      }
 
       console.log("送信先エンドポイント:", endpoint)
 
@@ -81,36 +93,220 @@ export function CustomerForm() {
   }
 
   const renderStep = () => {
-    switch (step) {
-      case 1:
-        return <OperationSelection formData={formData} updateFormData={updateFormData} nextStep={nextStep} />
-      case 2:
-        return (
-          <PersonalInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
-        )
-      case 3:
-        return (
-          <VehicleInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
-        )
-      case 4:
-        return (
-          <CourseSelection
-            formData={formData}
-            updateFormData={updateFormData}
-            nextStep={nextStep}
-            prevStep={prevStep}
-          />
-        )
-      case 5:
-        return (
-          <NewPaymentInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
-        )
-      case 6:
-        return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
-      case 7:
-        return <ThankYou formData={formData} />
+    // 共通のステップ1と2
+    if (step === 1) {
+      return <OperationSelection formData={formData} updateFormData={updateFormData} nextStep={nextStep} />
+    }
+
+    if (step === 2) {
+      return (
+        <PersonalInfo formData={formData} updateFormData={updateFormData} nextStep={nextStep} prevStep={prevStep} />
+      )
+    }
+
+    // 操作タイプに応じた分岐
+    switch (formData.operation) {
+      case "入会":
+        // 入会フロー
+        switch (step) {
+          case 3:
+            return (
+              <VehicleInfo
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 4:
+            return (
+              <CourseSelection
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 5:
+            return (
+              <NewPaymentInfo
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 6:
+            return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
+          case 7:
+            return <ThankYou formData={formData} />
+          default:
+            return null
+        }
+
+      case "登録車両変更":
+        // 登録車両変更フロー
+        switch (step) {
+          case 3:
+            return (
+              <VehicleInfo
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 4:
+            return (
+              <NewVehicleInfo
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 5:
+            return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
+          case 7:
+            return <ThankYou formData={formData} />
+          default:
+            return null
+        }
+
+      case "洗車コース変更":
+        // 洗車コース変更フロー
+        switch (step) {
+          case 3:
+            return (
+              <VehicleInfo
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 4:
+            return (
+              <CourseChangeForm
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 5:
+            return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
+          case 7:
+            return <ThankYou formData={formData} />
+          default:
+            return null
+        }
+
+      case "クレジットカード情報変更":
+        // クレジットカード情報変更フロー
+        switch (step) {
+          case 3:
+            return (
+              <VehicleInfo
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 4:
+            return (
+              <CreditCardChangeForm
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 5:
+            return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
+          case 7:
+            return <ThankYou formData={formData} />
+          default:
+            return null
+        }
+
+      case "メールアドレス変更":
+        // メールアドレス変更フロー
+        switch (step) {
+          case 3:
+            return (
+              <VehicleInfo
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 4:
+            return (
+              <EmailChangeForm
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 5:
+            return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
+          case 7:
+            return <ThankYou formData={formData} />
+          default:
+            return null
+        }
+
+      case "各種手続き":
+        // 各種手続きフロー
+        switch (step) {
+          case 3:
+            return (
+              <VehicleInfo
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 4:
+            return (
+              <OtherInquiryForm
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 5:
+            return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
+          case 7:
+            return <ThankYou formData={formData} />
+          default:
+            return null
+        }
+
       default:
         return null
+    }
+  }
+
+  // 現在のステップと操作タイプに基づいて総ステップ数を計算
+  const getTotalSteps = () => {
+    switch (formData.operation) {
+      case "入会":
+        return 6 // OperationSelection → PersonalInfo → VehicleInfo → CourseSelection → NewPaymentInfo → Confirmation
+      case "登録車両変更":
+      case "洗車コース変更":
+      case "クレジットカード情報変更":
+      case "メールアドレス変更":
+      case "各種手続き":
+        return 5 // OperationSelection → PersonalInfo → VehicleInfo → 専用フォーム → Confirmation
+      default:
+        return 6 // デフォルト
     }
   }
 
@@ -124,7 +320,7 @@ export function CustomerForm() {
       </div>
       <div className="w-full bg-gray-50 min-h-[calc(100vh-5rem)] py-6 md:py-8 lg:py-10">
         <div className="form-container">
-          {step < 7 && <ProgressBar currentStep={step} totalSteps={6} />}
+          {step < 7 && <ProgressBar currentStep={step} totalSteps={getTotalSteps()} />}
           {error && <ErrorMessage message={error} />}
           <div className="mt-6 md:mt-8 lg:mt-10">{renderStep()}</div>
         </div>
@@ -132,4 +328,3 @@ export function CustomerForm() {
     </div>
   )
 }
-

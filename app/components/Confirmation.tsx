@@ -60,11 +60,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
 
       <div className="bg-blue-50/80 rounded-2xl p-6 space-y-6">
         <ConfirmationItem icon={<MapPin className="w-6 h-6" />} label="入会店舗" value={formData.store} />
-        <ConfirmationItem
-          icon={<User className="w-6 h-6" />}
-          label="姓"
-          value={`${formData.familyName}`}
-        />
+        <ConfirmationItem icon={<User className="w-6 h-6" />} label="姓" value={`${formData.familyName}`} />
         <ConfirmationItem icon={<User className="w-6 h-6" />} label="名" value={formData.givenName} />
         <ConfirmationItem icon={<Mail className="w-6 h-6" />} label="メールアドレス" value={formData.email} />
         {formData.operation === "メールアドレス変更" && (
@@ -134,7 +130,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
           />
         )}
 
-        {formData.operation === "その他" && (
+        {formData.operation === "各種手続き" && (
           <ConfirmationItem
             icon={<FileText className="w-6 h-6" />}
             label="お問い合わせ内容"
@@ -232,4 +228,3 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
     </div>
   )
 }
-

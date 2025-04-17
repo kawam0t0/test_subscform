@@ -28,22 +28,14 @@ export function EmailChangeForm({ formData, updateFormData, nextStep, prevStep }
         />
       </div>
 
-      <div className="flex justify-between">
-        <button
-          type="button"
-          onClick={prevStep}
-          className="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
-        >
+      <div className="pt-4 grid grid-cols-2 gap-3">
+        <button type="button" onClick={prevStep} className="btn btn-secondary">
           戻る
         </button>
-        <button
-          type="submit"
-          className="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary hover:bg-primary/90"
-        >
+        <button type="submit" className="btn btn-primary">
           次へ
         </button>
       </div>
     </form>
   )
 }
-
