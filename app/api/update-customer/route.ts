@@ -145,11 +145,11 @@ export async function POST(request: Request) {
       phone,
       carModel || newCarModel,
       carColor || newCarColor,
-      licensePlate || newLicensePlate,
+      "", // ナンバープレート（削除済み）
       currentCourse || "",
       newCarModel || "",
       newCarColor || "",
-      newLicensePlate || "",
+      "", // 新しいナンバープレート（削除済み）
       newCourse || "",
       "",
     ]
@@ -168,4 +168,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

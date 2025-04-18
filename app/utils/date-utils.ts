@@ -1,15 +1,15 @@
 export function formatJapanDateTime(date: Date): string {
-  // UTC+9の変換を削除し、そのままのDateオブジェクトを使用
-  return date
-    .toLocaleString("ja-JP", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    })
-    .replace(/[/]/g, "/")
-    .replace(/,/g, "")
+  // 日本時間に変換（UTC+9）
+  const japanTime = new Date(date.getTime() + 9 * 60 * 60 * 1000)
+
+  // 日本時間のフォーマット
+  const year = japanTime.getUTCFullYear()
+  const month = String(japanTime.getUTCMonth() + 1).padStart(2, "0")
+  const day = String(japanTime.getUTCDate()).padStart(2, "0")
+  const hours = String(japanTime.getUTCHours()).padStart(2, "0")
+  const minutes = String(japanTime.getUTCMinutes()).padStart(2, "0")
+  const seconds = String(japanTime.getUTCSeconds()).padStart(2, "0")
+
+  // YYYY/MM/DD HH:MM:SS 形式で返す
+  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
 }

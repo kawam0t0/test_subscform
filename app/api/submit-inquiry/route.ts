@@ -27,11 +27,11 @@ export async function POST(request: Request) {
         phone,
         carModel,
         carColor,
-        licensePlate,
+        "", // ナンバープレート（削除済み）
         "",
         "",
         "",
-        "",
+        "", // 新しいナンバープレート（削除済み）
         "",
         inquiryDetails,
       ],
@@ -50,4 +50,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

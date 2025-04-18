@@ -214,11 +214,11 @@ export async function POST(request: Request) {
           phone, // H列: 電話番号
           carModel, // I列: 車種
           carColor, // J列: 車の色
-          licensePlate, // K列: ナンバー
+          "", // K列: ナンバー（削除済み）
           courseName, // L列: 洗車コース名
           "", // M列: 新しい車種
           "", // N列: 新しい車の色
-          "", // O列: 新しいナンバープレート
+          "", // O列: 新しいナンバープレート（削除済み）
           "", // P列: 新しいコース
           "", // Q列: その他
         ],
@@ -256,4 +256,3 @@ export async function POST(request: Request) {
     )
   }
 }
-
