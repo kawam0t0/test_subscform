@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { Client, Environment } from "square"
 import { appendToSheet } from "../../utils/google-sheets"
 import { formatJapanDateTime } from "../../utils/date-utils"
+import { sendInquiryConfirmationEmail } from "../../utils/email-sender"
 
 const squareClient = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
@@ -37,11 +38,9 @@ export async function POST(request: Request) {
       newCourse,
       carModel,
       carColor,
-      licensePlate,
       cardToken,
       newCarModel,
       newCarColor,
-      newLicensePlate,
       newEmail,
     } = formData
 
@@ -72,7 +71,7 @@ export async function POST(request: Request) {
     const matchingCustomer = emailSearchResult.customers?.[0] || phoneSearchResult.customers?.[0]
 
     if (!matchingCustomer || !matchingCustomer.id) {
-      throw new Error("指定されたメールアドレスまたは電話番号に一致する顧客が見つかりません")
+      throw new Error("��定されたメールアドレスまたは電話番号に一致する顧客が見つかりません")
     }
 
     const customerId = matchingCustomer.id
@@ -89,8 +88,8 @@ export async function POST(request: Request) {
 
     // 車両情報の更新（車両変更時）
     if (operation === "登録車両変更") {
-      // companyNameに新しい車両詳細を設定（車種/色/ナンバー形式）
-      updateData.companyName = `${newCarModel}/${newCarColor}/${newLicensePlate}`
+      // companyNameに新しい車両詳細を設定（車種/色形式）
+      updateData.companyName = `${newCarModel}/${newCarColor}`
     }
     // コース変更時
     else if (operation === "洗車コース変更") {
@@ -154,6 +153,33 @@ export async function POST(request: Request) {
       "",
     ]
     await appendToSheet([sheetData])
+
+    // 問い合わせ確認メールを送信
+    try {
+      const details: any = {}
+
+      if (operation === "登録車両変更") {
+        details.newCarModel = newCarModel
+        details.newCarColor = newCarColor
+      } else if (operation === "洗車コース変更") {
+        details.currentCourse = currentCourse
+        details.newCourse = newCourse
+      } else if (operation === "メールアドレス変更") {
+        details.newEmail = newEmail
+      }
+
+      await sendInquiryConfirmationEmail(
+        `${familyName} ${givenName}`,
+        operation === "メールアドレス変更" ? newEmail : email, // 新しいメールアドレスに送信
+        operation,
+        store,
+        details,
+      )
+      console.log("問い合わせ確認メールを送信しました")
+    } catch (emailError) {
+      console.error("メール送信中にエラーが発生しました:", emailError)
+      // メール送信エラーは処理を中断しない
+    }
 
     return NextResponse.json({
       success: true,

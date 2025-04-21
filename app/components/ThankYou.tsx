@@ -19,7 +19,12 @@ export function ThankYou({ formData }: ThankYouProps) {
         <br />
         ご利用ありがとうございます。
         <br />
-        お申し込み頂きました店舗にて会員カードをお受け取り下さいませ。
+        ご入会をされましたお客様はお申し込み頂きました店舗にて会員カードをお受け取り下さいませ。
+        <br />
+        <br />
+        なお、各種お手続きを選択されたお客様は、
+        <br />
+        担当者より1営業日~2営業日以内に登録頂いておりますメールアドレスにご連絡させていただきます。
       </p>
       <div className="pt-4">
         <a href="/" className="btn btn-primary">

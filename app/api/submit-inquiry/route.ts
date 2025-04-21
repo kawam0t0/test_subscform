@@ -2,14 +2,14 @@ import { NextResponse } from "next/server"
 import { appendToSheet } from "../../utils/google-sheets"
 import { formatJapanDateTime } from "../../utils/date-utils"
 import { generateReferenceId } from "../../utils/reference-id"
+import { sendInquiryConfirmationEmail } from "../../utils/email-sender"
 
 export async function POST(request: Request) {
   try {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { operation, store, familyName, givenName, email, phone, carModel, carColor, licensePlate, inquiryDetails } =
-      formData
+    const { operation, store, familyName, givenName, email, phone, carModel, carColor, inquiryDetails } = formData
 
     // Generate a new reference ID
     const referenceId = generateReferenceId(store)
@@ -36,6 +36,15 @@ export async function POST(request: Request) {
         inquiryDetails,
       ],
     ])
+
+    // 問い合わせ確認メールを送信
+    try {
+      await sendInquiryConfirmationEmail(`${familyName} ${givenName}`, email, operation, store, { inquiryDetails })
+      console.log("問い合わせ確認メールを送信しました")
+    } catch (emailError) {
+      console.error("メール送信中にエラーが発生しました:", emailError)
+      // メール送信エラーは処理を中断しない
+    }
 
     return NextResponse.json({
       success: true,
