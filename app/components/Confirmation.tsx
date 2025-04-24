@@ -36,10 +36,13 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
   const handleSubmit = async () => {
     if (isSubmitting || !isAgreed) return
     setIsSubmitting(true)
+    setError(null) // エラーをリセット
+
     try {
       await submitForm()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "エラーが発生しました")
+      console.error("フォーム送信エラー:", err)
+      setError(err instanceof Error ? err.message : "エラーが発生しました。お手数ですが、最初からやり直してください。")
     } finally {
       setIsSubmitting(false)
     }
@@ -51,6 +54,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
           <strong className="font-bold">エラー: </strong>
           <span className="block sm:inline">{error}</span>
+          <p className="mt-2 text-sm">お手数ですが、最初からやり直してください。</p>
         </div>
       )}
       <div className="text-center space-y-2">
@@ -168,7 +172,7 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         </button>
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting || !isAgreed}
+          disabled={isSubmitting || !isAgreed || error !== null}
           className="w-full h-14 rounded-xl bg-primary text-white
            hover:bg-primary/90 transition-colors duration-200 
            disabled:opacity-50 disabled:cursor-not-allowed
