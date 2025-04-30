@@ -129,4 +129,3 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
     </form>
   )
 }
-
