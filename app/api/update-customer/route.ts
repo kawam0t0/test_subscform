@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     const matchingCustomer = emailSearchResult.customers?.[0] || phoneSearchResult.customers?.[0]
 
     if (!matchingCustomer || !matchingCustomer.id) {
-      throw new Error("��定されたメールアドレスまたは電話番号に一致する顧客が見つかりません")
+      throw new Error("指定されたメールアドレスまたは電話番号に一致する顧客が見つかりません")
     }
 
     const customerId = matchingCustomer.id
@@ -80,25 +80,30 @@ export async function POST(request: Request) {
     // 更新データの準備
     const updateData: any = {
       givenName: givenName,
-      familyName: familyName, // 常に入力された姓を使用
       emailAddress: operation === "メールアドレス変更" ? newEmail : email,
       phoneNumber: phone,
       note: store,
     }
 
-    // 車両情報の更新（車両変更時）
+    // 操作タイプに応じてfamilyNameを設定
     if (operation === "登録車両変更") {
+      // 登録車両変更の場合、familyNameに「新しい車種/姓」の形式で設定
+      updateData.familyName = `${newCarModel}/${familyName}`
       // companyNameに新しい車両詳細を設定（車種/色形式）
       updateData.companyName = `${newCarModel}/${newCarColor}`
+    } else {
+      // その他の操作の場合、入力された姓を使用
+      updateData.familyName = familyName
     }
+
     // コース変更時
-    else if (operation === "洗車コース変更") {
+    if (operation === "洗車コース変更") {
       // 既存の車両情報を保持
       updateData.companyName = matchingCustomer.companyName
       updateData.note = `${store}, コース: ${newCourse.split("（")[0].trim()}`
     }
     // その他の操作（メールアドレス変更、クレジットカード情報変更など）
-    else {
+    else if (operation !== "登録車両変更") {
       // 既存の車両情報を保持
       updateData.companyName = matchingCustomer.companyName
     }
@@ -138,7 +143,7 @@ export async function POST(request: Request) {
       operation,
       matchingCustomer.referenceId || "",
       store,
-      `${familyName} ${givenName}`,
+      `${familyName} ${givenName}`, // 元の形式に戻す（常に「姓 名」の形式で記録）
       email,
       operation === "メールアドレス変更" ? newEmail : "",
       phone,
@@ -169,7 +174,7 @@ export async function POST(request: Request) {
       }
 
       await sendInquiryConfirmationEmail(
-        `${familyName} ${givenName}`,
+        operation === "登録車両変更" ? `${familyName} ${givenName}` : `${familyName} ${givenName}`, // 登録車両変更の場合も姓名をそのまま使用
         operation === "メールアドレス変更" ? newEmail : email, // 新しいメールアドレスに送信
         operation,
         store,
