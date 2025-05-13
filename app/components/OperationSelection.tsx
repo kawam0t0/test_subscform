@@ -4,18 +4,15 @@ import type React from "react"
 import { ChevronDown } from "lucide-react"
 import type { BaseFormProps } from "../types"
 
-// 全ての問い合わせ内容を定義
+// すべての問い合わせ内容を定義
 const allOperations = [
   { value: "入会", label: "ご入会" },
   { value: "登録車両変更", label: "登録車両変更" },
   { value: "洗車コース変更", label: "洗車コース変更" },
   { value: "クレジットカード情報変更", label: "クレジットカード情報変更" },
   { value: "メールアドレス変更", label: "メールアドレス変更" },
-  { value: "各種手続き", label: "各種手続き" }, // 「その他」から「各種手続き」に変更
+  { value: "各種手続き", label: "各種手続き" },
 ]
-
-// 入会のみの問い合わせ内容
-const membershipOnly = [{ value: "入会", label: "ご入会" }]
 
 const stores = [
   "SPLASH'N'GO!前橋50号店",
@@ -26,9 +23,8 @@ const stores = [
 ]
 
 export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
-  // 表示する問い合わせ内容を決定
-  // 新前橋店を選択した場合のみ全ての問い合わせ内容を表示
-  const operations = formData.store === "SPLASH'N'GO!新前橋店" ? allOperations : membershipOnly
+  // すべての店舗で全ての問い合わせ内容を表示するように変更
+  const operations = allOperations
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,16 +33,6 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
       return
     }
     nextStep()
-  }
-
-  // 店舗が変更された時の処理
-  const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newStore = e.target.value
-    updateFormData({
-      store: newStore,
-      // 店舗が変更されたとき、新前橋店以外に変更された場合は問い合わせ内容を入会のみにリセット
-      operation: newStore !== "SPLASH'N'GO!新前橋店" && formData.operation !== "入会" ? "" : formData.operation,
-    })
   }
 
   return (
@@ -59,7 +45,7 @@ export function OperationSelection({ formData, updateFormData, nextStep }: BaseF
           <select
             id="store"
             value={formData.store}
-            onChange={handleStoreChange}
+            onChange={(e) => updateFormData({ store: e.target.value })}
             required
             className="w-full h-16 sm:h-20 px-6 text-lg sm:text-xl rounded-2xl border-2 border-gray-200 
                      bg-white shadow-sm transition-all duration-200 
