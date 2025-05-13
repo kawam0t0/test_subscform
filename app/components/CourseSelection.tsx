@@ -59,7 +59,7 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
         <h2 className="text-2xl font-bold text-gray-800 mb-2">洗車コースを選択</h2>
         <div className="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-3 inline-block mx-auto">
           <p className="text-yellow-800 font-medium">
-            <span className="text-red-600 font-bold">4/1〜4/30</span>までの新規お申し込みに限り
+            <span className="text-red-600 font-bold">4/1〜5/30</span>までの新規お申し込みに限り
             <span className="text-red-600 font-bold">初月特別価格</span>でご提供！
           </p>
         </div>
