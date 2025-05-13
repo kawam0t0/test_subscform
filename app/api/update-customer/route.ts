@@ -18,8 +18,14 @@ function extractIdentifierAndModel(familyName: string): { identifier: string; mo
       return { identifier: id, model }
     }
   }
-  const model = familyName.split("/")[0].trim()
-  return { identifier: "", model }
+
+  // 「車種/姓」の形式かどうかをチェック
+  const parts = familyName.split("/")
+  if (parts.length > 1) {
+    return { identifier: "", model: parts[0].trim() }
+  }
+
+  return { identifier: "", model: familyName }
 }
 
 export async function POST(request: Request) {
@@ -75,7 +81,25 @@ export async function POST(request: Request) {
     }
 
     const customerId = matchingCustomer.id
-    const { identifier } = extractIdentifierAndModel(matchingCustomer?.familyName || "")
+
+    // 既存の車種情報を取得
+    let existingCarModel = carModel
+
+    // matchingCustomerのcompanyNameから車種を取得（形式は「車種/色」を想定）
+    if (matchingCustomer.companyName) {
+      const companyParts = matchingCustomer.companyName.split("/")
+      if (companyParts.length > 0) {
+        existingCarModel = companyParts[0].trim()
+      }
+    }
+
+    // familyNameから車種を取得（形式は「車種/姓」を想定）
+    if (!existingCarModel && matchingCustomer.familyName) {
+      const { model } = extractIdentifierAndModel(matchingCustomer.familyName)
+      if (model) {
+        existingCarModel = model
+      }
+    }
 
     // 更新データの準備
     const updateData: any = {
@@ -92,20 +116,30 @@ export async function POST(request: Request) {
       // companyNameに新しい車両詳細を設定（車種/色形式）
       updateData.companyName = `${newCarModel}/${newCarColor}`
     } else {
-      // その他の操作の場合、入力された姓を使用
-      updateData.familyName = familyName
+      // その他の操作の場合も「車種/姓」の形式で設定
+      // 既存の車種情報がある場合はそれを使用、なければ入力された車種情報を使用
+      const carModelToUse = existingCarModel || carModel
+      updateData.familyName = carModelToUse ? `${carModelToUse}/${familyName}` : familyName
     }
 
     // コース変更時
     if (operation === "洗車コース変更") {
       // 既存の車両情報を保持
-      updateData.companyName = matchingCustomer.companyName
+      if (matchingCustomer.companyName) {
+        updateData.companyName = matchingCustomer.companyName
+      } else if (carModel && carColor) {
+        updateData.companyName = `${carModel}/${carColor}`
+      }
       updateData.note = `${store}, コース: ${newCourse.split("（")[0].trim()}`
     }
     // その他の操作（メールアドレス変更、クレジットカード情報変更など）
     else if (operation !== "登録車両変更") {
       // 既存の車両情報を保持
-      updateData.companyName = matchingCustomer.companyName
+      if (matchingCustomer.companyName) {
+        updateData.companyName = matchingCustomer.companyName
+      } else if (carModel && carColor) {
+        updateData.companyName = `${carModel}/${carColor}`
+      }
     }
 
     // 顧客情報を更新
@@ -147,7 +181,7 @@ export async function POST(request: Request) {
       email,
       operation === "メールアドレス変更" ? newEmail : "",
       phone,
-      carModel || newCarModel,
+      carModel || newCarModel || existingCarModel,
       carColor || newCarColor,
       "", // ナンバープレート（削除済み）
       currentCourse || "",
@@ -174,7 +208,7 @@ export async function POST(request: Request) {
       }
 
       await sendInquiryConfirmationEmail(
-        operation === "登録車両変更" ? `${familyName} ${givenName}` : `${familyName} ${givenName}`, // 登録車両変更の場合も姓名をそのまま使用
+        `${familyName} ${givenName}`, // 常に姓名をそのまま使用
         operation === "メールアドレス変更" ? newEmail : email, // 新しいメールアドレスに送信
         operation,
         store,
