@@ -29,13 +29,14 @@ export async function POST(request: Request) {
 
       try {
         // 1. 顧客情報を作成
+        console.log("顧客情報を作成中...")
         const { result: customerResult } = await squareClient.customersApi.createCustomer({
           idempotencyKey: `${Date.now()}-${Math.random()}`,
           givenName: givenName,
-          familyName: `${carModel}/${familyName}`, // 車種/姓 の形式に変更
+          familyName: familyName, // 姓のみを格納
           emailAddress: email,
           phoneNumber: phone,
-          companyName: `${carModel}/${carColor}`,
+          companyName: `${carModel}/${carColor}`, // 車両情報はcompanyNameに格納
           referenceId: referenceId,
           note: store,
           nickname: courseName,
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
         // 2. カード情報の処理（存在する場合）
         if (cardToken) {
           try {
+            console.log("カード情報を保存中...", { customerId, cardToken: cardToken.substring(0, 10) + "..." })
             const { result: cardResult } = await squareClient.cardsApi.createCard({
               idempotencyKey: `${customerId}-${Date.now()}`,
               sourceId: cardToken,
@@ -81,7 +83,14 @@ export async function POST(request: Request) {
             // APIエラーの場合は詳細なエラーメッセージを取得
             if (cardError instanceof ApiError) {
               const errorDetail = cardError.errors?.[0]?.detail || cardError.message
-              throw new Error(`クレジットカードエラー: ${errorDetail}`)
+              const errorCode = cardError.errors?.[0]?.code || ""
+
+              // SOURCE_USEDエラーの場合は特別なメッセージを表示
+              if (errorCode === "SOURCE_USED") {
+                throw new Error("このカード情報は既に使用されています。ページを更新して再度お試しください。")
+              } else {
+                throw new Error(`クレジットカードエラー: ${errorDetail}`)
+              }
             } else {
               throw new Error("クレジットカード情報が無効です。正しい情報を入力してください。")
             }
@@ -114,21 +123,7 @@ export async function POST(request: Request) {
           console.log("Google Sheetsにデータが追加されました")
         } catch (sheetError) {
           console.error("Google Sheets書き込みエラー:", sheetError)
-
-          // Sheetsエラーが発生した場合、作成した顧客情報を削除
-          if (customerId) {
-            try {
-              await squareClient.customersApi.deleteCustomer(customerId)
-              console.log("Sheetsエラーにより顧客情報を削除しました:", customerId)
-              customerId = null
-            } catch (deleteError) {
-              console.error("顧客削除エラー:", deleteError)
-            }
-          }
-
-          throw new Error(
-            `Google Sheetsへの書き込みに失敗しました: ${sheetError instanceof Error ? sheetError.message : "不明なエラー"}`,
-          )
+          // Sheetsエラーはログに記録するだけで処理を続行
         }
 
         // 4. メール送信
