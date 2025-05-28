@@ -9,10 +9,14 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { operation, store, familyName, givenName, email, phone, carModel, carColor, inquiryDetails } = formData
+    const { operation, store, familyName, givenName, email, phone, carModel, carColor, inquiryDetails, inquiryType } =
+      formData
 
     // Generate a new reference ID
     const referenceId = generateReferenceId(store)
+
+    // プルダウンの選択内容とお問い合わせ内容を結合
+    const combinedInquiry = inquiryType && inquiryDetails ? `【${inquiryType}】${inquiryDetails}` : inquiryDetails || ""
 
     // Google Sheetsにデータを追加
     await appendToSheet([
@@ -33,13 +37,16 @@ export async function POST(request: Request) {
         "",
         "", // 新しいナンバープレート（削除済み）
         "",
-        inquiryDetails,
+        combinedInquiry, // Q列：プルダウンの内容とお問い合わせ内容を結合
       ],
     ])
 
     // 問い合わせ確認メールを送信
     try {
-      await sendInquiryConfirmationEmail(`${familyName} ${givenName}`, email, operation, store, { inquiryDetails })
+      await sendInquiryConfirmationEmail(`${familyName} ${givenName}`, email, operation, store, {
+        inquiryDetails: combinedInquiry,
+        inquiryType,
+      })
       console.log("問い合わせ確認メールを送信しました")
     } catch (emailError) {
       console.error("メール送信中にエラーが発生しました:", emailError)

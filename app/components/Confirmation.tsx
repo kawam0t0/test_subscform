@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { MapPin, User, Mail, Phone, Car, Palette, CreditCard, CheckCircle, FileText } from "lucide-react"
+import { MapPin, User, Mail, Phone, Car, Palette, CreditCard, CheckCircle, FileText, Calendar } from "lucide-react"
 import Link from "next/link"
 import type React from "react"
 import type { FormData } from "../types"
@@ -48,6 +48,18 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
     }
   }
 
+  // コース名と価格を抽出
+  const courseName = formData.course.split("（")[0].trim()
+  const coursePrice = formData.course.includes("980円")
+    ? "980円"
+    : formData.course.includes("1280円")
+      ? "1280円"
+      : formData.course.includes("1480円")
+        ? "1480円"
+        : formData.course.includes("2980円")
+          ? "2980円"
+          : ""
+
   return (
     <div className="space-y-6">
       {error && (
@@ -79,11 +91,26 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         <ConfirmationItem icon={<Palette className="w-6 h-6" />} label="車の色" value={formData.carColor} />
 
         {formData.operation === "入会" && (
-          <ConfirmationItem
-            icon={<CreditCard className="w-6 h-6" />}
-            label="選択されたコース"
-            value={formData.course}
-          />
+          <>
+            <ConfirmationItem
+              icon={<CreditCard className="w-6 h-6" />}
+              label="選択されたコース"
+              value={formData.course}
+            />
+            {formData.enableSubscription && (
+              <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-100">
+                <div className="flex">
+                  <Calendar className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <div className="ml-3">
+                    <p className="text-sm text-green-700 font-medium">定期支払い（月額自動引き落とし）</p>
+                    <p className="text-sm text-green-600 mt-1">
+                      選択されたコース「{courseName}」の月額料金 {coursePrice}が毎月自動的に引き落とされます。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {formData.operation === "登録車両変更" && (
@@ -121,11 +148,20 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
         )}
 
         {formData.operation === "各種手続き" && (
-          <ConfirmationItem
-            icon={<FileText className="w-6 h-6" />}
-            label="お問い合わせ内容"
-            value={formData.inquiryDetails || ""}
-          />
+          <>
+            {formData.inquiryType && (
+              <ConfirmationItem
+                icon={<FileText className="w-6 h-6" />}
+                label="お問い合わせの種類"
+                value={formData.inquiryType}
+              />
+            )}
+            <ConfirmationItem
+              icon={<FileText className="w-6 h-6" />}
+              label="お問い合わせ内容"
+              value={formData.inquiryDetails || ""}
+            />
+          </>
         )}
       </div>
 
@@ -157,6 +193,11 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
             プライバシーポリシー
           </Link>
           <span>を読み、理解し、これらに基づいて利用契約を締結することに同意します。</span>
+          {formData.enableSubscription && (
+            <span className="block mt-2 text-red-600 font-medium">
+              また、定期支払いを選択したことにより、毎月自動的に料金が引き落とされることに同意します。
+            </span>
+          )}
         </label>
       </div>
 

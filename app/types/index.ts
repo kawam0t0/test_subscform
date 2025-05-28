@@ -18,8 +18,10 @@ export interface FormData {
   currentCourse: string
   newCourse: string
   inquiryDetails?: string
+  inquiryType?: string // プルダウンの選択内容を追加
   newEmail: string
   isLimitedProductStore: boolean
+  enableSubscription?: boolean // 定期請求オプションを追加
 }
 
 export interface BaseFormProps {
@@ -46,4 +48,3 @@ export interface NavButtonProps {
   icon: React.ReactNode
   label: string
 }
-
