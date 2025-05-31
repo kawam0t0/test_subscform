@@ -9,14 +9,41 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { operation, store, familyName, givenName, email, phone, carModel, carColor, inquiryDetails, inquiryType } =
-      formData
+    const {
+      operation,
+      store,
+      familyName,
+      givenName,
+      email,
+      phone,
+      carModel,
+      carColor,
+      inquiryDetails,
+      inquiryType,
+      cancellationReasons,
+    } = formData
 
     // Generate a new reference ID
     const referenceId = generateReferenceId(store)
 
-    // プルダウンの選択内容とお問い合わせ内容を結合
-    const combinedInquiry = inquiryType && inquiryDetails ? `【${inquiryType}】${inquiryDetails}` : inquiryDetails || ""
+    // プルダウンの選択内容、解約理由、お問い合わせ内容を結合
+    let combinedInquiry = ""
+
+    if (inquiryType) {
+      combinedInquiry = `【${inquiryType}】`
+
+      // 解約理由がある場合は追加
+      if (cancellationReasons && cancellationReasons.length > 0) {
+        combinedInquiry += `\n解約理由: ${cancellationReasons.join(", ")}`
+      }
+
+      // 詳細内容がある場合は追加
+      if (inquiryDetails) {
+        combinedInquiry += `\n${inquiryDetails}`
+      }
+    } else {
+      combinedInquiry = inquiryDetails || ""
+    }
 
     // Google Sheetsにデータを追加
     await appendToSheet([
@@ -37,7 +64,7 @@ export async function POST(request: Request) {
         "",
         "", // 新しいナンバープレート（削除済み）
         "",
-        combinedInquiry, // Q列：プルダウンの内容とお問い合わせ内容を結合
+        combinedInquiry, // Q列：プルダウンの内容、解約理由、お問い合わせ内容を結合
       ],
     ])
 
@@ -46,6 +73,7 @@ export async function POST(request: Request) {
       await sendInquiryConfirmationEmail(`${familyName} ${givenName}`, email, operation, store, {
         inquiryDetails: combinedInquiry,
         inquiryType,
+        cancellationReasons,
       })
       console.log("問い合わせ確認メールを送信しました")
     } catch (emailError) {

@@ -156,9 +156,18 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
                 value={formData.inquiryType}
               />
             )}
+            {formData.inquiryType === "解約" &&
+              formData.cancellationReasons &&
+              formData.cancellationReasons.length > 0 && (
+                <ConfirmationItem
+                  icon={<FileText className="w-6 h-6" />}
+                  label="解約理由"
+                  value={formData.cancellationReasons.join(", ")}
+                />
+              )}
             <ConfirmationItem
               icon={<FileText className="w-6 h-6" />}
-              label="お問い合わせ内容"
+              label={formData.inquiryType === "解約" ? "その他ご意見・ご要望" : "お問い合わせ内容"}
               value={formData.inquiryDetails || ""}
             />
           </>
