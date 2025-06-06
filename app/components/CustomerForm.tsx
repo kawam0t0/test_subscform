@@ -15,6 +15,7 @@ import { OtherInquiryForm } from "./OtherInquiryForm"
 import { NewVehicleInfo } from "./NewVehicleInfo"
 import { EmailChangeForm } from "./EmailChangeForm"
 import { NewPaymentInfo as CreditCardChangeForm } from "./NewPaymentInfo"
+import { CourseChangeForm } from "./CourseChangeForm"
 import type { FormData } from "../types"
 
 export function CustomerForm() {
@@ -256,6 +257,33 @@ export function CustomerForm() {
           default:
             return null
         }
+      case "洗車コース変更":
+        switch (step) {
+          case 3:
+            return (
+              <VehicleInfo
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 4:
+            return (
+              <CourseChangeForm
+                formData={formData}
+                updateFormData={updateFormData}
+                nextStep={nextStep}
+                prevStep={prevStep}
+              />
+            )
+          case 5:
+            return <Confirmation formData={formData} prevStep={prevStep} submitForm={submitForm} />
+          case 6:
+            return <ThankYou formData={formData} />
+          default:
+            return null
+        }
 
       default:
         return null
@@ -271,6 +299,7 @@ export function CustomerForm() {
       case "クレジットカード情報変更":
       case "メールアドレス変更":
       case "各種手続き":
+      case "洗車コース変更":
         return 5 // OperationSelection → PersonalInfo → VehicleInfo → 専用フォーム → Confirmation
       default:
         return 6
