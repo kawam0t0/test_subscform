@@ -15,7 +15,7 @@ import { OtherInquiryForm } from "./OtherInquiryForm"
 import { NewVehicleInfo } from "./NewVehicleInfo"
 import { EmailChangeForm } from "./EmailChangeForm"
 import { NewPaymentInfo as CreditCardChangeForm } from "./NewPaymentInfo"
-import { CourseChangeForm } from "./CourseChangeForm"
+import CourseChangeForm from "./CourseChangeForm"
 import type { FormData } from "../types"
 
 export function CustomerForm() {

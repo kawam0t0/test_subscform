@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Check } from "lucide-react"
+import { Check, ChevronDown } from "lucide-react"
 import type { BaseFormProps } from "../types"
 import type React from "react"
 
-const allCourses = [
+const courses = [
   {
     id: "980",
     name: "プレミアムスタンダード",
@@ -18,80 +18,74 @@ const allCourses = [
   },
   {
     id: "1480",
-    name: "スーパーシャンプーナイアガラ",
+    name: "スーパーャンプーナイ��ガラ",
     price: "1480円",
   },
   {
     id: "2980",
-    name: ["セラミックコーティングタートル", "シェル"],
+    name: "セラミックコーティングタートルシェル",
     price: "2980円",
   },
 ]
 
-// 制限付き商品を提供する店舗
-const limitedStores = ["SPLASH'N'GO!前橋50号店", "SPLASH'N'GO!伊勢崎韮塚店", "SPLASH'N'GO!足利緑町店"]
-
-export function CourseSelection({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
-
-  // 店舗に基づいてコースをフィルタリング
-  const courses = limitedStores.includes(formData.store)
-    ? allCourses.filter((course) => ["980", "1280"].includes(course.id))
-    : allCourses
+export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
+  const [currentCourse, setCurrentCourse] = useState<string | null>(null)
+  const [newCourse, setNewCourse] = useState<string | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (selectedCourse) {
-      updateFormData({ course: selectedCourse })
-      nextStep()
-    } else {
-      alert("コースを選択してください")
+    if (!currentCourse || !newCourse) {
+      alert("現在のコースと新しいコースを選択してください")
+      return
     }
+    updateFormData({ currentCourse, newCourse })
+    nextStep()
   }
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">洗車コースを選択</h2>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  const renderCourseSelection = (
+    title: string,
+    selectedCourse: string | null,
+    setSelectedCourse: (course: string) => void,
+  ) => (
+    <div className="space-y-4">
+      <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {courses.map((course) => (
           <div
             key={course.id}
-            className={`relative overflow-hidden rounded-2xl shadow-lg transition-all duration-300 ${
-              selectedCourse === (Array.isArray(course.name) ? course.name.join("") : course.name)
+            className={`relative overflow-hidden rounded-xl shadow-md transition-all duration-300 ${
+              selectedCourse === course.name
                 ? "border-4 border-primary bg-primary/5"
                 : "border border-gray-200 hover:border-primary/50"
             }`}
-            onClick={() => setSelectedCourse(Array.isArray(course.name) ? course.name.join("") : course.name)}
+            onClick={() => setSelectedCourse(course.name)}
           >
             <div className="p-6 cursor-pointer flex flex-col items-center justify-center h-full">
-              <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">
-                {Array.isArray(course.name) ? (
-                  <>
-                    {course.name[0]}
-                    <br />
-                    {course.name[1]}
-                  </>
-                ) : (
-                  course.name
-                )}
-              </h3>
-              <div className="flex flex-col items-center">
-                <div className="text-3xl font-bold text-primary">月額{course.price}</div>
-              </div>
+              <h4 className="text-lg font-semibold text-gray-800 mb-3 text-center">{course.name}</h4>
+              <p className="text-2xl font-bold text-primary">月額{course.price}</p>
             </div>
-            {selectedCourse === (Array.isArray(course.name) ? course.name.join("") : course.name) && (
-              <div className="absolute top-4 right-4 bg-primary text-white rounded-full p-2">
-                <Check className="w-6 h-6" />
+            {selectedCourse === course.name && (
+              <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
+                <Check className="w-4 h-4" />
               </div>
             )}
           </div>
         ))}
       </div>
+    </div>
+  )
 
-      <div className="flex justify-end gap-4 mt-8">
+  return (
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {renderCourseSelection("現ご利用コース", currentCourse, setCurrentCourse)}
+
+      <div className="flex justify-center py-4">
+        <ChevronDown className="w-16 h-16 text-primary animate-bounce" strokeWidth={3} />
+      </div>
+
+      {renderCourseSelection("新ご利用コース", newCourse, setNewCourse)}
+
+      <div className="pt-4 grid grid-cols-2 gap-3">
         <button type="button" onClick={prevStep} className="btn btn-secondary">
           戻る
         </button>
@@ -102,3 +96,5 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
     </form>
   )
 }
+
+export default CourseChangeForm
