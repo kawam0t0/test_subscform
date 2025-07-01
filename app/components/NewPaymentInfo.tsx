@@ -37,29 +37,29 @@ export function NewPaymentInfo({ formData, updateFormData, nextStep, prevStep }:
           const mockContainer = document.createElement("div")
           mockContainer.className = "mock-card-container"
           mockContainer.innerHTML = `
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">カード番号</label>
-              <div class="relative">
-                <input type="text" value="4111 1111 1111 1111" readonly class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 pr-10">
-                <div class="absolute right-2 top-1/2 transform -translate-y-1/2">
-                  <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                  </svg>
-                </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">カード番号</label>
+            <div class="relative">
+              <input type="text" value="4111 1111 1111 1111" readonly class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 pr-10">
+              <div class="absolute right-2 top-1/2 transform -translate-y-1/2">
+                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
               </div>
             </div>
-            <div class="flex space-x-4">
-              <div class="w-1/2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">有効期限</label>
-                <input type="text" value="12/25" readonly class="w-full p-2 border border-gray-300 rounded-md bg-gray-50">
-              </div>
-              <div class="w-1/2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">CVV</label>
-                <input type="text" value="123" readonly class="w-full p-2 border border-gray-300 rounded-md bg-gray-50">
-              </div>
+          </div>
+          <div class="flex space-x-4">
+            <div class="w-1/2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">有効期限</label>
+              <input type="text" value="12/25" readonly class="w-full p-2 border border-gray-300 rounded-md bg-gray-50">
             </div>
-          `
+            <div class="w-1/2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">CVV</label>
+              <input type="text" value="123" readonly class="w-full p-2 border border-gray-300 rounded-md bg-gray-50">
+            </div>
+          </div>
+        `
 
           // モックUIをDOMに追加
           if (cardContainerRef.current && isMounted) {
@@ -111,7 +111,7 @@ export function NewPaymentInfo({ formData, updateFormData, nextStep, prevStep }:
         const payments = await window.Square.payments(appId)
 
         // カメラサポートの確認
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function") {
           setIsCameraSupported(true)
         }
 
@@ -180,7 +180,7 @@ export function NewPaymentInfo({ formData, updateFormData, nextStep, prevStep }:
     return () => {
       isMounted = false
 
-      // カードインスタンスがあれば��棄
+      // カードインスタンスがあれば破棄
       if (cardInstance && typeof cardInstance.destroy === "function") {
         try {
           cardInstance.destroy()
@@ -301,13 +301,4 @@ export function NewPaymentInfo({ formData, updateFormData, nextStep, prevStep }:
       </div>
     </form>
   )
-}
-
-// グローバル型定義
-declare global {
-  interface Window {
-    Square?: {
-      payments(appId: string): Promise<any>
-    }
-  }
 }

@@ -74,7 +74,7 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
         await card.attach(cardContainerRef.current)
 
         // カメラサポートの確認
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function") {
           setIsCameraSupported(true)
         }
 
