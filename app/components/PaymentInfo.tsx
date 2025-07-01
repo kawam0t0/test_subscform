@@ -3,25 +3,9 @@
 import React from "react"
 
 import { useState } from "react"
-import { MapPin, User, Mail, Phone, CreditCard } from "lucide-react"
+import { CreditCard } from "lucide-react"
 import { loadSquareSdk } from "../utils/square-sdk"
 import type { BaseFormProps } from "../types"
-
-interface ConfirmationItemProps {
-  icon: React.ReactNode
-  label: string
-  value: string
-}
-
-const ConfirmationItem = ({ icon, label, value }: ConfirmationItemProps) => (
-  <div className="flex items-center gap-4">
-    <div className="text-primary">{icon}</div>
-    <div className="space-y-1">
-      <div className="text-sm text-gray-600">{label}</div>
-      <div className="text-base font-medium text-gray-900">{value}</div>
-    </div>
-  </div>
-)
 
 export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [card, setCard] = useState<any>(null)
@@ -69,7 +53,7 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
         if (error instanceof Error) {
           setError(`初期化エラー: ${error.message}`)
         } else {
-          setError("支払いフォームの初期化中に不明なエラーが発生しました")
+          setError("支払いフォームの初期化中に不明なエラーが発生しまた")
         }
         setIsLoading(false)
       }
@@ -106,36 +90,25 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-blue-50/80 rounded-2xl p-6 space-y-6">
-        <ConfirmationItem icon={<MapPin className="w-6 h-6" />} label="入会店舗" value={formData.store} />
-        <ConfirmationItem
-          icon={<User className="w-6 h-6" />}
-          label="お名前"
-          value={`${formData.familyName} ${formData.givenName}`}
-        />
-        <ConfirmationItem icon={<Mail className="w-6 h-6" />} label="メールアドレス" value={formData.email} />
-        <ConfirmationItem icon={<Phone className="w-6 h-6" />} label="電話番号" value={formData.phone} />
-
-        <div>
-          <label htmlFor="card-container" className="form-label flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            クレジットカード情報
-          </label>
-          <div
-            className={`card-input-wrapper ${isFocused ? "focused" : ""}`}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-          >
-            <div ref={cardContainerRef} id="card-container" className="min-h-[44px]" />
-          </div>
+      <div>
+        <label htmlFor="card-container" className="form-label flex items-center gap-2">
+          <CreditCard className="h-5 w-5" />
+          クレジットカード情報
+        </label>
+        <div
+          className={`card-input-wrapper ${isFocused ? "focused" : ""}`}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+        >
+          <div ref={cardContainerRef} id="card-container" className="min-h-[44px]" />
         </div>
-
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl">
-            <p className="text-sm">{error}</p>
-          </div>
-        )}
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl">
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
 
       <div className="flex justify-end gap-4">
         <button
@@ -157,4 +130,3 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
     </form>
   )
 }
-

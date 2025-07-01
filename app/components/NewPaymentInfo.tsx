@@ -120,4 +120,3 @@ export function NewPaymentInfo({ formData, updateFormData, nextStep, prevStep }:
     </form>
   )
 }
-

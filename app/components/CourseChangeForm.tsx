@@ -18,7 +18,7 @@ const courses = [
   },
   {
     id: "1480",
-    name: "スーパーシャンプーナイアガラ",
+    name: "スーパーャンプーナイアガラ",
     price: "1480円",
   },
   {
@@ -96,3 +96,5 @@ export function CourseChangeForm({ formData, updateFormData, nextStep, prevStep 
     </form>
   )
 }
+
+export default CourseChangeForm

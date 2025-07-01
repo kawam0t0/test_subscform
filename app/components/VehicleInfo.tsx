@@ -13,9 +13,9 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // 車種の全角カタカナバリデーション
-    if (!/^[ァ-ヶー　]+$/.test(formData.carModel)) {
-      setCarModelError("車種は全角カタカナで入力してください。")
+    // 車種のバリデーション - 全角カタカナまたは半角ローマ字を許可
+    if (!/^[ァ-ヶー　a-zA-Z0-9\s-]+$/.test(formData.carModel)) {
+      setCarModelError("車種は全角カタカナまたはローマ字で入力してください。")
       return
     }
 
@@ -35,7 +35,7 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
             <Car className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7" />
             車種
             <span className="text-sm md:text-base lg:text-lg font-normal text-gray-500 ml-2">
-              (全角カタカナで入力してください)
+              (全角カタカナ/ローマ字で入力して下さい)
             </span>
           </label>
           <input
@@ -45,7 +45,7 @@ export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: Ba
             onChange={handleCarModelChange}
             required
             className="form-input"
-            placeholder="例：タント、プリウス"
+            placeholder="例：タント、BMW"
           />
           {carModelError && <p className="text-red-500 text-sm mt-2">{carModelError}</p>}
         </div>

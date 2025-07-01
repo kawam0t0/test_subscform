@@ -18,8 +18,14 @@ function extractIdentifierAndModel(familyName: string): { identifier: string; mo
       return { identifier: id, model }
     }
   }
-  const model = familyName.split("/")[0].trim()
-  return { identifier: "", model }
+
+  // 「車種/姓」の形式かどうかをチェック
+  const parts = familyName.split("/")
+  if (parts.length > 1) {
+    return { identifier: "", model: parts[0].trim() }
+  }
+
+  return { identifier: "", model: familyName }
 }
 
 export async function POST(request: Request) {
@@ -42,6 +48,7 @@ export async function POST(request: Request) {
       newCarModel,
       newCarColor,
       newEmail,
+      membershipNumber, // 会員番号を追加
     } = formData
 
     // メールアドレスで検索
@@ -71,36 +78,55 @@ export async function POST(request: Request) {
     const matchingCustomer = emailSearchResult.customers?.[0] || phoneSearchResult.customers?.[0]
 
     if (!matchingCustomer || !matchingCustomer.id) {
-      throw new Error("��定されたメールアドレスまたは電話番号に一致する顧客が見つかりません")
+      throw new Error("指定されたメールアドレスまたは電話番号に一致する顧客が見つかりません")
     }
 
     const customerId = matchingCustomer.id
-    const { identifier } = extractIdentifierAndModel(matchingCustomer?.familyName || "")
+
+    // 既存の車種情報を取得
+    let existingCarModel = carModel
+
+    // matchingCustomerのcompanyNameから車種を取得（形式は「車種/色」を想定）
+    if (matchingCustomer.companyName) {
+      const companyParts = matchingCustomer.companyName.split("/")
+      if (companyParts.length > 0) {
+        existingCarModel = companyParts[0].trim()
+      }
+    }
+
+    // familyNameから車種を取得（形式は「車種/姓」を想定）- 既存データとの互換性のため
+    if (!existingCarModel && matchingCustomer.familyName) {
+      const { model } = extractIdentifierAndModel(matchingCustomer.familyName)
+      if (model && model !== matchingCustomer.familyName) {
+        existingCarModel = model
+      }
+    }
 
     // 更新データの準備
     const updateData: any = {
       givenName: givenName,
-      familyName: familyName, // 常に入力された姓を使用
+      familyName: familyName, // 姓のみを格納
       emailAddress: operation === "メールアドレス変更" ? newEmail : email,
       phoneNumber: phone,
       note: store,
     }
 
-    // 車両情報の更新（車両変更時）
+    // 操作タイプに応じてcompanyNameを設定
     if (operation === "登録車両変更") {
-      // companyNameに新しい車両詳細を設定（車種/色形式）
+      // 登録車両変更の場合、companyNameに新しい車両詳細を設定（車種/色形式）
       updateData.companyName = `${newCarModel}/${newCarColor}`
+    } else {
+      // その他の操作の場合、既存の車両情報を保持
+      if (matchingCustomer.companyName) {
+        updateData.companyName = matchingCustomer.companyName
+      } else if (carModel && carColor) {
+        updateData.companyName = `${carModel}/${carColor}`
+      }
     }
+
     // コース変更時
-    else if (operation === "洗車コース変更") {
-      // 既存の車両情報を保持
-      updateData.companyName = matchingCustomer.companyName
+    if (operation === "洗車コース変更") {
       updateData.note = `${store}, コース: ${newCourse.split("（")[0].trim()}`
-    }
-    // その他の操作（メールアドレス変更、クレジットカード情報変更など）
-    else {
-      // 既存の車両情報を保持
-      updateData.companyName = matchingCustomer.companyName
     }
 
     // 顧客情報を更新
@@ -134,23 +160,25 @@ export async function POST(request: Request) {
 
     // Google Sheetsにデータを追加
     const sheetData = [
-      formatJapanDateTime(new Date()),
-      operation,
-      matchingCustomer.referenceId || "",
-      store,
-      `${familyName} ${givenName}`,
-      email,
-      operation === "メールアドレス変更" ? newEmail : "",
-      phone,
-      carModel || newCarModel,
-      carColor || newCarColor,
-      "", // ナンバープレート（削除済み）
-      currentCourse || "",
-      newCarModel || "",
-      newCarColor || "",
-      "", // 新しいナンバープレート（削除済み）
-      newCourse || "",
-      "",
+      formatJapanDateTime(new Date()), // A列
+      operation, // B列
+      matchingCustomer.referenceId || "", // C列
+      store, // D列
+      `${familyName} ${givenName}`, // E列
+      email, // F列
+      operation === "メールアドレス変更" ? newEmail : "", // G列
+      phone, // H列
+      carModel || newCarModel || existingCarModel, // I列
+      carColor || newCarColor, // J列
+      "", // K列: ナンバー（削除済み）
+      currentCourse || "", // L列
+      newCarModel || "", // M列
+      newCarColor || "", // N列
+      "", // O列: 新しいナンバープレート（削除済み）
+      newCourse || "", // P列
+      "", // Q列: その他（submit-inquiryで利用）
+      "", // R列: 空白
+      membershipNumber || "", // S列: 会員番号
     ]
     await appendToSheet([sheetData])
 
@@ -169,7 +197,7 @@ export async function POST(request: Request) {
       }
 
       await sendInquiryConfirmationEmail(
-        `${familyName} ${givenName}`,
+        `${familyName} ${givenName}`, // 姓名をそのまま使用
         operation === "メールアドレス変更" ? newEmail : email, // 新しいメールアドレスに送信
         operation,
         store,

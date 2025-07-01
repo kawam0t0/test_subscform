@@ -193,3 +193,39 @@
   }
 }
 
+/* カード入力フォームのスタイル */
+.card-input-wrapper {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background-color: white;
+  transition: all 0.2s ease;
+  min-height: 120px;
+}
+
+.card-input-wrapper.focused {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+/* Square Web Payment SDKのスタイル上書き */
+#card-container {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+}
+
+#card-container iframe {
+  width: 100%;
+  min-height: 40px;
+}
+
+/* モック用のスタイル */
+.mock-card-container {
+  width: 100%;
+  padding: 8px;
+}
+
+.mock-card-container input {
+  font-family: monospace;
+}
