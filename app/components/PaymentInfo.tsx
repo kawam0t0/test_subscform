@@ -54,7 +54,7 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
       setIsLoading(true)
       setError(null)
 
-      // モックトークンを生成
+      // モック��ークンを生成
       const mockToken = `mock_card_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`
 
       // 少し遅延を入れてAPIリクエストをシミュレート
