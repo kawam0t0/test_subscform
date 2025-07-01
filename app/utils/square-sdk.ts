@@ -85,36 +85,7 @@ export async function loadSquareSdk() {
     try {
       const payments = await window.Square.payments(appId)
       console.log("Square payments initialized successfully")
-
-      // カメラ機能付きのpayments オブジェクトを拡張
-      return {
-        ...payments,
-        card: async (options: any = {}) => {
-          // カメラ機能を有効化したオプションをマージ
-          const enhancedOptions = {
-            ...options,
-            includeInputLabels: true,
-            cardNumber: {
-              elementId: "card-number",
-              placeholder: "カード番号またはカメラでスキャン",
-              showCardScannerIcon: true,
-              ...options.cardNumber,
-            },
-            expirationDate: {
-              elementId: "expiration-date",
-              placeholder: "MM/YY",
-              ...options.expirationDate,
-            },
-            cvv: {
-              elementId: "cvv",
-              placeholder: "CVV",
-              ...options.cvv,
-            },
-          }
-
-          return await payments.card(enhancedOptions)
-        },
-      }
+      return payments
     } catch (error) {
       console.error("Failed to initialize Square payments:", error)
       throw error
