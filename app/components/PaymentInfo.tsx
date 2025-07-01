@@ -4,45 +4,80 @@ import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import { CreditCard } from "lucide-react"
 import type { BaseFormProps } from "../types"
-import { SquareSDK, loadSquareScript } from "../utils/square-sdk"
 
 export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
   const [isCardReady, setIsCardReady] = useState(false)
-  const squareSDKRef = useRef<SquareSDK | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const cardContainerRef = useRef<HTMLDivElement>(null)
+  const cardInstanceRef = useRef<any>(null)
+  const paymentsInstanceRef = useRef<any>(null)
 
+  // コンポーネントがマウントされたことを確認
   useEffect(() => {
-    let isMounted = true
-    let paymentsInstance: any = null
+    setIsMounted(true)
+    return () => {
+      setIsMounted(false)
+      // クリーンアップ時にカードインスタンスを破棄
+      if (cardInstanceRef.current && typeof cardInstanceRef.current.destroy === "function") {
+        try {
+          cardInstanceRef.current.destroy()
+        } catch (e) {
+          console.error("カードインスタンスの破棄に失敗:", e)
+        }
+      }
+    }
+  }, [])
 
-    const initializeSquarePayments = async () => {
+  // Square SDKの読み込みと初期化
+  useEffect(() => {
+    if (!isMounted) return
+
+    let scriptLoaded = false
+
+    const loadSquareScript = async () => {
       try {
         setError(null)
         setIsLoading(true)
 
         const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID
+
         if (!appId) {
-          throw new Error("Square App ID が設定されていません")
+          throw new Error("Square App IDが設定されていません")
         }
 
-        await loadSquareScript()
+        console.log("Square App ID:", appId)
 
-        if (!isMounted) return
+        // Square.jsがまだ読み込まれていない場合は読み込む
+        if (!window.Square && !scriptLoaded) {
+          scriptLoaded = true
+          console.log("Square.jsスクリプトを読み込み中...")
 
-        // window.Square が存在するか確認
-        if (!window.Square) {
-          throw new Error("Square SDK がウィンドウオブジェクトにロードされていません。")
-        }
-
-        paymentsInstance = await window.Square.payments(appId)
-
-        if (isMounted) {
-          setIsLoading(false)
+          const script = document.createElement("script")
+          script.src = "https://web.squarecdn.com/v1/square.js"
+          script.async = true
+          script.onload = () => {
+            console.log("Square.jsスクリプトの読み込み完了")
+            if (isMounted) {
+              initializeSquare(appId)
+            }
+          }
+          script.onerror = () => {
+            console.error("Square.jsスクリプトの読み込み失敗")
+            if (isMounted) {
+              setError("Square SDKの読み込みに失敗しました")
+              setIsLoading(false)
+            }
+          }
+          document.head.appendChild(script)
+        } else if (window.Square) {
+          // すでに読み込まれている場合は初期化
+          console.log("Square.jsは既に読み込まれています")
+          initializeSquare(appId)
         }
       } catch (err) {
-        console.error("Square 初期化エラー:", err)
+        console.error("Square SDK読み込みエラー:", err)
         if (isMounted) {
           setError(`初期化エラー: ${err instanceof Error ? err.message : "不明なエラー"}`)
           setIsLoading(false)
@@ -50,64 +85,91 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
       }
     }
 
-    initializeSquarePayments()
-
-    return () => {
-      isMounted = false
-      if (paymentsInstance && typeof paymentsInstance.destroy === "function") {
-        try {
-          paymentsInstance.destroy()
-        } catch (e) {
-          console.error("Payments インスタンスの破棄に失敗:", e)
-        }
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    let isMounted = true
-    const attachCardForm = async () => {
-      if (!containerRef.current || isLoading || !window.Square || !process.env.NEXT_PUBLIC_SQUARE_APP_ID) {
-        return
-      }
-
+    const initializeSquare = async (appId: string) => {
       try {
-        // SquareSDK インスタンスを初期化
-        squareSDKRef.current = new SquareSDK(process.env.NEXT_PUBLIC_SQUARE_APP_ID)
-        await squareSDKRef.current.initialize()
+        if (!window.Square || !isMounted) return
 
-        if (!isMounted) return
+        console.log("Square Paymentsを初期化中...")
 
-        await squareSDKRef.current.attachCard("card-container")
+        // Squareの支払い機能を初期化
+        const payments = await window.Square.payments(appId)
+        paymentsInstanceRef.current = payments
 
-        if (isMounted) {
-          setIsCardReady(true)
+        console.log("Square Payments初期化完了")
+
+        if (!isMounted || !cardContainerRef.current) return
+
+        // 既存の子要素をクリア
+        while (cardContainerRef.current.firstChild) {
+          cardContainerRef.current.removeChild(cardContainerRef.current.firstChild)
         }
+
+        console.log("カードフォームを作成中...")
+
+        // シンプルなスタイル設定（エラーを避けるため）
+        const card = await payments.card({
+          style: {
+            input: {
+              fontSize: "16px",
+              fontFamily: "Arial, sans-serif",
+            },
+            "input::placeholder": {
+              color: "#999999",
+            },
+            ".input-container": {
+              borderColor: "#E5E7EB",
+              borderRadius: "8px",
+            },
+            ".input-container.is-focus": {
+              borderColor: "#3B82F6",
+            },
+            ".input-container.is-error": {
+              borderColor: "#EF4444",
+            },
+          },
+        })
+
+        console.log("カードフォーム作成完了")
+
+        if (!isMounted || !cardContainerRef.current) return
+
+        // カードフォームをDOMにアタッチ
+        console.log("カードフォームをアタッチ中...")
+        await card.attach(cardContainerRef.current)
+
+        console.log("カードフォームアタッチ完了")
+
+        cardInstanceRef.current = card
+        setIsCardReady(true)
+        setIsLoading(false)
       } catch (err) {
-        console.error("カードフォームアタッチエラー:", err)
+        console.error("Square初期化エラー:", err)
         if (isMounted) {
-          setError(`カードフォームアタッチエラー: ${err instanceof Error ? err.message : "不明なエラー"}`)
+          setError(`カード初期化エラー: ${err instanceof Error ? err.message : "不明なエラー"}`)
+          setIsLoading(false)
         }
       }
     }
 
-    if (!isLoading) {
-      attachCardForm()
-    }
+    loadSquareScript()
 
+    // クリーンアップ関数
     return () => {
-      isMounted = false
-      if (squareSDKRef.current) {
-        squareSDKRef.current.destroy()
-        squareSDKRef.current = null
+      if (cardInstanceRef.current && typeof cardInstanceRef.current.destroy === "function") {
+        try {
+          cardInstanceRef.current.destroy()
+          cardInstanceRef.current = null
+        } catch (e) {
+          console.error("カードインスタンスの破棄に失敗:", e)
+        }
       }
     }
-  }, [isLoading, containerRef.current])
+  }, [isMounted])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!isCardReady || !squareSDKRef.current) {
+    if (!isCardReady || !cardInstanceRef.current) {
       setError("カード情報が初期化されていません")
       return
     }
@@ -116,13 +178,23 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
       setIsLoading(true)
       setError(null)
 
-      const result = await squareSDKRef.current.tokenizeCard()
+      console.log("カード情報をトークン化中...")
 
-      if (result.status === "OK" && result.token) {
+      // カード情報をトークン化
+      const result = await cardInstanceRef.current.tokenize()
+
+      console.log("トークン化結果:", result)
+
+      if (result.status === "OK") {
+        console.log("カード情報のトークン化成功:", result.token)
+
+        // 実際のトークンを保存して次のステップへ
         updateFormData({ cardToken: result.token })
         nextStep()
       } else {
-        throw new Error(result.errors?.[0]?.message || "カードの処理中にエラーが発生しました")
+        console.error("カード情報のトークン化失敗:", result.errors)
+        const errorMessage = result.errors?.[0]?.message || "カードの処理中にエラーが発生しました"
+        throw new Error(errorMessage)
       }
     } catch (err) {
       console.error("カードトークン化エラー:", err)
@@ -149,11 +221,13 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
               </div>
             </div>
           ) : (
-            <div ref={containerRef} id="card-container" className="min-h-[120px]"></div>
+            <div ref={cardContainerRef} id="card-container" className="min-h-[120px]"></div>
           )}
         </div>
 
-        <p className="mt-2 text-sm text-gray-500"></p>
+        <p className="mt-2 text-sm text-gray-500">
+          テスト用カード番号: 4111 1111 1111 1111（有効期限は未来の日付、CVVは任意の3桁）
+        </p>
       </div>
 
       {error && (
@@ -172,4 +246,13 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
       </div>
     </form>
   )
+}
+
+// グローバル型定義
+declare global {
+  interface Window {
+    Square?: {
+      payments(appId: string): Promise<any>
+    }
+  }
 }
