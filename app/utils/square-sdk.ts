@@ -1,104 +1,101 @@
+// Square Web Payments SDK の初期化とカード処理を行うユーティリティ
+
 declare global {
   interface Window {
-    Square: {
+    Square?: {
       payments(appId: string): Promise<any>
     }
   }
 }
 
-// モックカード処理の実装
-function createMockPayments() {
-  return {
-    card: (options: any) => {
-      console.log("モックカードオプション:", options)
-      return {
-        attach: async (element: HTMLElement) => {
-          console.log("Mock card attached to element:", element)
-          return true
+export interface SquareCardResult {
+  status: string
+  token?: string
+  errors?: Array<{ message: string }>
+}
+
+export class SquareSDK {
+  private payments: any = null
+  private card: any = null
+  private appId: string
+
+  constructor(appId: string) {
+    this.appId = appId
+  }
+
+  async initialize(): Promise<void> {
+    if (!window.Square) {
+      throw new Error("Square SDK が読み込まれていません")
+    }
+
+    this.payments = await window.Square.payments(this.appId)
+  }
+
+  async attachCard(containerId: string): Promise<void> {
+    if (!this.payments) {
+      throw new Error("Square Payments が初期化されていません")
+    }
+
+    const container = document.getElementById(containerId)
+    if (!container) {
+      throw new Error(`コンテナ ${containerId} が見つかりません`)
+    }
+
+    this.card = await this.payments.card({
+      style: {
+        input: {
+          fontSize: "16px",
+          color: "#374151",
+          backgroundColor: "#ffffff",
         },
-        tokenize: async () => {
-          console.log("Mock card tokenized")
-          return {
-            status: "OK",
-            token: "mock_card_token_" + Date.now(),
-          }
+        "input::placeholder": {
+          color: "#9CA3AF",
         },
-      }
-    },
+        ".input-container": {
+          borderColor: "#E5E7EB",
+          borderWidth: "1px",
+          borderRadius: "0.5rem",
+          padding: "0.75rem",
+        },
+        ".input-container.is-focus": {
+          borderColor: "#3B82F6",
+          boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.25)",
+        },
+      },
+    })
+
+    await this.card.attach(container)
+  }
+
+  async tokenizeCard(): Promise<SquareCardResult> {
+    if (!this.card) {
+      throw new Error("カードが初期化されていません")
+    }
+
+    const result = await this.card.tokenize()
+    return result
+  }
+
+  destroy(): void {
+    if (this.card && typeof this.card.destroy === "function") {
+      this.card.destroy()
+      this.card = null
+    }
   }
 }
 
-export async function loadSquareSdk() {
-  if (typeof window === "undefined") return null
-
-  // 開発環境でモックモードを使用するかどうか
-  const useMockInDev = true // 必要に応じてtrueまたはfalseに設定
-  const isDev =
-    process.env.NODE_ENV === "development" ||
-    window.location.hostname === "localhost" ||
-    window.location.hostname.includes("stackblitz")
-
-  if (isDev && useMockInDev) {
-    console.log("Using mock Square payments in development environment")
-    return createMockPayments()
-  }
-
-  try {
-    console.log("Starting Square initialization in loadSquareSdk function")
-
-    const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID
-
-    console.log("Environment variables:", {
-      appId,
-      baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
-    })
-
-    if (!appId) {
-      throw new Error("Required environment variable NEXT_PUBLIC_SQUARE_APP_ID is missing")
+export async function loadSquareScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.Square) {
+      resolve()
+      return
     }
 
-    // Square.jsスクリプトが既に読み込まれているか確認
-    if (!window.Square) {
-      console.log("Loading Square.js script...")
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script")
-        script.src = "https://web.squarecdn.com/v1/square.js"
-        script.async = true
-        script.onload = () => {
-          console.log("Square.js script loaded successfully")
-          resolve()
-        }
-        script.onerror = (error) => {
-          console.error("Failed to load Square.js script:", error)
-          reject(error)
-        }
-        document.head.appendChild(script)
-      })
-
-      // スクリプト読み込み後の待機時間
-      console.log("Waiting for Square.js to initialize...")
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-    }
-
-    console.log("Initializing Square payments with:", { appId })
-
-    try {
-      const payments = await window.Square.payments(appId)
-      console.log("Square payments initialized successfully")
-      return payments
-    } catch (error) {
-      console.error("Failed to initialize Square payments:", error)
-      throw error
-    }
-  } catch (error) {
-    console.error("Square SDK initialization error:", error)
-
-    // エラーが発生した場合でもモックを返す（開発環境のみ）
-    if (isDev) {
-      console.log("Falling back to mock implementation due to error")
-      return createMockPayments()
-    }
-
-    throw error
-  }
+    const script = document.createElement("script")
+    script.src = "https://web.squarecdn.com/v1/square.js"
+    script.async = true
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error("Square SDK の読み込みに失敗しました"))
+    document.head.appendChild(script)
+  })
 }
