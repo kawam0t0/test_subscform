@@ -15,8 +15,9 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
 
   useEffect(() => {
     let isMounted = true
+    let paymentsInstance: any = null
 
-    const initializeSquare = async () => {
+    const initializeSquarePayments = async () => {
       try {
         setError(null)
         setIsLoading(true)
@@ -26,22 +27,18 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
           throw new Error("Square App ID が設定されていません")
         }
 
-        // Square SDK を読み込み
         await loadSquareScript()
 
         if (!isMounted) return
 
-        // Square SDK を初期化
-        squareSDKRef.current = new SquareSDK(appId)
-        await squareSDKRef.current.initialize()
+        // window.Square が存在するか確認
+        if (!window.Square) {
+          throw new Error("Square SDK がウィンドウオブジェクトにロードされていません。")
+        }
 
-        if (!isMounted) return
-
-        // カードフォームをアタッチ
-        await squareSDKRef.current.attachCard("card-container")
+        paymentsInstance = await window.Square.payments(appId)
 
         if (isMounted) {
-          setIsCardReady(true)
           setIsLoading(false)
         }
       } catch (err) {
@@ -53,15 +50,59 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
       }
     }
 
-    initializeSquare()
+    initializeSquarePayments()
+
+    return () => {
+      isMounted = false
+      if (paymentsInstance && typeof paymentsInstance.destroy === "function") {
+        try {
+          paymentsInstance.destroy()
+        } catch (e) {
+          console.error("Payments インスタンスの破棄に失敗:", e)
+        }
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+    const attachCardForm = async () => {
+      if (!containerRef.current || isLoading || !window.Square || !process.env.NEXT_PUBLIC_SQUARE_APP_ID) {
+        return
+      }
+
+      try {
+        // SquareSDK インスタンスを初期化
+        squareSDKRef.current = new SquareSDK(process.env.NEXT_PUBLIC_SQUARE_APP_ID)
+        await squareSDKRef.current.initialize()
+
+        if (!isMounted) return
+
+        await squareSDKRef.current.attachCard("card-container")
+
+        if (isMounted) {
+          setIsCardReady(true)
+        }
+      } catch (err) {
+        console.error("カードフォームアタッチエラー:", err)
+        if (isMounted) {
+          setError(`カードフォームアタッチエラー: ${err instanceof Error ? err.message : "不明なエラー"}`)
+        }
+      }
+    }
+
+    if (!isLoading) {
+      attachCardForm()
+    }
 
     return () => {
       isMounted = false
       if (squareSDKRef.current) {
         squareSDKRef.current.destroy()
+        squareSDKRef.current = null
       }
     }
-  }, [])
+  }, [isLoading, containerRef.current])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -112,6 +153,7 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
           )}
         </div>
 
+        <p className="mt-2 text-sm text-gray-500"></p>
       </div>
 
       {error && (
