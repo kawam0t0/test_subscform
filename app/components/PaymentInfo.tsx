@@ -1,107 +1,144 @@
 "use client"
 
-import React from "react"
+import type React from "react"
 
 import { useState } from "react"
-import { CreditCard } from "lucide-react"
-import { loadSquareSdk } from "../utils/square-sdk"
+import { CreditCard, Calendar, Lock } from "lucide-react"
 import type { BaseFormProps } from "../types"
 
 export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
-  const [card, setCard] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [cardNumber, setCardNumber] = useState("4111 1111 1111 1111")
+  const [expiry, setExpiry] = useState("12/25")
+  const [cvv, setCvv] = useState("123")
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isFocused, setIsFocused] = useState(false)
-  const cardContainerRef = React.useRef<HTMLDivElement>(null)
 
-  React.useEffect(() => {
-    let isMounted = true
+  const formatCardNumber = (value: string) => {
+    // 数字以外を削除
+    const numbers = value.replace(/\D/g, "")
+    // 4桁ごとにスペースを挿入
+    const formatted = numbers.replace(/(\d{4})(?=\d)/g, "$1 ")
+    return formatted.substring(0, 19) // 最大16桁+スペース3つ
+  }
 
-    const initializeSquare = async () => {
-      try {
-        setError(null)
-        console.log("Square初期化を開始します")
-
-        if (!cardContainerRef.current) {
-          throw new Error("カードコンテナが見つかりません")
-        }
-
-        const payments = await loadSquareSdk()
-        if (!payments || !isMounted) return
-
-        console.log("Square SDKが正常に読み込まれました。カードを初期化します")
-        const card = await payments.card({
-          style: {
-            input: {
-              fontSize: "16px",
-              color: "#374151",
-            },
-            "input::placeholder": {
-              color: "#9CA3AF",
-            },
-          },
-        })
-        await card.attach(cardContainerRef.current)
-
-        if (isMounted) {
-          setCard(card)
-          setIsLoading(false)
-          console.log("カードが正常に初期化されました")
-        }
-      } catch (error) {
-        console.error("支払い初期化エラー:", error)
-        if (error instanceof Error) {
-          setError(`初期化エラー: ${error.message}`)
-        } else {
-          setError("支払いフォームの初期化中に不明なエラーが発生しまた")
-        }
-        setIsLoading(false)
-      }
+  const formatExpiry = (value: string) => {
+    // 数字以外を削除
+    const numbers = value.replace(/\D/g, "")
+    // 月/年の形式にフォーマット
+    if (numbers.length >= 2) {
+      return `${numbers.substring(0, 2)}/${numbers.substring(2, 4)}`
     }
-
-    initializeSquare()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
+    return numbers
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!card) return
+
+    // 簡易バリデーション
+    if (cardNumber.replace(/\s/g, "").length < 16) {
+      setError("有効なカード番号を入力してください")
+      return
+    }
+
+    if (expiry.length < 5) {
+      setError("有効な有効期限を入力してください")
+      return
+    }
+
+    if (cvv.length < 3) {
+      setError("有効なセキュリティコードを入力してください")
+      return
+    }
 
     try {
       setIsLoading(true)
       setError(null)
-      const result = await card.tokenize()
-      if (result.status === "OK") {
-        updateFormData({ cardToken: result.token })
-        nextStep()
-      } else {
-        throw new Error(result.errors[0].message)
-      }
-    } catch (error) {
-      console.error("カードの処理中にエラーが発生しました:", error)
-      setError("カードの処理中にエラーが発生しました")
+
+      // モックトークンを生成
+      const mockToken = `mock_card_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`
+
+      // 少し遅延を入れてAPIリクエストをシミュレート
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // フォームデータを更新
+      updateFormData({ cardToken: mockToken })
+
+      // 次のステップへ
+      nextStep()
+    } catch (err) {
+      console.error("カード処理エラー:", err)
+      setError("カード情報の処理中にエラーが発生しました")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 form-container">
       <div>
-        <label htmlFor="card-container" className="form-label flex items-center gap-2">
+        <label htmlFor="card-number" className="form-label flex items-center gap-2">
           <CreditCard className="h-5 w-5" />
           クレジットカード情報
         </label>
-        <div
-          className={`card-input-wrapper ${isFocused ? "focused" : ""}`}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-        >
-          <div ref={cardContainerRef} id="card-container" className="min-h-[44px]" />
+
+        <div className="mt-2 border border-gray-300 rounded-xl p-6 bg-white shadow-sm space-y-4">
+          <div>
+            <label htmlFor="card-number" className="block text-sm font-medium text-gray-700 mb-1">
+              カード番号
+            </label>
+            <input
+              id="card-number"
+              type="text"
+              value={cardNumber}
+              onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+              placeholder="1234 5678 9012 3456"
+              maxLength={19}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="expiry" className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>有効期限 (月/年)</span>
+                </div>
+              </label>
+              <input
+                id="expiry"
+                type="text"
+                value={expiry}
+                onChange={(e) => setExpiry(formatExpiry(e.target.value))}
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                placeholder="MM/YY"
+                maxLength={5}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="flex items-center gap-1">
+                  <Lock className="h-4 w-4" />
+                  <span>セキュリティコード</span>
+                </div>
+              </label>
+              <input
+                id="cvv"
+                type="text"
+                value={cvv}
+                onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").substring(0, 4))}
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                placeholder="123"
+                maxLength={4}
+              />
+            </div>
+          </div>
         </div>
+
+        <p className="mt-2 text-sm text-gray-500">
+          テスト用カード情報がデフォルトで入力されています。実際のカード情報を入力することもできます。
+        </p>
       </div>
 
       {error && (
@@ -110,20 +147,11 @@ export function PaymentInfo({ formData, updateFormData, nextStep, prevStep }: Ba
         </div>
       )}
 
-      <div className="flex justify-end gap-4">
-        <button
-          type="button"
-          onClick={prevStep}
-          disabled={isLoading}
-          className="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
-        >
+      <div className="pt-4 grid grid-cols-2 gap-3">
+        <button type="button" onClick={prevStep} className="btn btn-secondary" disabled={isLoading}>
           戻る
         </button>
-        <button
-          type="submit"
-          disabled={isLoading || !card}
-          className="px-6 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary hover:bg-primary/90"
-        >
+        <button type="submit" disabled={isLoading} className="btn btn-primary">
           {isLoading ? "処理中..." : "次へ"}
         </button>
       </div>
