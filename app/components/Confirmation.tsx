@@ -1,10 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import { MapPin, User, Mail, Phone, Car, Palette, CreditCard, CheckCircle, FileText, Calendar } from "lucide-react"
+import {
+  MapPin,
+  User,
+  Mail,
+  Phone,
+  Car,
+  Palette,
+  CreditCard,
+  CheckCircle,
+  FileText,
+  Calendar,
+  Gift,
+} from "lucide-react"
 import Link from "next/link"
 import type React from "react"
 import type { FormData } from "../types"
+import { isCampaignValid } from "../utils/campaign-utils"
 
 interface ConfirmationProps {
   formData: FormData
@@ -60,6 +73,14 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
           ? "2980円"
           : ""
 
+  // キャンペーン適用チェック
+  const isCampaignApplied = isCampaignValid(
+    formData.campaignCode || "",
+    formData.store,
+    formData.operation,
+    formData.course,
+  )
+
   return (
     <div className="space-y-6">
       {error && (
@@ -76,6 +97,16 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
 
       <div className="bg-blue-50/80 rounded-2xl p-6 space-y-6">
         <ConfirmationItem icon={<MapPin className="w-6 h-6" />} label="入会店舗" value={formData.store} />
+
+        {/* キャンペーンコード表示 */}
+        {formData.campaignCode && (
+          <ConfirmationItem
+            icon={<Gift className="w-6 h-6" />}
+            label="キャンペーンコード"
+            value={formData.campaignCode}
+          />
+        )}
+
         <ConfirmationItem icon={<User className="w-6 h-6" />} label="姓" value={`${formData.familyName}`} />
         <ConfirmationItem icon={<User className="w-6 h-6" />} label="名" value={formData.givenName} />
         <ConfirmationItem icon={<Mail className="w-6 h-6" />} label="メールアドレス" value={formData.email} />
@@ -97,7 +128,23 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
               label="選択されたコース"
               value={formData.course}
             />
-            {formData.enableSubscription && (
+
+            {/* キャンペーン適用時の特別表示 */}
+            {isCampaignApplied && (
+              <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                <div className="flex">
+                  <Gift className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700 font-medium">🎉 キャンペーン適用</p>
+                    <p className="text-sm text-red-600 mt-1">
+                      プレミアムスタンダードが2ヶ月間無料！3ヶ月目から月額980円が適用されます。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {formData.enableSubscription && !isCampaignApplied && (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-100">
                 <div className="flex">
                   <Calendar className="w-5 h-5 text-green-500 flex-shrink-0" />
@@ -202,9 +249,14 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
             プライバシーポリシー
           </Link>
           <span>を読み、理解し、これらに基づいて利用契約を締結することに同意します。</span>
-          {formData.enableSubscription && (
+          {formData.enableSubscription && !isCampaignApplied && (
             <span className="block mt-2 text-red-600 font-medium">
               また、定期支払いを選択したことにより、毎月自動的に料金が引き落とされることに同意します。
+            </span>
+          )}
+          {isCampaignApplied && (
+            <span className="block mt-2 text-red-600 font-medium">
+              また、キャンペーン適用により2ヶ月無料期間終了後、3ヶ月目から通常料金が適用されることに同意します。
             </span>
           )}
         </label>

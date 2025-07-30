@@ -2,6 +2,7 @@ import type React from "react"
 export interface FormData {
   operation: string
   store: string
+  campaignCode: string // キャンペーンコードを追加
   familyName: string
   givenName: string
   email: string

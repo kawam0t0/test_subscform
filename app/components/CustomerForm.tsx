@@ -19,10 +19,10 @@ import CourseChangeForm from "./CourseChangeForm"
 import type { FormData } from "../types"
 
 export function CustomerForm() {
-  const [step, setStep] = useState(1)
   const [formData, setFormData] = useState<FormData>({
     operation: "",
     store: "",
+    campaignCode: "", // キャンペーンコードを追加
     familyName: "",
     givenName: "",
     email: "",
@@ -44,6 +44,7 @@ export function CustomerForm() {
     enableSubscription: false,
   })
   const [error, setError] = useState<string | null>(null)
+  const [step, setStep] = useState<number>(1) // Declare the step variable
 
   const updateFormData = (data: Partial<FormData>) => {
     setFormData((prev) => ({ ...prev, ...data }))

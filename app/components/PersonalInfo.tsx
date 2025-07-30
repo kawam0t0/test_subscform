@@ -1,30 +1,49 @@
 "use client"
 
 import type React from "react"
-import { User, Mail, Phone, Camera } from "lucide-react"
+import { User, Mail, Phone, Gift } from "lucide-react"
 import { useState } from "react"
 import Image from "next/image"
 import type { BaseFormProps } from "../types"
-import { BarcodeScanner } from "./BarcodeScanner"
 
 export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [errors, setErrors] = useState({
+    campaignCode: "",
     familyName: "",
     givenName: "",
     email: "",
     phone: "",
-    membershipNumber: "",
   })
-  const [isScannerOpen, setIsScannerOpen] = useState(false)
+
+  // キャンペーン期間チェック（8/1~8/31）
+  const isCampaignPeriod = () => {
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const campaignStart = new Date(currentYear, 7, 1) // 8月1日（月は0から始まる）
+    const campaignEnd = new Date(currentYear, 7, 31, 23, 59, 59) // 8月31日
+    return now >= campaignStart && now <= campaignEnd
+  }
+
+  // キャンペーン対象かチェック
+  const isCampaignEligible = () => {
+    return formData.operation === "入会" && formData.store === "SPLASH'N'GO!新前橋店"
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors = {
+      campaignCode: "",
       familyName: "",
       givenName: "",
       email: "",
       phone: "",
-      membershipNumber: "",
+    }
+
+    // キャンペーンコードのバリデーション（キャンペーン対象の場合のみ）
+    if (isCampaignEligible() && formData.campaignCode) {
+      if (!/^[A-Za-z0-9]+$/.test(formData.campaignCode)) {
+        newErrors.campaignCode = "キャンペーンコードは半角英数字で入力してください。"
+      }
     }
 
     if (!/^[ァ-ヶー　]+$/.test(formData.familyName)) {
@@ -43,13 +62,6 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
       newErrors.phone = "電話番号は10桁または11桁の半角数字で入力してください。"
     }
 
-    // 会員番号のバリデーション（入会以外の場合のみ）
-    if (formData.operation !== "入会" && formData.membershipNumber) {
-      if (!/^[a-zA-Z0-9]+$/.test(formData.membershipNumber)) {
-        newErrors.membershipNumber = "会員番号は半角英数字で入力してください。"
-      }
-    }
-
     setErrors(newErrors)
 
     if (Object.values(newErrors).every((error) => error === "")) {
@@ -57,18 +69,10 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
     }
   }
 
-  // バーコードスキャン結果を処理
-  const handleScanResult = (result: string) => {
-    console.log("スキャン結果:", result)
-    // スキャン結果をクリーンアップ（英数字のみ抽出）
-    const cleanResult = result.replace(/[^a-zA-Z0-9]/g, "")
-    updateFormData({ membershipNumber: cleanResult })
-    setIsScannerOpen(false)
-  }
-
-  // バーコードリーダー起動
-  const handleBarcodeScan = () => {
-    setIsScannerOpen(true)
+  const handleCampaignCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 半角英数字のみ許可
+    const value = e.target.value.replace(/[^A-Za-z0-9]/g, "")
+    updateFormData({ campaignCode: value })
   }
 
   return (
@@ -93,37 +97,32 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
           </div>
         )}
 
-        <div className="form-grid">
-          {/* 会員番号の入力項目（入会以外の場合のみ表示） */}
-          {formData.operation !== "入会" && (
-            <div>
-              <label htmlFor="membershipNumber" className="form-label flex items-center gap-2">
-                <User className="h-6 w-6" />
-                会員番号
-              </label>
-              <div className="relative flex items-center">
-                <input
-                  id="membershipNumber"
-                  type="text"
-                  placeholder="半角英数字"
-                  value={formData.membershipNumber || ""}
-                  onChange={(e) => updateFormData({ membershipNumber: e.target.value })}
-                  required
-                  className="form-input pr-12"
-                />
-                <button
-                  type="button"
-                  onClick={handleBarcodeScan}
-                  className="absolute right-2 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                  aria-label="バーコードをスキャン"
-                >
-                  <Camera className="h-5 w-5 text-gray-600" />
-                </button>
+        {/* キャンペーンコード入力欄（新前橋店の入会のみ表示） */}
+        {isCampaignEligible() && (
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-4">
               </div>
-              {errors.membershipNumber && <p className="text-red-500 text-sm mt-2">{errors.membershipNumber}</p>}
+              <p className="text-sm text-yellow-700 mb-4">キャンペーンコードをお持ちの方は下記にご入力ください。</p>
+              <label htmlFor="campaignCode" className="form-label flex items-center gap-2">
+                <Gift className="h-5 w-5 text-yellow-600" />
+                キャンペーンコード
+                <span className="text-sm font-normal text-gray-500 ml-2">(半角英数字で入力してください)</span>
+              </label>
+              <input
+                id="campaignCode"
+                type="text"
+                value={formData.campaignCode}
+                onChange={handleCampaignCodeChange}
+                className="form-input font-mono text-lg tracking-wider"
+                maxLength={20}
+              />
+              {errors.campaignCode && <p className="text-red-500 text-sm mt-2">{errors.campaignCode}</p>}
             </div>
-          )}
+          </div>
+        )}
 
+        <div className="form-grid">
           <div>
             <label htmlFor="familyName" className="form-label flex items-center gap-2">
               <User className="h-6 w-6" />姓
@@ -203,9 +202,6 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
           </button>
         </div>
       </form>
-
-      {/* バーコードスキャナーモーダル */}
-      <BarcodeScanner isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} onScan={handleScanResult} />
     </>
   )
 }

@@ -160,6 +160,7 @@ export async function POST(request: Request) {
 
     // Google Sheetsにデータを追加
     const sheetData = [
+<<<<<<< HEAD
       formatJapanDateTime(new Date()), // A列
       operation, // B列
       matchingCustomer.referenceId || "", // C列
@@ -179,6 +180,25 @@ export async function POST(request: Request) {
       "", // Q列: その他（submit-inquiryで利用）
       "", // R列: 空白
       membershipNumber || "", // S列: 会員番号
+=======
+      formatJapanDateTime(new Date()),
+      operation,
+      matchingCustomer.referenceId || "",
+      store,
+      `${familyName} ${givenName}`, // 姓名をそのまま使用
+      email,
+      operation === "メールアドレス変更" ? newEmail : "",
+      phone,
+      carModel || newCarModel || existingCarModel,
+      carColor || newCarColor,
+      "", // ナンバープレート（削除済み）
+      currentCourse || "",
+      newCarModel || "",
+      newCarColor || "",
+      "", // 新しいナンバープレート（削除済み）
+      newCourse || "",
+      "",
+>>>>>>> 4fc69638a5f800f21c18f4934f90fb4dfc7f16a7
     ]
     await appendToSheet([sheetData])
 

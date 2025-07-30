@@ -21,7 +21,19 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
-    const { familyName, givenName, email, phone, carModel, carColor, course, store, operation, cardToken } = formData
+    const {
+      familyName,
+      givenName,
+      email,
+      phone,
+      carModel,
+      carColor,
+      course,
+      store,
+      operation,
+      cardToken,
+      campaignCode,
+    } = formData
 
     if (operation === "入会") {
       const referenceId = generateReferenceId(store)
@@ -120,6 +132,7 @@ export async function POST(request: Request) {
               "", // Q列: その他
               "", // R列: 空白
               "", // S列: 会員番号 (入会時は空)
+              campaignCode || "", // T列: キャンペーンコード
             ],
           ])
           console.log("Google Sheetsにデータが追加されました")

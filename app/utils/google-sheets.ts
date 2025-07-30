@@ -47,14 +47,14 @@ export async function appendToSheet(values: string[][]) {
     // デバッグ用のログ
     console.log("Attempting to append data with:", {
       spreadsheetId,
-      range: "customer_info!A:S", // S列まで拡張
+      range: "customer_info!A:T", // T列まで拡張
       values: stringValues,
     })
 
     // APIリクエストの構造を修正
     const request = {
       spreadsheetId,
-      range: "customer_info!A:S", // S列まで拡張
+      range: "customer_info!A:T", // T列まで拡張
       valueInputOption: "RAW",
       insertDataOption: "INSERT_ROWS",
       requestBody: {
