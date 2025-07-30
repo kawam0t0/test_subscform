@@ -20,7 +20,7 @@ export async function POST(request: Request) {
             {
               cadence: "MONTHLY", // 月額プラン
               recurringPriceMoney: {
-                amount: BigInt(price), ）
+                amount: BigInt(price),
                 currency: "JPY",
               },
               ordinal: 0,
