@@ -25,6 +25,7 @@ export default function ThankYouPage() {
     newCourse: "",
     inquiryDetails: "",
     newEmail: "",
+    campaignCode: "",
     isLimitedProductStore: false, // 追加
   }
 
