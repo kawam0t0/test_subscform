@@ -64,7 +64,7 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
           <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white p-6 rounded-2xl mb-6">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Gift className="w-8 h-8" />
-              <h2 className="text-3xl font-bold">キャンペーン適用中！</h2>
+              <h2 className="text-3xl font-bold">🎉 キャンペーン適用中！</h2>
             </div>
             <p className="text-lg">プレミアムスタンダードが2ヶ月無料でご利用いただけます！</p>
           </div>
@@ -75,9 +75,14 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
             className="relative overflow-hidden rounded-2xl shadow-xl border-4 border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50 cursor-pointer transform hover:scale-105 transition-all duration-300"
             onClick={() => setSelectedCourse("プレミアムスタンダード（キャンペーン）")}
           >
+            <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse">
+              2ヶ月無料！
+            </div>
             <div className="p-8 text-center">
               <div className="flex items-center justify-center gap-2 mb-4">
+                <Star className="w-6 h-6 text-yellow-600" />
                 <h3 className="text-2xl font-bold text-gray-800">プレミアムスタンダード</h3>
+                <Star className="w-6 h-6 text-yellow-600" />
               </div>
               <div className="space-y-2">
                 <div className="text-lg text-gray-500 line-through">通常価格：月額980円</div>
@@ -86,8 +91,8 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
               </div>
               <div className="mt-4 p-4 bg-white rounded-lg border-2 border-yellow-300">
                 <p className="text-sm text-gray-600">
-                 キャンペーンコード「SPGO418」が適用されました
-                  <br />2ヶ月間無料でお試しいただけます
+                  ✨ キャンペーンコード「SPGO418」が適用されました
+                  <br />🎁 2ヶ月間無料でお試しいただけます
                 </p>
               </div>
             </div>
