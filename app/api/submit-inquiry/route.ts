@@ -21,10 +21,7 @@ export async function POST(request: Request) {
       inquiryDetails,
       inquiryType,
       cancellationReasons,
-<<<<<<< HEAD
       membershipNumber, // 会員番号を追加
-=======
->>>>>>> 4fc69638a5f800f21c18f4934f90fb4dfc7f16a7
     } = formData
 
     // Generate a new reference ID
@@ -52,7 +49,6 @@ export async function POST(request: Request) {
     // Google Sheetsにデータを追加
     await appendToSheet([
       [
-<<<<<<< HEAD
         formatJapanDateTime(new Date()), // A列
         operation, // B列
         referenceId, // C列
@@ -72,25 +68,6 @@ export async function POST(request: Request) {
         combinedInquiry, // Q列：プルダウンの内容、解約理由、お問い合わせ内容を結合
         "", // R列: 空白
         membershipNumber || "", // S列: 会員番号
-=======
-        formatJapanDateTime(new Date()),
-        operation,
-        referenceId,
-        store,
-        `${familyName} ${givenName}`,
-        email,
-        "",
-        phone,
-        carModel,
-        carColor,
-        "", // ナンバープレート（削除済み）
-        "",
-        "",
-        "",
-        "", // 新しいナンバープレート（削除済み）
-        "",
-        combinedInquiry, // Q列：プルダウンの内容、解約理由、お問い合わせ内容を結合
->>>>>>> 4fc69638a5f800f21c18f4934f90fb4dfc7f16a7
       ],
     ])
 
