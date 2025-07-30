@@ -26,7 +26,7 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
 
   // キャンペーン対象かチェック
   const isCampaignEligible = () => {
-    return formData.operation === "入会" && formData.store === "SPLASH'N'GO!新前橋店"
+    return formData.operation === "入会" && formData.store === "SPLASH'N'GO!新前橋店" && isCampaignPeriod()
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -101,8 +101,7 @@ export function PersonalInfo({ formData, updateFormData, nextStep, prevStep }: B
         {isCampaignEligible() && (
           <div className="mb-8">
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-6">
-              <div className="flex items-center gap-2 mb-4">
-              </div>
+              <div className="flex items-center gap-2 mb-4"></div>
               <p className="text-sm text-yellow-700 mb-4">キャンペーンコードをお持ちの方は下記にご入力ください。</p>
               <label htmlFor="campaignCode" className="form-label flex items-center gap-2">
                 <Gift className="h-5 w-5 text-yellow-600" />
