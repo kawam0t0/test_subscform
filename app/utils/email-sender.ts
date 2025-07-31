@@ -117,7 +117,6 @@ export async function sendConfirmationEmail(
                 </table>
                 
                 <p style="font-size: 15px; line-height: 1.6; margin-bottom: 15px;">ご不明な点がございましたら、お気軽にお問い合わせください。</p>
-                <p style="font-size: 15px; line-height: 1.6; margin-bottom: 15px; color: #FF6B35; font-weight: 600;">素敵なカーライフをSPLASH'N'GO!でお楽しみください！</p>
                 
                 <!-- お問い合わせ情報 -->
                 <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 8px; margin-bottom: 25px;">
