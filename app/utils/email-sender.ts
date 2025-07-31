@@ -73,7 +73,7 @@ export async function sendConfirmationEmail(
                 <p style="font-size: 16px; margin-top: 0; margin-bottom: 20px; font-weight: 500;">${name} 様</p>
                 
                 <p style="font-size: 15px; line-height: 1.6; margin-bottom: 15px;">この度は、SPLASH'N'GO!新前橋店のキャンペーンにお申し込みいただき、誠にありがとうございます！</p>
-                <p style="font-size: 15px; line-height: 1.6; margin-bottom: 25px;"><strong>おめでとうございます！</strong> キャンペーンが適用され、以下の内容で登録が完了しました。</p>
+                <p style="font-size: 15px; line-height: 1.6; margin-bottom: 25px;">キャンペーンが適用され、以下の内容で登録が完了しました。</p>
                 
                 
                 <!-- 登録情報ボックス -->
