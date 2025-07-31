@@ -75,19 +75,6 @@ export async function sendConfirmationEmail(
                 <p style="font-size: 15px; line-height: 1.6; margin-bottom: 15px;">この度は、SPLASH'N'GO!新前橋店のキャンペーンにお申し込みいただき、誠にありがとうございます！</p>
                 <p style="font-size: 15px; line-height: 1.6; margin-bottom: 25px;"><strong>おめでとうございます！</strong> キャンペーンが適用され、以下の内容で登録が完了しました。</p>
                 
-                <!-- キャンペーン特典ボックス -->
-                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #FFE5B4 0%, #FFCC5C 100%); border-radius: 12px; margin-bottom: 25px; overflow: hidden; border: 3px solid #FF6B35;">
-                  <tr>
-                    <td style="padding: 25px; text-align: center;">
-                      <h3 style="margin: 0 0 15px; font-size: 20px; color: #D2691E; font-weight: 700;">特別キャンペーン特典</h3>
-                      <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                        <p style="margin: 0; font-size: 24px; font-weight: 700; color: #FF6B35;">最初の2ヶ月間：完全無料！</p>
-                        <p style="margin: 5px 0 0; font-size: 14px; color: #666; text-decoration: line-through;">通常価格：月額980円</p>
-                      </div>
-                      <p style="margin: 0; font-size: 16px; color: #D2691E; font-weight: 600;">3ヶ月目以降：月額980円でご利用いただけます</p>
-                    </td>
-                  </tr>
-                </table>
                 
                 <!-- 登録情報ボックス -->
                 <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background: linear-gradient(to right, #f0f7ff, #e6f2ff); border-radius: 8px; margin-bottom: 25px; overflow: hidden; border-left: 4px solid #0062E6;">
