@@ -2,7 +2,7 @@ import nodemailer from "nodemailer"
 
 // メールトランスポーターの作成
 function createTransporter() {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     service: "gmail",
     auth: {
       user: process.env.EMAIL_USER,
@@ -36,7 +36,7 @@ export async function sendConfirmationEmail(
     const mailOptions = {
       from: `"SPLASH'N'GO!" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "🎉【キャンペーン登録完了】SPLASH'N'GO!新前橋店",
+      subject: "【キャンペーン登録完了】SPLASH'N'GO!新前橋店",
       html: `
         <!DOCTYPE html>
         <html lang="ja">
@@ -54,10 +54,10 @@ export async function sendConfirmationEmail(
                 <table width="100%" border="0" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="background: linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #FFD700 100%); padding: 30px 20px; text-align: center; position: relative;">
-                      <div style="position: absolute; top: 10px; left: 20px; font-size: 24px;">🎉</div>
-                      <div style="position: absolute; top: 10px; right: 20px; font-size: 24px;">🎊</div>
+                      <div style="position: absolute; top: 10px; left: 20px; font-size: 24px;"></div>
+                      <div style="position: absolute; top: 10px; right: 20px; font-size: 24px;"></div>
                       <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 700; letter-spacing: 1px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">SPLASH'N'GO!</h1>
-                      <p style="margin: 10px 0 0; color: rgba(255,255,255,0.95); font-size: 18px; font-weight: 600;">🎉 キャンペーン登録完了！ 🎉</p>
+                      <p style="margin: 10px 0 0; color: rgba(255,255,255,0.95); font-size: 18px; font-weight: 600;">キャンペーン登録完了！</p>
                       <div style="margin-top: 15px; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 20px; display: inline-block;">
                         <p style="margin: 0; color: white; font-size: 16px; font-weight: 600;">2ヶ月無料キャンペーン適用中</p>
                       </div>
@@ -73,13 +73,13 @@ export async function sendConfirmationEmail(
                 <p style="font-size: 16px; margin-top: 0; margin-bottom: 20px; font-weight: 500;">${name} 様</p>
                 
                 <p style="font-size: 15px; line-height: 1.6; margin-bottom: 15px;">この度は、SPLASH'N'GO!新前橋店のキャンペーンにお申し込みいただき、誠にありがとうございます！</p>
-                <p style="font-size: 15px; line-height: 1.6; margin-bottom: 25px;">🎊 <strong>おめでとうございます！</strong> キャンペーンが適用され、以下の内容で登録が完了しました。</p>
+                <p style="font-size: 15px; line-height: 1.6; margin-bottom: 25px;"><strong>おめでとうございます！</strong> キャンペーンが適用され、以下の内容で登録が完了しました。</p>
                 
                 <!-- キャンペーン特典ボックス -->
                 <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #FFE5B4 0%, #FFCC5C 100%); border-radius: 12px; margin-bottom: 25px; overflow: hidden; border: 3px solid #FF6B35;">
                   <tr>
                     <td style="padding: 25px; text-align: center;">
-                      <h3 style="margin: 0 0 15px; font-size: 20px; color: #D2691E; font-weight: 700;">🎁 特別キャンペーン特典 🎁</h3>
+                      <h3 style="margin: 0 0 15px; font-size: 20px; color: #D2691E; font-weight: 700;">特別キャンペーン特典</h3>
                       <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                         <p style="margin: 0; font-size: 24px; font-weight: 700; color: #FF6B35;">最初の2ヶ月間：完全無料！</p>
                         <p style="margin: 5px 0 0; font-size: 14px; color: #666; text-decoration: line-through;">通常価格：月額980円</p>
@@ -105,7 +105,7 @@ export async function sendConfirmationEmail(
                 <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #E8F5E8 0%, #F0FFF0 100%); border-radius: 8px; margin-bottom: 25px; border: 2px solid #32CD32;">
                   <tr>
                     <td style="padding: 20px;">
-                      <h4 style="margin: 0 0 15px; font-size: 16px; color: #228B22; font-weight: 600;">📋 キャンペーンご利用について</h4>
+                      <h4 style="margin: 0 0 15px; font-size: 16px; color: #228B22; font-weight: 600;">キャンペーンご利用について</h4>
                       <ul style="margin: 0; padding-left: 20px; color: #2F4F2F;">
                         <li style="margin-bottom: 8px;">お申し込み頂きました新前橋店にて会員カードをお受け取りください</li>
                         <li style="margin-bottom: 8px;">最初の2ヶ月間は料金が発生いたしません</li>
