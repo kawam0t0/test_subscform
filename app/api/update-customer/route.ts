@@ -128,7 +128,8 @@ export async function POST(request: Request) {
       // 更新データの準備
       const updateData: any = {
         givenName: givenName,
-        familyName: familyName, // 姓のみを格納
+        // 入会はcreate APIで対応。更新側では「登録車両変更」のときのみ「新車種/姓」にする
+        familyName: operation === "登録車両変更" && newCarModel ? `${newCarModel}/${familyName}` : familyName,
         emailAddress: operation === "メールアドレス変更" ? newEmail : email,
         phoneNumber: phone,
         note: store,

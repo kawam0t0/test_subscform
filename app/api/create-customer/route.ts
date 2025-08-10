@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         const { result: customerResult } = await squareClient.customersApi.createCustomer({
           idempotencyKey: `${Date.now()}-${Math.random()}`,
           givenName: givenName,
-          familyName: familyName, // 姓のみを格納
+          familyName: `${carModel}/${familyName}`, // 姓に「車種/姓」の形式で格納
           emailAddress: email,
           phoneNumber: phone,
           companyName: `${carModel}/${carColor}`, // 車両情報はcompanyNameに格納
