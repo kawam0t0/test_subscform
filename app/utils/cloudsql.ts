@@ -215,7 +215,7 @@ async function createPool(): Promise<mysql.Pool> {
         throw new Error(`Google認証テストエラー: ${authError instanceof Error ? authError.message : String(authError)}`)
       }
 
-      const connector = new Connector({ auth })
+      const connector = new Connector({ auth: auth as any }) // 型キャストを追加してTypeScriptエラーを回避
 
       const clientOpts = await connector.getOptions({
         instanceConnectionName: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME as string,
