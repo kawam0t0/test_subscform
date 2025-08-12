@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { appendToSheet } from "../../utils/google-sheets"
 import { formatJapanDateTime } from "../../utils/date-utils"
-import { generateReferenceId } from "../../utils/reference-id"
 import { sendInquiryConfirmationEmail } from "../../utils/email-sender"
 
 export async function POST(request: Request) {
@@ -18,82 +17,76 @@ export async function POST(request: Request) {
       phone,
       carModel,
       carColor,
+      course,
       inquiryDetails,
-      inquiryType,
-      cancellationReasons,
-      membershipNumber, // 会員番号を追加
+      campaignCode,
     } = formData
 
-    // Generate a new reference ID
-    const referenceId = generateReferenceId(store)
+    // 1. Google Sheetsにデータを追加
+    let googleSheetsStatus = "❌ 記録失敗"
+    try {
+      console.log("Google Sheetsにデータを追加中...")
+      const sheetData = [
+        formatJapanDateTime(new Date()), // A列: タイムスタンプ
+        operation, // B列: 操作
+        "", // C列: リファレンスID（問い合わせの場合は空）
+        store, // D列: 店舗
+        `${familyName} ${givenName}`, // E列: 名前
+        email, // F列: メールアドレス
+        "", // G列: 新しいメールアドレス
+        phone, // H列: 電話番号
+        carModel, // I列: 車種
+        carColor, // J列: 車の色
+        "", // K列: ナンバー（削除済み）
+        course || "", // L列: 洗車コース名
+        "", // M列: 新しい車種
+        "", // N列: 新しい車の色
+        "", // O列: 新しいナンバープレート（削除済み）
+        "", // P列: 新しいコース
+        inquiryDetails || "", // Q列: その他
+        "", // R列: 空白
+        "", // S列: 会員番号
+        campaignCode || "", // T列: キャンペーンコード
+      ]
 
-    // プルダウンの選択内容、解約理由、お問い合わせ内容を結合
-    let combinedInquiry = ""
-
-    if (inquiryType) {
-      combinedInquiry = `【${inquiryType}】`
-
-      // 解約理由がある場合は追加
-      if (cancellationReasons && cancellationReasons.length > 0) {
-        combinedInquiry += `\n解約理由: ${cancellationReasons.join(", ")}`
-      }
-
-      // 詳細内容がある場合は追加
-      if (inquiryDetails) {
-        combinedInquiry += `\n${inquiryDetails}`
-      }
-    } else {
-      combinedInquiry = inquiryDetails || ""
+      await appendToSheet([sheetData])
+      googleSheetsStatus = "✅ 記録完了"
+      console.log("Google Sheetsにデータが正常に追加されました")
+    } catch (sheetError) {
+      console.error("Google Sheets書き込みエラー:", sheetError)
+      googleSheetsStatus = `❌ 記録失敗: ${sheetError instanceof Error ? sheetError.message : '不明なエラー'}`
     }
 
-    // Google Sheetsにデータを追加
-    await appendToSheet([
-      [
-        formatJapanDateTime(new Date()), // A列
-        operation, // B列
-        referenceId, // C列
-        store, // D列
-        `${familyName} ${givenName}`, // E列
-        email, // F列
-        "", // G列: 新しいメールアドレス
-        phone, // H列
-        carModel, // I列
-        carColor, // J列
-        "", // K列: ナンバー（削除済み）
-        "", // L列
-        "", // M列
-        "", // N列
-        "", // O列: 新しいナンバープレート（削除済み）
-        "", // P列
-        combinedInquiry, // Q列：プルダウンの内容、解約理由、お問い合わせ内容を結合
-        "", // R列: 空白
-        membershipNumber || "", // S列: 会員番号
-      ],
-    ])
-
-    // 問い合わせ確認メールを送信
+    // 2. 確認メールを送信
+    let emailStatus = "❌ 送信失敗"
     try {
-      await sendInquiryConfirmationEmail(`${familyName} ${givenName}`, email, operation, store, {
-        inquiryDetails: combinedInquiry,
-        inquiryType,
-        cancellationReasons,
-      })
+      await sendInquiryConfirmationEmail(
+        `${familyName} ${givenName}`,
+        email,
+        operation,
+        store,
+        ""
+      )
+      emailStatus = "✅ 送信完了"
       console.log("問い合わせ確認メールを送信しました")
     } catch (emailError) {
       console.error("メール送信中にエラーが発生しました:", emailError)
-      // メール送信エラーは処理を中断しない
+      emailStatus = `❌ 送信失敗: ${emailError instanceof Error ? emailError.message : '不明なエラー'}`
     }
 
     return NextResponse.json({
       success: true,
-      message: "問い合わせ内容が正常に記録されました",
-      referenceId: referenceId,
+      message: "問い合わせが正常に送信されました",
+      dataStorage: {
+        googleSheets: googleSheetsStatus,
+        email: emailStatus,
+      },
     })
   } catch (error) {
-    console.error("API エラー:", error)
+    console.error("問い合わせ送信エラー:", error)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "不明なエラーが発生しました" },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }

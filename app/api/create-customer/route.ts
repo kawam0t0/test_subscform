@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { Client, Environment, ApiError } from "square"
+import { insertCustomer, type InsertCustomerData } from "../../utils/cloudsql"
 import { appendToSheet } from "../../utils/google-sheets"
 import { formatJapanDateTime } from "../../utils/date-utils"
 import { generateReferenceId } from "../../utils/reference-id"
@@ -11,190 +12,176 @@ const squareClient = new Client({
 })
 
 function extractCourseName(course: string): string {
-  return course.split("（")[0].trim()
+  return course?.split("（")[0].trim() || ""
+}
+
+function buildCompanyName(model?: string, color?: string): string | undefined {
+  const m = (model || "").trim()
+  const c = (color || "").trim()
+  if (m && c) return `${m}/${c}`
+  if (m) return m
+  if (c) return c
+  return undefined
+}
+
+function buildFamilyNameWithModel(familyName: string, model?: string): string {
+  const m = (model || "").trim()
+  const f = (familyName || "").trim()
+  const composed = m ? `${m}/${f}` : f
+  return composed.slice(0, 255)
 }
 
 export async function POST(request: Request) {
-  let customerId: string | null = null
+  let createdSquareCustomerId: string | null = null
 
   try {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
     const {
+      operation,
+      store,
       familyName,
       givenName,
       email,
       phone,
       carModel,
       carColor,
-      course,
-      store,
-      operation,
+      licensePlate,
       cardToken,
+      referenceId,
+      course,
       campaignCode,
     } = formData
 
-    if (operation === "入会") {
-      const referenceId = generateReferenceId(store)
-      const courseName = extractCourseName(course)
+    if (operation !== "入会") {
+      return NextResponse.json({ success: false, error: "このエンドポイントは入会フロー専用です" }, { status: 400 })
+    }
 
+    console.log("顧客情報を作成中...")
+    const customersApi = squareClient.customersApi
+    const finalReferenceId = referenceId || generateReferenceId(store)
+    const companyNameCandidate = buildCompanyName(carModel, carColor)
+
+    const createCustomerRequest: any = {
+      givenName: givenName,
+      familyName: buildFamilyNameWithModel(familyName, carModel),
+      emailAddress: email,
+      phoneNumber: phone,
+      referenceId: finalReferenceId,
+      nickname: extractCourseName(course),
+      note: store,
+    }
+    if (companyNameCandidate) {
+      createCustomerRequest.companyName = companyNameCandidate
+    }
+
+    const { result: customerResult } = await customersApi.createCustomer(createCustomerRequest)
+    createdSquareCustomerId = customerResult.customer?.id || null
+
+    if (!createdSquareCustomerId) {
+      throw new Error("Square顧客の作成に失敗しました")
+    }
+    console.log("顧客情報が作成されました:", createdSquareCustomerId)
+
+    if (cardToken) {
+      console.log("カード情報を保存中...", {
+        customerId: createdSquareCustomerId,
+        cardToken: cardToken.substring(0, 10) + "...",
+      })
       try {
-        // 1. 顧客情報を作成
-        console.log("顧客情報を作成中...")
-        const { result: customerResult } = await squareClient.customersApi.createCustomer({
-          idempotencyKey: `${Date.now()}-${Math.random()}`,
-          givenName: givenName,
-          familyName: `${carModel}/${familyName}`, // 姓に「車種/姓」の形式で格納
-          emailAddress: email,
-          phoneNumber: phone,
-          companyName: `${carModel}/${carColor}`, // 車両情報はcompanyNameに格納
-          referenceId: referenceId,
-          note: store,
-          nickname: courseName,
+        const { result: cardResult } = await squareClient.cardsApi.createCard({
+          idempotencyKey: `card-${createdSquareCustomerId}-${Date.now()}`,
+          sourceId: cardToken,
+          card: { customerId: createdSquareCustomerId },
         })
-
-        if (!customerResult.customer?.id) {
-          throw new Error("顧客の作成に失敗しました")
+        console.log("カード情報が正常に保存されました:", cardResult.card?.id)
+      } catch (err) {
+        console.error("カード登録エラー:", err)
+        if (createdSquareCustomerId) {
+          await customersApi.deleteCustomer(createdSquareCustomerId)
         }
-
-        customerId = customerResult.customer.id
-        console.log("顧客情報が作成されました:", customerId)
-
-        // 2. カード情報の処理（存在する場合）
-        if (cardToken) {
-          try {
-            console.log("カード情報を保存中...", { customerId, cardToken: cardToken.substring(0, 10) + "..." })
-            const { result: cardResult } = await squareClient.cardsApi.createCard({
-              idempotencyKey: `${customerId}-${Date.now()}`,
-              sourceId: cardToken,
-              card: {
-                customerId: customerId,
-              },
-            })
-
-            if (!cardResult.card || !cardResult.card.id) {
-              throw new Error("カード情報の保存に失敗しました")
-            }
-
-            console.log("カード情報が正常に保存されました:", cardResult.card.id)
-          } catch (cardError) {
-            console.error("カード処理エラー:", cardError)
-
-            // カードエラーが発生した場合、作成した顧客情報を削除
-            if (customerId) {
-              try {
-                await squareClient.customersApi.deleteCustomer(customerId)
-                console.log("カードエラーにより顧客情報を削除しました:", customerId)
-                customerId = null
-              } catch (deleteError) {
-                console.error("顧客削除エラー:", deleteError)
-              }
-            }
-
-            // APIエラーの場合は詳細なエラーメッセージを取得
-            if (cardError instanceof ApiError) {
-              const errorDetail = cardError.errors?.[0]?.detail || cardError.message
-              const errorCode = cardError.errors?.[0]?.code || ""
-
-              // SOURCE_USEDエラーの場合は特別なメッセージを表示
-              if (errorCode === "SOURCE_USED") {
-                throw new Error("このカード情報は既に使用されています。ページを更新して再度お試しください。")
-              } else {
-                throw new Error(`クレジットカードエラー: ${errorDetail}`)
-              }
-            } else {
-              throw new Error("クレジットカード情報が無効です。正しい情報を入力してください。")
-            }
-          }
-        }
-
-        // 3. Google Sheetsにデータを追加
-        try {
-          await appendToSheet([
-            [
-              formatJapanDateTime(new Date()), // A列: タイムスタンプ
-              operation, // B列: 操作
-              referenceId, // C列: リファレンスID
-              store, // D列: 店舗
-              `${familyName} ${givenName}`, // E列: 名前
-              email, // F列: メールアドレス
-              "", // G列: 新しいメールアドレス
-              phone, // H列: 電話番号
-              carModel, // I列: 車種
-              carColor, // J列: 車の色
-              "", // K列: ナンバー（削除済み）
-              courseName, // L列: 洗車コース名
-              "", // M列: 新しい車種
-              "", // N列: 新しい車の色
-              "", // O列: 新しいナンバープレート（削除済み）
-              "", // P列: 新しいコース
-              "", // Q列: その他
-              "", // R列: 空白
-              "", // S列: 会員番号 (入会時は空)
-              campaignCode || "", // T列: キャンペーンコード
-            ],
-          ])
-          console.log("Google Sheetsにデータが追加されました")
-        } catch (sheetError) {
-          console.error("Google Sheets書き込みエラー:", sheetError)
-          // Sheetsエラーはログに記録するだけで処理を続行
-        }
-
-        // 4. メール送信
-        try {
-          await sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, referenceId)
-          console.log("入会確認メールを送信しました")
-        } catch (emailError) {
-          console.error("メール送信中にエラーが発生しました:", emailError)
-          // メール送信エラーは処理を中断しないが、ログに記録
-        }
-
-        return NextResponse.json({
-          success: true,
-          customerId: customerId,
-          referenceId: referenceId,
-          message: "顧客情報が正常に登録されました",
-        })
-      } catch (processingError) {
-        // 処理中のエラーが発生した場合、作成した顧客情報を削除
-        if (customerId) {
-          try {
-            await squareClient.customersApi.deleteCustomer(customerId)
-            console.log("処理エラーにより顧客情報を削除しました:", customerId)
-            customerId = null
-          } catch (deleteError) {
-            console.error("顧客削除エラー:", deleteError)
-          }
-        }
-
-        throw processingError
+        throw err
       }
+    }
+
+    console.log("CloudSQLに顧客データを挿入中...")
+    const customerData: InsertCustomerData = {
+      referenceId: finalReferenceId,
+      squareCustomerId: createdSquareCustomerId,
+      familyName: familyName,
+      givenName: givenName,
+      email: email,
+      phone: phone,
+      course: extractCourseName(course),
+      carModel: carModel,
+      color: carColor,
+      plateInfo1: licensePlate || null,
+      plateInfo2: null,
+      plateInfo3: null,
+      plateInfo4: null,
+      storeName: store,
+      campaignCode: campaignCode || null,
+    }
+    const cloudSqlCustomerId = await insertCustomer(customerData)
+    console.log("CloudSQLに顧客データが正常に挿入されました:", cloudSqlCustomerId)
+
+    try {
+      const sheetData = [
+        formatJapanDateTime(new Date()),
+        operation,
+        finalReferenceId,
+        store,
+        `${familyName} ${givenName}`,
+        email,
+        "",
+        phone,
+        carModel || "",
+        carColor || "",
+        licensePlate || "",
+        extractCourseName(course),
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        campaignCode || "",
+      ]
+      await appendToSheet([sheetData])
+      console.log("Google Sheetsにデータが追加されました")
+    } catch (sheetError) {
+      console.error("Google Sheets書き込みエラー:", sheetError)
+    }
+
+    try {
+      await sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId)
+      console.log("入会確認メールを送信しました")
+    } catch (emailErr) {
+      console.error("確認メール送信エラー:", emailErr)
     }
 
     return NextResponse.json({
-      success: false,
-      error: "この操作は入会フロー以外では利用できません",
+      success: true,
+      customerId: createdSquareCustomerId,
+      cloudSqlCustomerId,
+      referenceId: finalReferenceId,
+      message: "入会が完了しました",
     })
   } catch (error) {
-    console.error("エラー発生:", error)
-
-    // 最終的なエラーハンドリング - 顧客情報が残っていれば削除を試みる
-    if (customerId) {
+    console.error("エラーが発生しました:", error)
+    if (createdSquareCustomerId) {
       try {
-        await squareClient.customersApi.deleteCustomer(customerId)
-        console.log("最終エラーハンドリングで顧客情報を削除しました:", customerId)
+        await squareClient.customersApi.deleteCustomer(createdSquareCustomerId)
+        console.log("作成されたSquare顧客を削除しました:", createdSquareCustomerId)
       } catch (deleteError) {
-        console.error("最終エラーハンドリングでの顧客削除エラー:", deleteError)
+        console.error("Square顧客の削除に失敗しました:", deleteError)
       }
     }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "不明なエラーが発生しました",
-      },
-      { status: 500 },
-    )
+    if (error instanceof ApiError) {
+      return NextResponse.json({ error: "Square APIエラーが発生しました", details: error.errors }, { status: 400 })
+    }
+    return NextResponse.json({ error: "内部サーバーエラーが発生しました" }, { status: 500 })
   }
 }

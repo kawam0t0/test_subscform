@@ -1,6 +1,5 @@
 import mysql from "mysql2/promise"
-import { GoogleAuth } from "google-auth-library"
-import { Connector, IpAddressTypes } from "@google-cloud/cloud-sql-connector"
+import { IpAddressTypes } from "@google-cloud/cloud-sql-connector"
 
 // =====================
 // 型定義
@@ -84,6 +83,14 @@ const connectionConfig = {
   connectTimeout: 60_000,
 }
 
+console.log("ローカル接続設定:", {
+  host: connectionConfig.host,
+  port: connectionConfig.port,
+  user: connectionConfig.user,
+  database: connectionConfig.database,
+  passwordSet: !!connectionConfig.password,
+})
+
 type GlobalWithMysql = typeof globalThis & {
   mysqlPool?: mysql.Pool
   schemaReady?: boolean
@@ -107,163 +114,30 @@ async function createPool(): Promise<mysql.Pool> {
     return g.mysqlPool
   }
 
-  // 本番は Cloud SQL Connector、ローカルは 127.0.0.1:3307 を使用
-  const usingConnector =
-    !!process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME &&
-    (process.env.VERCEL === "1" || process.env.NODE_ENV === "production")
-
+  const isVercel = process.env.VERCEL === "1"
   let createdPool: mysql.Pool
 
-  if (usingConnector) {
-    // Cloud SQL Connector を使って TCP over TLS で接続
-    try {
-      let auth: GoogleAuth | undefined = undefined
+  if (isVercel) {
+    // Vercel環境：Cloud SQL Connector使用（シンプル版）
+    const { Connector } = await import("@google-cloud/cloud-sql-connector")
+    const connector = new Connector()
+    const clientOpts = await connector.getOptions({
+      instanceConnectionName: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME as string,
+      ipType: IpAddressTypes.PUBLIC,
+    })
 
-      if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-        try {
-          const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
-          console.log("Google認証情報JSONの解析を開始...")
-
-          const credentials = JSON.parse(credentialsJson)
-
-          // 必須フィールドの検証
-          const requiredFields = [
-            "type",
-            "project_id",
-            "private_key_id",
-            "private_key",
-            "client_email",
-            "client_id",
-            "auth_uri",
-            "token_uri",
-          ]
-          const missingFields = requiredFields.filter((field) => !credentials[field])
-
-          if (missingFields.length > 0) {
-            throw new Error(`サービスアカウントキーに必須フィールドが不足しています: ${missingFields.join(", ")}`)
-          }
-
-          auth = new GoogleAuth({
-            credentials,
-            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-          })
-
-          console.log("✅ GoogleAuthでGoogle認証情報を正常に作成しました")
-          console.log(`プロジェクトID: ${credentials.project_id}`)
-          console.log(`クライアントメール: ${credentials.client_email}`)
-        } catch (error) {
-          console.error("❌ Google認証情報JSONの解析に失敗:", error)
-          throw new Error(`Google認証情報の設定エラー: ${error instanceof Error ? error.message : String(error)}`)
-        }
-      } else if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_PROJECT_ID) {
-        try {
-          console.log("個別環境変数からGoogle認証情報を構築中...")
-
-          // プライベートキーの正規化
-          let privateKey = process.env.GOOGLE_PRIVATE_KEY
-          if (!privateKey.includes("-----BEGIN PRIVATE KEY-----")) {
-            // Base64エンコードされている場合はデコード
-            try {
-              privateKey = Buffer.from(privateKey, "base64").toString("utf8")
-            } catch {
-              // デコードに失敗した場合はそのまま使用
-            }
-          }
-
-          // 改行文字の正規化
-          privateKey = privateKey.replace(/\\n/g, "\n").replace(/"/g, "").trim()
-
-          const credentials = {
-            type: "service_account",
-            project_id: process.env.GOOGLE_PROJECT_ID,
-            private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID || "dummy-key-id",
-            private_key: privateKey,
-            client_email: process.env.GOOGLE_CLIENT_EMAIL,
-            client_id: process.env.GOOGLE_CLIENT_ID || "dummy-client-id",
-            auth_uri: "https://accounts.google.com/o/oauth2/auth",
-            token_uri: "https://oauth2.googleapis.com/token",
-            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-            client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(process.env.GOOGLE_CLIENT_EMAIL)}`,
-          }
-
-          auth = new GoogleAuth({
-            credentials,
-            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-          })
-
-          console.log("✅ 個別環境変数からGoogle認証情報を正常に構築しました")
-          console.log(`プロジェクトID: ${credentials.project_id}`)
-          console.log(`クライアントメール: ${credentials.client_email}`)
-        } catch (error) {
-          console.error("❌ 個別環境変数からのGoogle認証情報構築に失敗:", error)
-          throw new Error(`Google認証情報の構築エラー: ${error instanceof Error ? error.message : String(error)}`)
-        }
-      } else {
-        const errorMsg =
-          "Google認証情報が設定されていません。GOOGLE_APPLICATION_CREDENTIALS_JSON または GOOGLE_CLIENT_EMAIL + GOOGLE_PRIVATE_KEY + GOOGLE_PROJECT_ID を設定してください。"
-        console.error("❌", errorMsg)
-        throw new Error(errorMsg)
-      }
-
-      console.log("Google認証のテストを実行中...")
-      try {
-        const authClient = await auth.getClient()
-        const projectId = await auth.getProjectId()
-        console.log(`✅ Google認証テスト成功 - プロジェクトID: ${projectId}`)
-      } catch (authError) {
-        console.error("❌ Google認証テストに失敗:", authError)
-        throw new Error(`Google認証テストエラー: ${authError instanceof Error ? authError.message : String(authError)}`)
-      }
-
-      const connector = new Connector({ auth: auth as any }) // 型キャストを追加してTypeScriptエラーを回避
-
-      const clientOpts = await connector.getOptions({
-        instanceConnectionName: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME as string,
-        ipType: IpAddressTypes.PUBLIC,
-      })
-
-      createdPool = mysql.createPool({
-        ...clientOpts,
-        user: process.env.CLOUDSQL_DATABASE_USER,
-        password: process.env.CLOUDSQL_DATABASE_PASSWORD,
-        database: process.env.CLOUDSQL_DATABASE_NAME,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0,
-      })
-
-      console.log("✅ Cloud SQL Connector接続を作成しました")
-    } catch (error) {
-      console.error("❌ Cloud SQL Connector接続に失敗しました:", error)
-      console.log("🔄 直接接続にフォールバックします")
-
-      const requiredEnvVars = [
-        "CLOUDSQL_DATABASE_HOST",
-        "CLOUDSQL_DATABASE_USER",
-        "CLOUDSQL_DATABASE_PASSWORD",
-        "CLOUDSQL_DATABASE_NAME",
-      ]
-      const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar])
-
-      if (missingEnvVars.length > 0) {
-        throw new Error(`直接接続に必要な環境変数が不足しています: ${missingEnvVars.join(", ")}`)
-      }
-
-      createdPool = mysql.createPool({
-        host: process.env.CLOUDSQL_DATABASE_HOST || "127.0.0.1",
-        port: Number.parseInt(process.env.CLOUDSQL_DATABASE_PORT || "3306"),
-        user: process.env.CLOUDSQL_DATABASE_USER,
-        password: process.env.CLOUDSQL_DATABASE_PASSWORD,
-        database: process.env.CLOUDSQL_DATABASE_NAME,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0,
-      })
-
-      console.log("✅ 直接接続でプールを作成しました")
-    }
+    createdPool = mysql.createPool({
+      ...clientOpts,
+      user: process.env.CLOUDSQL_DATABASE_USER,
+      password: process.env.CLOUDSQL_DATABASE_PASSWORD,
+      database: process.env.CLOUDSQL_DATABASE_NAME,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+    })
   } else {
-    // ローカル: Cloud SQL Proxy 経由 (127.0.0.1:3307)
+    // ローカル環境：直接接続（Cloud SQL Proxy経由）
+    console.log("ローカル環境での直接接続を試行中...")
     createdPool = mysql.createPool({
       host: connectionConfig.host,
       port: connectionConfig.port,
@@ -271,12 +145,7 @@ async function createPool(): Promise<mysql.Pool> {
       password: connectionConfig.password,
       database: connectionConfig.database,
       timezone: connectionConfig.timezone,
-      ...(process.env.NODE_ENV === "production" && { ssl: { rejectUnauthorized: false } }),
       ...basePoolOptions,
-    })
-    console.log("✅ Using local proxy connection", {
-      host: connectionConfig.host,
-      port: connectionConfig.port,
     })
   }
 
@@ -735,7 +604,7 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         store_name, store_code, new_car_model, new_car_color,
         new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
         new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customerId,
         data.inquiryType,
