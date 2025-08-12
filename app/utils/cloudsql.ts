@@ -143,11 +143,12 @@ async function createPool(): Promise<mysql.Pool> {
             throw new Error(`サービスアカウントキーに必須フィールドが不足しています: ${missingFields.join(", ")}`)
           }
 
-          // GoogleAuth.fromJSON()を使用（推奨方法）
-          auth = GoogleAuth.fromJSON(credentials)
-          auth.scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+          auth = new GoogleAuth({
+            credentials,
+            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+          })
 
-          console.log("✅ GoogleAuth.fromJSON()でGoogle認証情報を正常に作成しました")
+          console.log("✅ GoogleAuthでGoogle認証情報を正常に作成しました")
           console.log(`プロジェクトID: ${credentials.project_id}`)
           console.log(`クライアントメール: ${credentials.client_email}`)
         } catch (error) {
@@ -185,9 +186,10 @@ async function createPool(): Promise<mysql.Pool> {
             client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(process.env.GOOGLE_CLIENT_EMAIL)}`,
           }
 
-          // GoogleAuth.fromJSON()を使用
-          auth = GoogleAuth.fromJSON(credentials)
-          auth.scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+          auth = new GoogleAuth({
+            credentials,
+            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+          })
 
           console.log("✅ 個別環境変数からGoogle認証情報を正常に構築しました")
           console.log(`プロジェクトID: ${credentials.project_id}`)
@@ -733,7 +735,7 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         store_name, store_code, new_car_model, new_car_color,
         new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
         new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customerId,
         data.inquiryType,
@@ -817,7 +819,3 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
 }
 
 export default pool
-
-
-
-
