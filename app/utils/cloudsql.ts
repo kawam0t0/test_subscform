@@ -1,5 +1,6 @@
 import mysql from "mysql2/promise"
 import { IpAddressTypes } from "@google-cloud/cloud-sql-connector"
+import { GoogleAuth } from "google-auth-library"
 
 // =====================
 // 型定義
@@ -120,7 +121,25 @@ async function createPool(): Promise<mysql.Pool> {
   if (isVercel) {
     // Vercel環境：Cloud SQL Connector使用（シンプル版）
     const { Connector } = await import("@google-cloud/cloud-sql-connector")
-    const connector = new Connector()
+
+    // Google認証設定
+    const auth = new GoogleAuth({
+      credentials: {
+        type: "service_account",
+        project_id: process.env.GOOGLE_PROJECT_ID,
+        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        auth_uri: "https://accounts.google.com/o/oauth2/auth",
+        token_uri: "https://oauth2.googleapis.com/token",
+        auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+        client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.GOOGLE_CLIENT_EMAIL}`,
+      },
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+    })
+
+    const connector = new Connector({ auth: auth as any })
     const clientOpts = await connector.getOptions({
       instanceConnectionName: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME as string,
       ipType: IpAddressTypes.PUBLIC,
@@ -128,9 +147,9 @@ async function createPool(): Promise<mysql.Pool> {
 
     createdPool = mysql.createPool({
       ...clientOpts,
-      user: process.env.CLOUDSQL_DATABASE_USER,
-      password: process.env.CLOUDSQL_DATABASE_PASSWORD,
-      database: process.env.CLOUDSQL_DATABASE_NAME,
+      user: process.env.CLOUDSQL_USER, // 修正: 正しい環境変数名
+      password: process.env.CLOUDSQL_PASSWORD, // 修正: 正しい環境変数名
+      database: process.env.CLOUDSQL_DATABASE, // 修正: 正しい環境変数名
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
@@ -604,7 +623,7 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         store_name, store_code, new_car_model, new_car_color,
         new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
         new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?)`,
       [
         customerId,
         data.inquiryType,
