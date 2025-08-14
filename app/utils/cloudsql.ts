@@ -1,6 +1,5 @@
 import mysql from "mysql2/promise"
 import { IpAddressTypes } from "@google-cloud/cloud-sql-connector"
-import { GoogleAuth } from "google-auth-library"
 
 // =====================
 // 型定義
@@ -134,47 +133,23 @@ async function createPool(): Promise<mysql.Pool> {
 
     const { Connector } = await import("@google-cloud/cloud-sql-connector")
 
-    // プライベートキーの処理
-    let privateKey = process.env.GOOGLE_PRIVATE_KEY
-    if (privateKey) {
-      // 改行文字を正しく処理
-      privateKey = privateKey.replace(/\\n/g, "\n")
-      console.log("プライベートキー処理完了")
-    }
-
-    // Google認証情報オブジェクトを作成
-    const credentials = {
+    // 環境変数を設定してADCを有効にする
+    const serviceAccountKey = {
       type: "service_account",
       project_id: process.env.GOOGLE_PROJECT_ID,
       private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-      private_key: privateKey,
+      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
       client_id: process.env.GOOGLE_CLIENT_ID,
     }
 
-    console.log("Google認証情報オブジェクト作成完了")
+    // 一時的にGOOGLE_APPLICATION_CREDENTIALSを設定
+    process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON = JSON.stringify(serviceAccountKey)
 
-    // GoogleAuthインスタンスを作成
-    const auth = new GoogleAuth({
-      credentials,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    })
-
-    console.log("GoogleAuthインスタンス作成完了")
-
-    // 認証テスト
-    try {
-      const accessToken = await auth.getAccessToken()
-      console.log("認証テスト: SUCCESS")
-    } catch (error) {
-      console.error("認証テスト: FAILED", error)
-      throw error
-    }
+    console.log("Application Default Credentials設定完了")
 
     console.log("Cloud SQL Connector初期化開始...")
-    const connector = new Connector({
-      auth: auth as any, // 型キャストで回避
-    })
+    const connector = new Connector()
 
     console.log("getOptions呼び出し開始...")
     const clientOpts = await connector.getOptions({
