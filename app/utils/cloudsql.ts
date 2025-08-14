@@ -124,12 +124,21 @@ async function createPool(): Promise<mysql.Pool> {
 
     let privateKey = process.env.GOOGLE_PRIVATE_KEY
     if (privateKey) {
-      // 複数の改行文字パターンに対応
-      privateKey = privateKey.replace(/\\n/g, "\n").replace(/\\\\/g, "\\").trim()
+      // 既存のヘッダー/フッターを削除
+      privateKey = privateKey
+        .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+        .replace(/-----END PRIVATE KEY-----/g, "")
+        .replace(/\s+/g, "") // すべての空白文字を削除
+        .trim()
 
-      // プライベートキーの形式を確認・修正
-      if (!privateKey.startsWith("-----BEGIN PRIVATE KEY-----")) {
-        privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`
+      // Base64文字列のみが残っているはず
+      if (privateKey) {
+        // 64文字ごとに改行を挿入してPEM形式に再構築
+        const keyLines = []
+        for (let i = 0; i < privateKey.length; i += 64) {
+          keyLines.push(privateKey.substring(i, i + 64))
+        }
+        privateKey = `-----BEGIN PRIVATE KEY-----\n${keyLines.join("\n")}\n-----END PRIVATE KEY-----`
       }
     }
 
@@ -191,7 +200,7 @@ async function getPool(): Promise<mysql.Pool> {
   return _poolPromise
 }
 
-// 後方互換性のためのpool export（実際���使用時に初期化される）
+// 後方互換性のためのpool export（実際の使用時に初期化される）
 export const pool = {
   async execute(...args: Parameters<mysql.Pool["execute"]>) {
     const poolInstance = await getPool()
