@@ -122,13 +122,24 @@ async function createPool(): Promise<mysql.Pool> {
     // Vercel環境：Cloud SQL Connector使用（シンプル版）
     const { Connector } = await import("@google-cloud/cloud-sql-connector")
 
+    let privateKey = process.env.GOOGLE_PRIVATE_KEY
+    if (privateKey) {
+      // 複数の改行文字パターンに対応
+      privateKey = privateKey.replace(/\\n/g, "\n").replace(/\\\\/g, "\\").trim()
+
+      // プライベートキーの形式を確認・修正
+      if (!privateKey.startsWith("-----BEGIN PRIVATE KEY-----")) {
+        privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`
+      }
+    }
+
     // Google認証設定
     const auth = new GoogleAuth({
       credentials: {
         type: "service_account",
         project_id: process.env.GOOGLE_PROJECT_ID,
         private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+        private_key: privateKey,
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
         client_id: process.env.GOOGLE_CLIENT_ID,
       },
@@ -143,9 +154,9 @@ async function createPool(): Promise<mysql.Pool> {
 
     createdPool = mysql.createPool({
       ...clientOpts,
-      user: process.env.CLOUDSQL_USER, // 修正: 正しい環境変数名
-      password: process.env.CLOUDSQL_PASSWORD, // 修正: 正しい環境変数名
-      database: process.env.CLOUDSQL_DATABASE, // 修正: 正しい環境変数名
+      user: process.env.CLOUDSQL_USER,
+      password: process.env.CLOUDSQL_PASSWORD,
+      database: process.env.CLOUDSQL_DATABASE,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
@@ -180,7 +191,7 @@ async function getPool(): Promise<mysql.Pool> {
   return _poolPromise
 }
 
-// 後方互換性のためのpool export（実際の使用時に初期化される）
+// 後方互換性のためのpool export（実際���使用時に初期化される）
 export const pool = {
   async execute(...args: Parameters<mysql.Pool["execute"]>) {
     const poolInstance = await getPool()
