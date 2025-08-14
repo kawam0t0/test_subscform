@@ -1,5 +1,4 @@
 import mysql from "mysql2/promise"
-import { IpAddressTypes } from "@google-cloud/cloud-sql-connector"
 
 // =====================
 // 型定義
@@ -118,58 +117,25 @@ async function createPool(): Promise<mysql.Pool> {
   let createdPool: mysql.Pool
 
   if (isVercel) {
-    // === Cloud SQL Connector デバッグ情報 ===
-    console.log("=== Cloud SQL Connector デバッグ情報 ===")
-    console.log("環境変数チェック:", {
-      GOOGLE_PROJECT_ID: process.env.GOOGLE_PROJECT_ID ? "SET" : "NOT_SET",
-      GOOGLE_CLIENT_EMAIL: process.env.GOOGLE_CLIENT_EMAIL ? "SET" : "NOT_SET",
-      GOOGLE_PRIVATE_KEY_ID: process.env.GOOGLE_PRIVATE_KEY_ID ? "SET" : "NOT_SET",
-      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? "SET" : "NOT_SET",
-      GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY
-        ? `SET (${process.env.GOOGLE_PRIVATE_KEY.length} chars)`
-        : "NOT_SET",
-      CLOUDSQL_INSTANCE_CONNECTION_NAME: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME ? "SET" : "NOT_SET",
-    })
+    // Vercel環境での直接CloudSQL接続を試行中...
 
-    const { Connector } = await import("@google-cloud/cloud-sql-connector")
-
-    // 環境変数を設定してADCを有効にする
-    const serviceAccountKey = {
-      type: "service_account",
-      project_id: process.env.GOOGLE_PROJECT_ID,
-      private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      client_id: process.env.GOOGLE_CLIENT_ID,
-    }
-
-    // 一時的にGOOGLE_APPLICATION_CREDENTIALSを設定
-    process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON = JSON.stringify(serviceAccountKey)
-
-    console.log("Application Default Credentials設定完了")
-
-    console.log("Cloud SQL Connector初期化開始...")
-    const connector = new Connector()
-
-    console.log("getOptions呼び出し開始...")
-    const clientOpts = await connector.getOptions({
-      instanceConnectionName: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME as string,
-      ipType: IpAddressTypes.PUBLIC,
-    })
-
-    console.log("getOptions成功:", Object.keys(clientOpts))
+    // CloudSQLインスタンスのパブリックIPアドレスを使用
+    const cloudSqlHost = "34.146.195.123" // CloudSQLインスタンスのパブリックIP
 
     createdPool = mysql.createPool({
-      ...clientOpts,
+      host: cloudSqlHost,
+      port: 3306, // CloudSQLの標準ポート
       user: process.env.CLOUDSQL_USER,
       password: process.env.CLOUDSQL_PASSWORD,
       database: process.env.CLOUDSQL_DATABASE,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
+      timezone: "+09:00",
+      ssl: {
+        rejectUnauthorized: false, // CloudSQLのSSL証明書を受け入れる
+      },
+      ...basePoolOptions,
     })
 
-    console.log("=== Cloud SQL Connector デバッグ情報終了 ===")
+    console.log("Vercel環境でのCloudSQL直接接続設定完了")
   } else {
     // ローカル環境：直接接続（Cloud SQL Proxy経由）
     console.log("ローカル環境での直接接続を試行中...")
