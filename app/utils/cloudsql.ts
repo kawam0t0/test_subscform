@@ -209,7 +209,7 @@ async function createPool(): Promise<mysql.Pool> {
       console.log("✅ テストクエリ結果:", result)
 
       console.log("時刻クエリ実行中...")
-      const [timeResult] = await testConnection.execute("SELECT NOW() as current_time")
+      const [timeResult] = await testConnection.execute("SELECT NOW() as now_time")
       console.log("✅ 時刻クエリ結果:", timeResult)
 
       console.log("データベース名クエリ実行中...")
@@ -317,7 +317,7 @@ export async function testConnection(): Promise<boolean> {
       console.log("✅ セッション設定完了")
 
       console.log("テストクエリ実行中...")
-      const [result] = await conn.query("SELECT 1 as test, NOW() as current_time, DATABASE() as db_name")
+      const [result] = await conn.query("SELECT 1 as test, NOW() as now_time, DATABASE() as db_name")
       console.log("✅ テストクエリ結果:", result)
 
       return true
