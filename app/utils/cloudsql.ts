@@ -86,8 +86,14 @@ console.log("CloudSQL環境変数詳細チェック:", {
 })
 
 const connectionConfig = {
-  host: process.env.CLOUDSQL_DATABASE_HOST || process.env.CLOUDSQL_HOST || "127.0.0.1",
-  port: Number.parseInt(process.env.CLOUDSQL_DATABASE_PORT || process.env.CLOUDSQL_PORT || "3307"),
+  host:
+    process.env.VERCEL === "1"
+      ? process.env.CLOUDSQL_DATABASE_HOST || process.env.CLOUDSQL_HOST || "34.146.22.196" // 正しいCloudSQLパブリックIPアドレスに修正
+      : process.env.CLOUDSQL_DATABASE_HOST || process.env.CLOUDSQL_HOST || "127.0.0.1", // ローカルはProxy
+  port:
+    process.env.VERCEL === "1"
+      ? 3306 // CloudSQLの標準ポート
+      : Number.parseInt(process.env.CLOUDSQL_DATABASE_PORT || process.env.CLOUDSQL_PORT || "3307"), // ローカルはProxy
   user: process.env.CLOUDSQL_DATABASE_USER || process.env.CLOUDSQL_USER || "root",
   password: process.env.CLOUDSQL_DATABASE_PASSWORD || process.env.CLOUDSQL_PASSWORD || "",
   database: process.env.CLOUDSQL_DATABASE_NAME || process.env.CLOUDSQL_DATABASE || "customer_database",
@@ -150,14 +156,14 @@ async function createPool(): Promise<mysql.Pool> {
       console.log("インスタンス接続名:", instanceConnectionName)
 
       const vercelPoolConfig = {
-        host: connectionConfig.host,
-        port: connectionConfig.port,
+        host: connectionConfig.host, // CloudSQLの実際のIPアドレス
+        port: connectionConfig.port, // 3306（CloudSQLの標準ポート）
         user: connectionConfig.user,
         password: connectionConfig.password,
         database: connectionConfig.database,
         timezone: "+09:00",
         ssl: {
-          rejectUnauthorized: false,
+          rejectUnauthorized: false, // CloudSQL接続用SSL設定
         },
         acquireTimeout: 60000,
         timeout: 60000,
