@@ -1,6 +1,5 @@
 import mysql from "mysql2/promise"
 import { IpAddressTypes } from "@google-cloud/cloud-sql-connector"
-import { GoogleAuth } from "google-auth-library"
 
 // =====================
 // 型定義
@@ -132,75 +131,26 @@ async function createPool(): Promise<mysql.Pool> {
       CLOUDSQL_INSTANCE_CONNECTION_NAME: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME ? "SET" : "NOT_SET",
     })
 
-    // Vercel環境：Cloud SQL Connector使用（シンプル版）
+    // Vercel環境：Cloud SQL Connector使用（環境変数ベース）
     const { Connector } = await import("@google-cloud/cloud-sql-connector")
 
-    let privateKey = process.env.GOOGLE_PRIVATE_KEY
-    console.log("プライベートキー処理前:", privateKey ? `${privateKey.substring(0, 50)}...` : "NOT_SET")
-
-    if (privateKey) {
-      // 既存のヘッダー/フッターを削除
-      privateKey = privateKey
-        .replace(/-----BEGIN PRIVATE KEY-----/g, "")
-        .replace(/-----END PRIVATE KEY-----/g, "")
-        .replace(/\s+/g, "") // すべての空白文字を削除
-        .trim()
-
-      console.log("プライベートキー処理中:", privateKey ? `Base64部分: ${privateKey.length} chars` : "EMPTY")
-
-      // Base64文字列のみが残っているはず
-      if (privateKey) {
-        // 64文字ごとに改行を挿入してPEM形式に再構築
-        const keyLines = []
-        for (let i = 0; i < privateKey.length; i += 64) {
-          keyLines.push(privateKey.substring(i, i + 64))
-        }
-        privateKey = `-----BEGIN PRIVATE KEY-----\n${keyLines.join("\n")}\n-----END PRIVATE KEY-----`
-        console.log("プライベートキー処理後:", `PEM形式に再構築完了 (${keyLines.length} lines)`)
-      }
-    }
-
-    // Google認証設定
-    const credentials = {
+    process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON = JSON.stringify({
       type: "service_account",
       project_id: process.env.GOOGLE_PROJECT_ID,
       private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-      private_key: privateKey,
+      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
       client_id: process.env.GOOGLE_CLIENT_ID,
-    }
-
-    console.log("認証情報オブジェクト:", {
-      type: credentials.type,
-      project_id: credentials.project_id,
-      private_key_id: credentials.private_key_id,
-      client_email: credentials.client_email,
-      client_id: credentials.client_id,
-      private_key_length: credentials.private_key?.length || 0,
+      auth_uri: "https://accounts.google.com/o/oauth2/auth",
+      token_uri: "https://oauth2.googleapis.com/token",
+      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+      client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(process.env.GOOGLE_CLIENT_EMAIL || "")}`,
     })
 
-    const auth = new GoogleAuth({
-      credentials,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    })
-
-    console.log("GoogleAuth インスタンス作成完了")
-
-    try {
-      // 認証テスト開始...
-      console.log("認証テスト開始...")
-      const authClient = await auth.getClient()
-      console.log("認証クライアント取得成功:", authClient.constructor.name)
-
-      const accessToken = await auth.getAccessToken()
-      console.log("アクセストークン取得:", accessToken ? "SUCCESS" : "FAILED")
-    } catch (authError) {
-      console.error("認証テストエラー:", authError)
-      throw new Error(`Google認証失敗: ${authError}`)
-    }
+    console.log("Application Default Credentials設定完了")
 
     console.log("Cloud SQL Connector初期化開始...")
-    const connector = new Connector({ auth: auth as any })
+    const connector = new Connector()
 
     console.log("getOptions呼び出し開始...")
     const clientOpts = await connector.getOptions({
