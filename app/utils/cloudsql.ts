@@ -119,10 +119,25 @@ async function createPool(): Promise<mysql.Pool> {
   let createdPool: mysql.Pool
 
   if (isVercel) {
+    // === Cloud SQL Connector デバッグ情報 ===
+    console.log("=== Cloud SQL Connector デバッグ情報 ===")
+    console.log("環境変数チェック:", {
+      GOOGLE_PROJECT_ID: process.env.GOOGLE_PROJECT_ID ? "SET" : "NOT_SET",
+      GOOGLE_CLIENT_EMAIL: process.env.GOOGLE_CLIENT_EMAIL ? "SET" : "NOT_SET",
+      GOOGLE_PRIVATE_KEY_ID: process.env.GOOGLE_PRIVATE_KEY_ID ? "SET" : "NOT_SET",
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? "SET" : "NOT_SET",
+      GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY
+        ? `SET (${process.env.GOOGLE_PRIVATE_KEY.length} chars)`
+        : "NOT_SET",
+      CLOUDSQL_INSTANCE_CONNECTION_NAME: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME ? "SET" : "NOT_SET",
+    })
+
     // Vercel環境：Cloud SQL Connector使用（シンプル版）
     const { Connector } = await import("@google-cloud/cloud-sql-connector")
 
     let privateKey = process.env.GOOGLE_PRIVATE_KEY
+    console.log("プライベートキー処理前:", privateKey ? `${privateKey.substring(0, 50)}...` : "NOT_SET")
+
     if (privateKey) {
       // 既存のヘッダー/フッターを削除
       privateKey = privateKey
@@ -130,6 +145,8 @@ async function createPool(): Promise<mysql.Pool> {
         .replace(/-----END PRIVATE KEY-----/g, "")
         .replace(/\s+/g, "") // すべての空白文字を削除
         .trim()
+
+      console.log("プライベートキー処理中:", privateKey ? `Base64部分: ${privateKey.length} chars` : "EMPTY")
 
       // Base64文字列のみが残っているはず
       if (privateKey) {
@@ -139,27 +156,59 @@ async function createPool(): Promise<mysql.Pool> {
           keyLines.push(privateKey.substring(i, i + 64))
         }
         privateKey = `-----BEGIN PRIVATE KEY-----\n${keyLines.join("\n")}\n-----END PRIVATE KEY-----`
+        console.log("プライベートキー処理後:", `PEM形式に再構築完了 (${keyLines.length} lines)`)
       }
     }
 
     // Google認証設定
+    const credentials = {
+      type: "service_account",
+      project_id: process.env.GOOGLE_PROJECT_ID,
+      private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+      private_key: privateKey,
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+    }
+
+    console.log("認証情報オブジェクト:", {
+      type: credentials.type,
+      project_id: credentials.project_id,
+      private_key_id: credentials.private_key_id,
+      client_email: credentials.client_email,
+      client_id: credentials.client_id,
+      private_key_length: credentials.private_key?.length || 0,
+    })
+
     const auth = new GoogleAuth({
-      credentials: {
-        type: "service_account",
-        project_id: process.env.GOOGLE_PROJECT_ID,
-        private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-        private_key: privateKey,
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-      },
+      credentials,
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
     })
 
+    console.log("GoogleAuth インスタンス作成完了")
+
+    try {
+      // 認証テスト開始...
+      console.log("認証テスト開始...")
+      const authClient = await auth.getClient()
+      console.log("認証クライアント取得成功:", authClient.constructor.name)
+
+      const accessToken = await auth.getAccessToken()
+      console.log("アクセストークン取得:", accessToken ? "SUCCESS" : "FAILED")
+    } catch (authError) {
+      console.error("認証テストエラー:", authError)
+      throw new Error(`Google認証失敗: ${authError}`)
+    }
+
+    console.log("Cloud SQL Connector初期化開始...")
     const connector = new Connector({ auth: auth as any })
+
+    console.log("getOptions呼び出し開始...")
     const clientOpts = await connector.getOptions({
       instanceConnectionName: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME as string,
       ipType: IpAddressTypes.PUBLIC,
     })
+
+    console.log("getOptions成功:", Object.keys(clientOpts))
 
     createdPool = mysql.createPool({
       ...clientOpts,
@@ -170,6 +219,8 @@ async function createPool(): Promise<mysql.Pool> {
       connectionLimit: 10,
       queueLimit: 0,
     })
+
+    console.log("=== Cloud SQL Connector デバッグ情報終了 ===")
   } else {
     // ローカル環境：直接接続（Cloud SQL Proxy経由）
     console.log("ローカル環境での直接接続を試行中...")
