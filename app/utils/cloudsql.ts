@@ -1,5 +1,6 @@
 import mysql from "mysql2/promise"
 import { IpAddressTypes } from "@google-cloud/cloud-sql-connector"
+import { GoogleAuth } from "google-auth-library"
 
 // =====================
 // 型定義
@@ -131,26 +132,49 @@ async function createPool(): Promise<mysql.Pool> {
       CLOUDSQL_INSTANCE_CONNECTION_NAME: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME ? "SET" : "NOT_SET",
     })
 
-    // Vercel環境：Cloud SQL Connector使用（環境変数ベース）
     const { Connector } = await import("@google-cloud/cloud-sql-connector")
 
-    process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON = JSON.stringify({
+    // プライベートキーの処理
+    let privateKey = process.env.GOOGLE_PRIVATE_KEY
+    if (privateKey) {
+      // 改行文字を正しく処理
+      privateKey = privateKey.replace(/\\n/g, "\n")
+      console.log("プライベートキー処理完了")
+    }
+
+    // Google認証情報オブジェクトを作成
+    const credentials = {
       type: "service_account",
       project_id: process.env.GOOGLE_PROJECT_ID,
       private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      private_key: privateKey,
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
       client_id: process.env.GOOGLE_CLIENT_ID,
-      auth_uri: "https://accounts.google.com/o/oauth2/auth",
-      token_uri: "https://oauth2.googleapis.com/token",
-      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-      client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(process.env.GOOGLE_CLIENT_EMAIL || "")}`,
+    }
+
+    console.log("Google認証情報オブジェクト作成完了")
+
+    // GoogleAuthインスタンスを作成
+    const auth = new GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
     })
 
-    console.log("Application Default Credentials設定完了")
+    console.log("GoogleAuthインスタンス作成完了")
+
+    // 認証テスト
+    try {
+      const accessToken = await auth.getAccessToken()
+      console.log("認証テスト: SUCCESS")
+    } catch (error) {
+      console.error("認証テスト: FAILED", error)
+      throw error
+    }
 
     console.log("Cloud SQL Connector初期化開始...")
-    const connector = new Connector()
+    const connector = new Connector({
+      auth: auth as any, // 型キャストで回避
+    })
 
     console.log("getOptions呼び出し開始...")
     const clientOpts = await connector.getOptions({
