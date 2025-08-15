@@ -547,7 +547,7 @@ export async function findCustomerFlexible(
 
 export async function insertCustomer(data: InsertCustomerData): Promise<number> {
   console.log("insertCustomer開始")
-  await ensureSchemaInitialized()
+  // await ensureSchemaInitialized()
 
   let storeCode: string | null = null
   try {
@@ -588,7 +588,7 @@ export async function insertCustomer(data: InsertCustomerData): Promise<number> 
       storeCode,
     ]
 
-    console.log("SQL実行中 - 完全版")
+    console.log("既存テーブルにSQL実行中")
     const [result] = await conn.execute(insertSql, insertValues)
 
     const insertResult = result as mysql.ResultSetHeader
