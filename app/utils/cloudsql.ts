@@ -119,7 +119,6 @@ async function createPool(): Promise<mysql.Pool> {
     if (isVercel) {
       poolConfig = {
         ...connectionConfig,
-        ssl: false, // SSL無効化でシンプルに
         ...basePoolOptions,
       }
     } else {
