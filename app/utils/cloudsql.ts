@@ -634,8 +634,10 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         customer_id, inquiry_type, inquiry_details, cancellation_reasons, status,
         reference_id, square_customer_id, family_name, given_name, email, phone, course,
         car_model, color, plate_info_1, plate_info_2, plate_info_3, plate_info_4,
-        store_name
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        store_name, store_code,
+        new_car_model, new_car_color, new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
+        new_course_name, new_email
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customerId,
         data.inquiryType,
@@ -658,6 +660,16 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         current.plate_info_3 ?? null,
         current.plate_info_4 ?? null,
         data.storeName ?? current.store_name ?? null,
+        resolvedStoreCode ?? null,
+        // 新しい車両・コース・メール情報
+        data.newCarModel ?? null,
+        data.newCarColor ?? null,
+        null, // new_plate_info_1 (今はnull)
+        null, // new_plate_info_2 (今はnull)
+        null, // new_plate_info_3 (今はnull)
+        null, // new_plate_info_4 (今はnull)
+        data.newCourseName ?? null,
+        data.newEmail ?? null,
       ],
     )
 
