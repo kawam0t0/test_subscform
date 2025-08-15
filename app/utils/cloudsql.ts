@@ -573,7 +573,7 @@ export async function insertCustomer(data: InsertCustomerData): Promise<number> 
     const insertValues = [
       data.referenceId,
       data.squareCustomerId || null,
-      data.familyName,
+      data.family_name, // familyNameをfamily_nameに修正
       data.givenName,
       data.email,
       data.phone,
