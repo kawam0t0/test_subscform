@@ -166,7 +166,7 @@ export async function POST(request: Request) {
       // CloudSQLエラーでもSquare顧客は保持し、成功レスポンスを返す
       console.log("CloudSQLエラーが発生しましたが、Square顧客は正常に作成されました")
 
-      // Google Sheetsとメール送信を独立して実行
+      // Google Sheetsへの書き込みを同期実行（即座に反映）
       const sheetsData = [
         formatJapanDateTime(new Date()),
         operation,
@@ -190,10 +190,12 @@ export async function POST(request: Request) {
         campaignCode || "",
       ]
 
-      // Google Sheetsへの書き込みを独立実行
-      appendToSheet([sheetsData])
-        .then(() => console.log("Google Sheets書き込み成功"))
-        .catch((err) => console.error("Google Sheets書き込みエラー:", err))
+      try {
+        await appendToSheet([sheetsData])
+        console.log("Google Sheets書き込み成功")
+      } catch (err) {
+        console.error("Google Sheets書き込みエラー:", err)
+      }
 
       // メール送信を独立実行
       sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId)
@@ -209,7 +211,7 @@ export async function POST(request: Request) {
       })
     }
 
-    // Google SheetsとEmail送信を独立して実行（互いのエラーが影響しないように）
+    // Google Sheetsへの書き込みを同期実行（即座に反映）
     const sheetsData = [
       formatJapanDateTime(new Date()),
       operation,
@@ -233,12 +235,14 @@ export async function POST(request: Request) {
       campaignCode || "",
     ]
 
-    // Google Sheetsへの書き込みを独立実行
-    appendToSheet([sheetsData])
-      .then(() => console.log("Google Sheets書き込み成功"))
-      .catch((err) => console.error("Google Sheets書き込みエラー:", err))
+    try {
+      await appendToSheet([sheetsData])
+      console.log("Google Sheets書き込み成功")
+    } catch (err) {
+      console.error("Google Sheets書き込みエラー:", err)
+    }
 
-    // メール送信を独立実行
+    // メール送信のみバックグラウンドで実行
     sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId)
       .then(() => console.log("確認メール送信成功"))
       .catch((err) => console.error("確認メール送信エラー:", err))
