@@ -73,18 +73,42 @@ export async function appendToSheet(values: string[][]) {
     }
 
     console.log("[DEBUG] Google Sheets API呼び出し開始...")
-    const response = await sheets.spreadsheets.values.append(request)
+
+    const response = await Promise.race([
+      sheets.spreadsheets.values.append(request),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Google Sheets API timeout after 15 seconds")), 15000),
+      ),
+    ])
+
     console.log("[SUCCESS] Data appended successfully:", response.data)
     return response.data
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    const errorStack = error instanceof Error ? error.stack : undefined
+    const errorType =
+      error && typeof error === "object" && "constructor" in error ? (error.constructor as any)?.name : "Unknown"
+
+    // Google API エラーの場合の追加情報
+    const statusCode =
+      error && typeof error === "object" && ("status" in error || "code" in error)
+        ? (error as any).status || (error as any).code
+        : undefined
+
+    const details =
+      error && typeof error === "object" && ("details" in error || "response" in error)
+        ? (error as any).details || (error as any).response?.data
+        : undefined
+
     console.error("[ERROR] Google Sheets書き込みエラー:", {
       error,
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
+      message: errorMessage,
+      stack: errorStack,
+      errorType,
+      statusCode,
+      details,
     })
 
-    throw new Error(
-      `Failed to append data to Google Sheets: ${error instanceof Error ? error.message : "Unknown error"}`,
-    )
+    throw new Error(`Failed to append data to Google Sheets: ${errorMessage}`)
   }
 }
