@@ -123,44 +123,97 @@ export async function POST(request: Request) {
       storeName: store,
       campaignCode: campaignCode || null,
     }
-    const cloudSqlCustomerId = await insertCustomer(customerData)
-    console.log("CloudSQLに顧客データが正常に挿入されました:", cloudSqlCustomerId)
 
+    // CloudSQL操作にタイムアウトを設定（8秒）
+    const cloudSqlPromise = insertCustomer(customerData)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("CloudSQL操作がタイムアウトしました")), 8000)
+    })
+
+    let cloudSqlCustomerId: number
     try {
-      const sheetData = [
-        formatJapanDateTime(new Date()),
-        operation,
-        finalReferenceId,
-        store,
-        `${familyName} ${givenName}`,
-        email,
-        "",
-        phone,
-        carModel || "",
-        carColor || "",
-        licensePlate || "",
-        extractCourseName(course),
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        campaignCode || "",
-      ]
-      await appendToSheet([sheetData])
-      console.log("Google Sheetsにデータが追加されました")
-    } catch (sheetError) {
-      console.error("Google Sheets書き込みエラー:", sheetError)
+      cloudSqlCustomerId = (await Promise.race([cloudSqlPromise, timeoutPromise])) as number
+      console.log("CloudSQLに顧客データが正常に挿入されました:", cloudSqlCustomerId)
+    } catch (cloudSqlError) {
+      console.error("CloudSQL挿入エラー:", cloudSqlError)
+      // CloudSQLエラーでもSquare顧客は保持し、成功レスポンスを返す
+      console.log("CloudSQLエラーが発生しましたが、Square顧客は正常に作成されました")
+
+      // バックグラウンドでGoogle Sheetsとメール送信を実行
+      Promise.all([
+        appendToSheet([
+          [
+            formatJapanDateTime(new Date()),
+            operation,
+            finalReferenceId,
+            store,
+            `${familyName} ${givenName}`,
+            email,
+            "",
+            phone,
+            carModel || "",
+            carColor || "",
+            licensePlate || "",
+            extractCourseName(course),
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            campaignCode || "",
+          ],
+        ]).catch((err) => console.error("Google Sheets書き込みエラー:", err)),
+        sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId).catch((err) =>
+          console.error("確認メール送信エラー:", err),
+        ),
+      ])
+
+      return NextResponse.json({
+        success: true,
+        customerId: createdSquareCustomerId,
+        referenceId: finalReferenceId,
+        message: "入会が完了しました（データベース同期は後で実行されます）",
+        warning: "データベース同期に時間がかかっています",
+      })
     }
 
-    try {
-      await sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId)
-      console.log("入会確認メールを送信しました")
-    } catch (emailErr) {
-      console.error("確認メール送信エラー:", emailErr)
-    }
+    // Google SheetsとEmail送信を並行実行（エラーでも処理を継続）
+    const backgroundTasks = [
+      appendToSheet([
+        [
+          formatJapanDateTime(new Date()),
+          operation,
+          finalReferenceId,
+          store,
+          `${familyName} ${givenName}`,
+          email,
+          "",
+          phone,
+          carModel || "",
+          carColor || "",
+          licensePlate || "",
+          extractCourseName(course),
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          campaignCode || "",
+        ],
+      ]).catch((err) => console.error("Google Sheets書き込みエラー:", err)),
+      sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId).catch((err) =>
+        console.error("確認メール送信エラー:", err),
+      ),
+    ]
+
+    // バックグラウンドタスクを並行実行（結果を待たない）
+    Promise.all(backgroundTasks).then(() => {
+      console.log("バックグラウンドタスクが完了しました")
+    })
 
     return NextResponse.json({
       success: true,
@@ -171,17 +224,38 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error("エラーが発生しました:", error)
+
     if (createdSquareCustomerId) {
       try {
-        await squareClient.customersApi.deleteCustomer(createdSquareCustomerId)
+        const deletePromise = squareClient.customersApi.deleteCustomer(createdSquareCustomerId)
+        const deleteTimeout = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("Square顧客削除がタイムアウトしました")), 3000)
+        })
+        await Promise.race([deletePromise, deleteTimeout])
         console.log("作成されたSquare顧客を削除しました:", createdSquareCustomerId)
       } catch (deleteError) {
         console.error("Square顧客の削除に失敗しました:", deleteError)
       }
     }
+
     if (error instanceof ApiError) {
-      return NextResponse.json({ error: "Square APIエラーが発生しました", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Square APIエラーが発生しました",
+          details: error.errors,
+        },
+        { status: 400 },
+      )
     }
-    return NextResponse.json({ error: "内部サーバーエラーが発生しました" }, { status: 500 })
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "内部サーバーエラーが発生しました",
+        message: "お手数ですが、しばらく時間をおいて再度お試しください",
+      },
+      { status: 500 },
+    )
   }
 }
