@@ -109,7 +109,7 @@ export async function POST(request: Request) {
     const customerData: InsertCustomerData = {
       referenceId: finalReferenceId,
       squareCustomerId: createdSquareCustomerId,
-      familyName: familyName,
+      family_name: familyName,
       givenName: givenName,
       email: email,
       phone: phone,
@@ -124,6 +124,14 @@ export async function POST(request: Request) {
       campaignCode: campaignCode || null,
     }
 
+    const cloudSqlStartTime = Date.now()
+    console.log("[SYSTEM] CloudSQL操作開始:", {
+      timestamp: new Date().toISOString(),
+      customerId: createdSquareCustomerId,
+      referenceId: finalReferenceId,
+      environment: process.env.VERCEL_ENV || "development",
+    })
+
     // CloudSQL操作にタイムアウトを設定（8秒）
     const cloudSqlPromise = insertCustomer(customerData)
     const timeoutPromise = new Promise((_, reject) => {
@@ -133,9 +141,28 @@ export async function POST(request: Request) {
     let cloudSqlCustomerId: number
     try {
       cloudSqlCustomerId = (await Promise.race([cloudSqlPromise, timeoutPromise])) as number
-      console.log("CloudSQLに顧客データが正常に挿入されました:", cloudSqlCustomerId)
+      const executionTime = Date.now() - cloudSqlStartTime
+      console.log("[SYSTEM] CloudSQL操作成功:", {
+        customerId: cloudSqlCustomerId,
+        executionTime: `${executionTime}ms`,
+        timestamp: new Date().toISOString(),
+      })
     } catch (cloudSqlError) {
-      console.error("CloudSQL挿入エラー:", cloudSqlError)
+      const executionTime = Date.now() - cloudSqlStartTime
+      console.error("[SYSTEM] CloudSQL操作失敗:", {
+        error: cloudSqlError,
+        errorMessage: cloudSqlError instanceof Error ? cloudSqlError.message : "Unknown error",
+        errorStack: cloudSqlError instanceof Error ? cloudSqlError.stack : undefined,
+        executionTime: `${executionTime}ms`,
+        timestamp: new Date().toISOString(),
+        customerId: createdSquareCustomerId,
+        referenceId: finalReferenceId,
+        environment: process.env.VERCEL_ENV || "development",
+        nodeEnv: process.env.NODE_ENV,
+        vercelRegion: process.env.VERCEL_REGION,
+        customerDataSize: JSON.stringify(customerData).length,
+      })
+
       // CloudSQLエラーでもSquare顧客は保持し、成功レスポンスを返す
       console.log("CloudSQLエラーが発生しましたが、Square顧客は正常に作成されました")
 
