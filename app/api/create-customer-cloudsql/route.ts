@@ -5,18 +5,34 @@ import { appendToSheet } from "../../utils/google-sheets"
 import { formatJapanDateTime } from "../../utils/date-utils"
 import { generateReferenceId } from "../../utils/reference-id"
 import { sendConfirmationEmail } from "../../utils/email-sender"
-//テスト・テストテスト
+
 const squareClient = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
   environment: Environment.Production,
 })
 
 function extractCourseName(course: string): string {
-  return course.split("（")[0].trim()
+  return course?.split("（")[0].trim() || ""
+}
+
+function buildCompanyName(model?: string, color?: string): string | undefined {
+  const m = (model || "").trim()
+  const c = (color || "").trim()
+  if (m && c) return `${m}/${c}`
+  if (m) return m
+  if (c) return c
+  return undefined
+}
+
+function buildFamilyNameWithModel(familyName: string, model?: string): string {
+  const m = (model || "").trim()
+  const f = (familyName || "").trim()
+  const composed = m ? `${m}/${f}` : f
+  return composed.slice(0, 255)
 }
 
 export async function POST(request: Request) {
-  let customerId: string | null = null
+  let createdSquareCustomerId: string | null = null
 
   try {
     const formData = await request.json()
@@ -35,60 +51,65 @@ export async function POST(request: Request) {
       cardToken,
       referenceId,
       course,
-      newCarModel,
-      newCarColor,
-      newLicensePlate,
-      currentCourse,
-      newCourse,
-      inquiryDetails,
-      newEmail,
-      isLimitedProductStore,
-      enableSubscription,
       campaignCode,
     } = formData
 
-    // 1. Square顧客を作成
-    console.log("Square顧客を作成中...")
-    const customersApi = squareClient.customersApi
+    if (operation !== "入会") {
+      return NextResponse.json({ success: false, error: "このエンドポイントは入会フロー専用です" }, { status: 400 })
+    }
 
-    const createCustomerRequest = {
+    console.log("顧客情報を作成中...")
+    const customersApi = squareClient.customersApi
+    const finalReferenceId = referenceId || generateReferenceId(store)
+    const companyNameCandidate = buildCompanyName(carModel, carColor)
+
+    const createCustomerRequest: any = {
       givenName: givenName,
-      familyName: familyName,
+      familyName: buildFamilyNameWithModel(familyName, carModel),
       emailAddress: email,
       phoneNumber: phone,
-      referenceId: referenceId || generateReferenceId(store),
+      referenceId: finalReferenceId,
+      nickname: extractCourseName(course),
+      note: store,
+    }
+    if (companyNameCandidate) {
+      createCustomerRequest.companyName = companyNameCandidate
     }
 
     const { result: customerResult } = await customersApi.createCustomer(createCustomerRequest)
-    customerId = customerResult.customer?.id || null
+    createdSquareCustomerId = customerResult.customer?.id || null
 
-    if (!customerId) {
+    if (!createdSquareCustomerId) {
       throw new Error("Square顧客の作成に失敗しました")
     }
+    console.log("顧客情報が作成されました:", createdSquareCustomerId)
 
-    console.log("Square顧客が正常に作成されました:", customerId)
+    if (cardToken) {
+      console.log("カード情報を保存中...", {
+        customerId: createdSquareCustomerId,
+        cardToken: cardToken.substring(0, 10) + "...",
+      })
+      try {
+        const { result: cardResult } = await squareClient.cardsApi.createCard({
+          idempotencyKey: `card-${createdSquareCustomerId}-${Date.now()}`,
+          sourceId: cardToken,
+          card: { customerId: createdSquareCustomerId },
+        })
+        console.log("カード情報が正常に保存されました:", cardResult.card?.id)
+      } catch (err) {
+        console.error("カード登録エラー:", err)
+        if (createdSquareCustomerId) {
+          await customersApi.deleteCustomer(createdSquareCustomerId)
+        }
+        throw err
+      }
+    }
 
-    // 2. クレジットカード情報を保存
-    console.log("クレジットカード情報を保存中...")
-    const cardsApi = squareClient.cardsApi
-
-    const { result: cardResult } = await cardsApi.createCard({
-      idempotencyKey: `card-${customerId}-${Date.now()}`,
-      sourceId: cardToken,
-      card: {
-        customerId: customerId,
-      },
-    })
-
-    console.log("クレジットカード情報が正常に保存されました")
-
-    // 3. CloudSQLに顧客データを挿入（store_name使用、store_codeは自動取得）
     console.log("CloudSQLに顧客データを挿入中...")
-    
     const customerData: InsertCustomerData = {
-      referenceId: createCustomerRequest.referenceId,
-      squareCustomerId: customerId,
-      familyName: familyName,
+      referenceId: finalReferenceId,
+      squareCustomerId: createdSquareCustomerId,
+      family_name: familyName,
       givenName: givenName,
       email: email,
       phone: phone,
@@ -99,78 +120,169 @@ export async function POST(request: Request) {
       plateInfo2: null,
       plateInfo3: null,
       plateInfo4: null,
-      storeName: store,  // store_nameを使用してstore_codeを自動取得
-      campaignCode: campaignCode || null
+      storeName: store,
+      campaignCode: campaignCode || null,
     }
 
-    const cloudSqlCustomerId = await insertCustomer(customerData)
-    console.log("CloudSQLに顧客データが正常に挿入されました:", cloudSqlCustomerId)
+    const cloudSqlStartTime = Date.now()
+    console.log("[SYSTEM] CloudSQL操作開始:", {
+      timestamp: new Date().toISOString(),
+      customerId: createdSquareCustomerId,
+      referenceId: finalReferenceId,
+      environment: process.env.VERCEL_ENV || "development",
+    })
 
-    // 4. Google Sheetsにデータを追加
-    console.log("Google Sheetsにデータを追加中...")
-    const sheetData = [
-      formatJapanDateTime(new Date()),
-      operation,
-      createCustomerRequest.referenceId,
-      store,
-      `${familyName} ${givenName}`,
-      email,
-      "",
-      phone,
-      carModel,
-      carColor,
-      licensePlate || "",
-      extractCourseName(course),
-      newCarModel || "",
-      newCarColor || "",
-      newLicensePlate || "",
-      currentCourse || "",
-      newCourse || "",
-      inquiryDetails || "",
-      newEmail || "",
-      campaignCode || "",
+    // CloudSQL操作にタイムアウトを設定（8秒）
+    const cloudSqlPromise = insertCustomer(customerData)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("CloudSQL操作がタイムアウトしました")), 8000)
+    })
+
+    let cloudSqlCustomerId: number
+    try {
+      cloudSqlCustomerId = (await Promise.race([cloudSqlPromise, timeoutPromise])) as number
+      const executionTime = Date.now() - cloudSqlStartTime
+      console.log("[SYSTEM] CloudSQL操作成功:", {
+        customerId: cloudSqlCustomerId,
+        executionTime: `${executionTime}ms`,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (cloudSqlError) {
+      const executionTime = Date.now() - cloudSqlStartTime
+      console.error("[SYSTEM] CloudSQL操作失敗:", {
+        error: cloudSqlError,
+        errorMessage: cloudSqlError instanceof Error ? cloudSqlError.message : "Unknown error",
+        errorStack: cloudSqlError instanceof Error ? cloudSqlError.stack : undefined,
+        executionTime: `${executionTime}ms`,
+        timestamp: new Date().toISOString(),
+        customerId: createdSquareCustomerId,
+        referenceId: finalReferenceId,
+        environment: process.env.VERCEL_ENV || "development",
+        nodeEnv: process.env.NODE_ENV,
+        vercelRegion: process.env.VERCEL_REGION,
+        customerDataSize: JSON.stringify(customerData).length,
+      })
+
+      // CloudSQLエラーでもSquare顧客は保持し、成功レスポンスを返す
+      console.log("CloudSQLエラーが発生しましたが、Square顧客は正常に作成されました")
+
+      // バックグラウンドでGoogle Sheetsとメール送信を実行
+      Promise.all([
+        appendToSheet([
+          [
+            formatJapanDateTime(new Date()),
+            operation,
+            finalReferenceId,
+            store,
+            `${familyName} ${givenName}`,
+            email,
+            "",
+            phone,
+            carModel || "",
+            carColor || "",
+            licensePlate || "",
+            extractCourseName(course),
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            campaignCode || "",
+          ],
+        ]).catch((err) => console.error("Google Sheets書き込みエラー:", err)),
+        sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId).catch((err) =>
+          console.error("確認メール送信エラー:", err),
+        ),
+      ])
+
+      return NextResponse.json({
+        success: true,
+        customerId: createdSquareCustomerId,
+        referenceId: finalReferenceId,
+        message: "入会が完了しました（データベース同期は後で実行されます）",
+        warning: "データベース同期に時間がかかっています",
+      })
+    }
+
+    // Google SheetsとEmail送信を並行実行（エラーでも処理を継続）
+    const backgroundTasks = [
+      appendToSheet([
+        [
+          formatJapanDateTime(new Date()),
+          operation,
+          finalReferenceId,
+          store,
+          `${familyName} ${givenName}`,
+          email,
+          "",
+          phone,
+          carModel || "",
+          carColor || "",
+          licensePlate || "",
+          extractCourseName(course),
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          campaignCode || "",
+        ],
+      ]).catch((err) => console.error("Google Sheets書き込みエラー:", err)),
+      sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId).catch((err) =>
+        console.error("確認メール送信エラー:", err),
+      ),
     ]
 
-    // 配列の配列として渡す
-    await appendToSheet([sheetData])
-    console.log("Google Sheetsにデータが正常に追加されました")
-
-    // 5. 確認メールを送信
-    try {
-      await sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, createCustomerRequest.referenceId)
-      console.log("確認メールが送信されました")
-    } catch (emailError) {
-      console.error("確認メール送信エラー:", emailError)
-      // メール送信エラーは処理を停止させない
-    }
-
-    console.log("確認メールを送信しました")
+    // バックグラウンドタスクを並行実行（結果を待たない）
+    Promise.all(backgroundTasks).then(() => {
+      console.log("バックグラウンドタスクが完了しました")
+    })
 
     return NextResponse.json({
       success: true,
-      customerId: customerId,
-      cloudSqlCustomerId: cloudSqlCustomerId,
-      referenceId: createCustomerRequest.referenceId,
+      customerId: createdSquareCustomerId,
+      cloudSqlCustomerId,
+      referenceId: finalReferenceId,
+      message: "入会が完了しました",
     })
   } catch (error) {
     console.error("エラーが発生しました:", error)
 
-    // Square顧客が作成された場合は削除を試行
-    if (customerId) {
+    if (createdSquareCustomerId) {
       try {
-        const customersApi = squareClient.customersApi
-        await customersApi.deleteCustomer(customerId)
-        console.log("作成されたSquare顧客を削除しました:", customerId)
+        const deletePromise = squareClient.customersApi.deleteCustomer(createdSquareCustomerId)
+        const deleteTimeout = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("Square顧客削除がタイムアウトしました")), 3000)
+        })
+        await Promise.race([deletePromise, deleteTimeout])
+        console.log("作成されたSquare顧客を削除しました:", createdSquareCustomerId)
       } catch (deleteError) {
         console.error("Square顧客の削除に失敗しました:", deleteError)
       }
     }
 
     if (error instanceof ApiError) {
-      console.error("Square APIエラー:", error.errors)
-      return NextResponse.json({ error: "Square APIエラーが発生しました", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Square APIエラーが発生しました",
+          details: error.errors,
+        },
+        { status: 400 },
+      )
     }
 
-    return NextResponse.json({ error: "内部サーバーエラーが発生しました" }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: "内部サーバーエラーが発生しました",
+        message: "お手数ですが、しばらく時間をおいて再度お試しください",
+      },
+      { status: 500 },
+    )
   }
 }
