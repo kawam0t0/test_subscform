@@ -166,36 +166,39 @@ export async function POST(request: Request) {
       // CloudSQLエラーでもSquare顧客は保持し、成功レスポンスを返す
       console.log("CloudSQLエラーが発生しましたが、Square顧客は正常に作成されました")
 
-      // バックグラウンドでGoogle Sheetsとメール送信を実行
-      Promise.all([
-        appendToSheet([
-          [
-            formatJapanDateTime(new Date()),
-            operation,
-            finalReferenceId,
-            store,
-            `${familyName} ${givenName}`,
-            email,
-            "",
-            phone,
-            carModel || "",
-            carColor || "",
-            licensePlate || "",
-            extractCourseName(course),
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            campaignCode || "",
-          ],
-        ]).catch((err) => console.error("Google Sheets書き込みエラー:", err)),
-        sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId).catch((err) =>
-          console.error("確認メール送信エラー:", err),
-        ),
-      ])
+      // Google Sheetsとメール送信を独立して実行
+      const sheetsData = [
+        formatJapanDateTime(new Date()),
+        operation,
+        finalReferenceId,
+        store,
+        `${familyName} ${givenName}`,
+        email,
+        "",
+        phone,
+        carModel || "",
+        carColor || "",
+        licensePlate || "",
+        extractCourseName(course),
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        campaignCode || "",
+      ]
+
+      // Google Sheetsへの書き込みを独立実行
+      appendToSheet([sheetsData])
+        .then(() => console.log("Google Sheets書き込み成功"))
+        .catch((err) => console.error("Google Sheets書き込みエラー:", err))
+
+      // メール送信を独立実行
+      sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId)
+        .then(() => console.log("確認メール送信成功"))
+        .catch((err) => console.error("確認メール送信エラー:", err))
 
       return NextResponse.json({
         success: true,
@@ -206,41 +209,39 @@ export async function POST(request: Request) {
       })
     }
 
-    // Google SheetsとEmail送信を並行実行（エラーでも処理を継続）
-    const backgroundTasks = [
-      appendToSheet([
-        [
-          formatJapanDateTime(new Date()),
-          operation,
-          finalReferenceId,
-          store,
-          `${familyName} ${givenName}`,
-          email,
-          "",
-          phone,
-          carModel || "",
-          carColor || "",
-          licensePlate || "",
-          extractCourseName(course),
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          campaignCode || "",
-        ],
-      ]).catch((err) => console.error("Google Sheets書き込みエラー:", err)),
-      sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId).catch((err) =>
-        console.error("確認メール送信エラー:", err),
-      ),
+    // Google SheetsとEmail送信を独立して実行（互いのエラーが影響しないように）
+    const sheetsData = [
+      formatJapanDateTime(new Date()),
+      operation,
+      finalReferenceId,
+      store,
+      `${familyName} ${givenName}`,
+      email,
+      "",
+      phone,
+      carModel || "",
+      carColor || "",
+      licensePlate || "",
+      extractCourseName(course),
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      campaignCode || "",
     ]
 
-    // バックグラウンドタスクを並行実行（結果を待たない）
-    Promise.all(backgroundTasks).then(() => {
-      console.log("バックグラウンドタスクが完了しました")
-    })
+    // Google Sheetsへの書き込みを独立実行
+    appendToSheet([sheetsData])
+      .then(() => console.log("Google Sheets書き込み成功"))
+      .catch((err) => console.error("Google Sheets書き込みエラー:", err))
+
+    // メール送信を独立実行
+    sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId)
+      .then(() => console.log("確認メール送信成功"))
+      .catch((err) => console.error("確認メール送信エラー:", err))
 
     return NextResponse.json({
       success: true,
