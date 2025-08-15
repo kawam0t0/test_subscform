@@ -62,54 +62,30 @@ export interface InsertCustomerData {
 // =====================
 // 接続設定とプール（グローバル再利用）
 // =====================
-console.log("=== CloudSQL詳細デバッグ開始 ===")
-console.log("環境情報:", {
-  NODE_ENV: process.env.NODE_ENV,
-  VERCEL: process.env.VERCEL,
-  VERCEL_ENV: process.env.VERCEL_ENV,
-  VERCEL_URL: process.env.VERCEL_URL,
-})
-
-console.log("CloudSQL環境変数詳細チェック:", {
-  // 両方の環境変数名をチェック
-  CLOUDSQL_DATABASE_HOST: process.env.CLOUDSQL_DATABASE_HOST || "NOT_SET",
-  CLOUDSQL_HOST: process.env.CLOUDSQL_HOST || "NOT_SET",
-  CLOUDSQL_DATABASE_PORT: process.env.CLOUDSQL_DATABASE_PORT || "NOT_SET",
-  CLOUDSQL_PORT: process.env.CLOUDSQL_PORT || "NOT_SET",
-  CLOUDSQL_DATABASE_USER: process.env.CLOUDSQL_DATABASE_USER || "NOT_SET",
-  CLOUDSQL_USER: process.env.CLOUDSQL_USER || "NOT_SET",
-  CLOUDSQL_DATABASE_PASSWORD: process.env.CLOUDSQL_DATABASE_PASSWORD ? "***SET***" : "NOT_SET",
-  CLOUDSQL_PASSWORD: process.env.CLOUDSQL_PASSWORD ? "***SET***" : "NOT_SET",
-  CLOUDSQL_DATABASE_NAME: process.env.CLOUDSQL_DATABASE_NAME || "NOT_SET",
-  CLOUDSQL_DATABASE: process.env.CLOUDSQL_DATABASE || "NOT_SET",
-  CLOUDSQL_INSTANCE_CONNECTION_NAME: process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME || "NOT_SET",
+console.log("CloudSQL環境変数チェック:", {
+  CLOUDSQL_USER: process.env.CLOUDSQL_USER ? "SET" : "NOT_SET",
+  CLOUDSQL_PASSWORD: process.env.CLOUDSQL_PASSWORD ? "SET" : "NOT_SET",
+  CLOUDSQL_DATABASE: process.env.CLOUDSQL_DATABASE ? "SET" : "NOT_SET",
 })
 
 const connectionConfig = {
-  host:
-    process.env.VERCEL === "1"
-      ? process.env.CLOUDSQL_DATABASE_HOST || process.env.CLOUDSQL_HOST || "34.146.22.196" // 正しいCloudSQLパブリックIPアドレスに修正
-      : process.env.CLOUDSQL_DATABASE_HOST || process.env.CLOUDSQL_HOST || "127.0.0.1", // ローカルはProxy
-  port:
-    process.env.VERCEL === "1"
-      ? 3306 // CloudSQLの標準ポート
-      : Number.parseInt(process.env.CLOUDSQL_DATABASE_PORT || process.env.CLOUDSQL_PORT || "3307"), // ローカルはProxy
-  user: process.env.CLOUDSQL_DATABASE_USER || process.env.CLOUDSQL_USER || "root",
-  password: process.env.CLOUDSQL_DATABASE_PASSWORD || process.env.CLOUDSQL_PASSWORD || "",
-  database: process.env.CLOUDSQL_DATABASE_NAME || process.env.CLOUDSQL_DATABASE || "customer_database",
+  host: process.env.VERCEL === "1" ? "34.146.22.196" : "127.0.0.1",
+  port: process.env.VERCEL === "1" ? 3306 : 3307,
+  user: process.env.CLOUDSQL_USER || "root",
+  password: process.env.CLOUDSQL_PASSWORD || "",
+  database: process.env.CLOUDSQL_DATABASE || "customer_database",
   timezone: "+09:00",
-  connectTimeout: 60_000,
+  connectTimeout: 10000, // 10秒に短縮
+  acquireTimeout: 10000,
+  timeout: 10000,
 }
 
-console.log("最終接続設定:", {
+console.log("接続設定:", {
   host: connectionConfig.host,
   port: connectionConfig.port,
   user: connectionConfig.user,
   database: connectionConfig.database,
   passwordSet: !!connectionConfig.password,
-  passwordLength: connectionConfig.password ? connectionConfig.password.length : 0,
-  timezone: connectionConfig.timezone,
-  connectTimeout: connectionConfig.connectTimeout,
 })
 
 type GlobalWithMysql = typeof globalThis & {
@@ -121,123 +97,65 @@ const g = globalThis as GlobalWithMysql
 
 const basePoolOptions: mysql.PoolOptions = {
   waitForConnections: true,
-  connectionLimit: 5,
-  maxIdle: 2,
-  idleTimeout: 60_000,
+  connectionLimit: 3, // 接続数を削減
+  maxIdle: 1,
+  idleTimeout: 30000, // アイドルタイムアウトを短縮
   queueLimit: 0,
   connectTimeout: connectionConfig.connectTimeout,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 10_000,
 }
 
 async function createPool(): Promise<mysql.Pool> {
-  console.log("=== プール作成開始 ===")
+  console.log("プール作成開始")
 
   if (g.mysqlPool) {
-    console.log("既存のプールを再利用")
     return g.mysqlPool
   }
 
   const isVercel = process.env.VERCEL === "1"
-  console.log("環境判定:", { isVercel, VERCEL_ENV: process.env.VERCEL })
-
-  let createdPool: mysql.Pool
 
   try {
+    let poolConfig: mysql.PoolOptions
+
     if (isVercel) {
-      console.log("=== Vercel環境でのCloudSQL接続設定開始 ===")
-
-      const instanceConnectionName = process.env.CLOUDSQL_INSTANCE_CONNECTION_NAME
-      if (!instanceConnectionName) {
-        console.error("❌ CLOUDSQL_INSTANCE_CONNECTION_NAME が設定されていません")
-        throw new Error("CLOUDSQL_INSTANCE_CONNECTION_NAME が設定されていません")
-      }
-
-      console.log("インスタンス接続名:", instanceConnectionName)
-
-      const vercelPoolConfig = {
-        host: connectionConfig.host, // CloudSQLの実際のIPアドレス
-        port: connectionConfig.port, // 3306（CloudSQLの標準ポート）
-        user: connectionConfig.user,
-        password: connectionConfig.password,
-        database: connectionConfig.database,
-        timezone: "+09:00",
-        ssl: {
-          rejectUnauthorized: false, // CloudSQL接続用SSL設定
-        },
-        acquireTimeout: 60000,
-        timeout: 60000,
+      poolConfig = {
+        ...connectionConfig,
+        ssl: false, // SSL無効化でシンプルに
         ...basePoolOptions,
       }
-
-      console.log("Vercelプール設定:", {
-        ...vercelPoolConfig,
-        password: vercelPoolConfig.password ? "***SET***" : "NOT_SET",
-      })
-
-      createdPool = mysql.createPool(vercelPoolConfig)
-      console.log("✅ Vercel環境でのプール作成完了")
     } else {
-      console.log("=== ローカル環境での直接接続開始 ===")
-
-      const localPoolConfig = {
-        host: connectionConfig.host,
-        port: connectionConfig.port,
-        user: connectionConfig.user,
-        password: connectionConfig.password,
-        database: connectionConfig.database,
-        timezone: connectionConfig.timezone,
+      poolConfig = {
+        ...connectionConfig,
         ...basePoolOptions,
       }
-
-      console.log("ローカルプール設定:", {
-        ...localPoolConfig,
-        password: localPoolConfig.password ? "***SET***" : "NOT_SET",
-      })
-
-      createdPool = mysql.createPool(localPoolConfig)
-      console.log("✅ ローカル環境でのプール作成完了")
     }
 
-    console.log("=== プール接続テスト開始 ===")
+    console.log("プール設定:", {
+      ...poolConfig,
+      password: poolConfig.password ? "***SET***" : "NOT_SET",
+    })
+
+    const createdPool = mysql.createPool(poolConfig)
+
+    console.log("接続テスト開始")
     const testConnection = await createdPool.getConnection()
-    console.log("✅ プールから接続取得成功")
 
     try {
-      console.log("テストクエリ実行中...")
       const [result] = await testConnection.execute("SELECT 1 as test")
-      console.log("✅ テストクエリ結果:", result)
-
-      console.log("時刻クエリ実行中...")
-      const [timeResult] = await testConnection.execute("SELECT NOW() as now_time")
-      console.log("✅ 時刻クエリ結果:", timeResult)
-
-      console.log("データベース名クエリ実行中...")
-      const [dbResult] = await testConnection.execute("SELECT DATABASE() as current_db")
-      console.log("✅ データベース名クエリ結果:", dbResult)
-    } catch (testError) {
-      console.error("❌ プール接続テスト失敗:", testError)
-      throw testError
+      console.log("接続テスト成功:", result)
     } finally {
       testConnection.release()
-      console.log("✅ テスト接続解放完了")
     }
 
     if (process.env.NODE_ENV !== "production") {
       g.mysqlPool = createdPool
-      console.log("グローバルプールに保存（非本番環境）")
     }
 
-    console.log("=== プール作成完了 ===")
+    console.log("プール作成完了")
     return createdPool
   } catch (error) {
-    console.error("❌ プール作成エラー:", {
+    console.error("プール作成エラー:", {
       message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       code: (error as any)?.code,
-      errno: (error as any)?.errno,
-      sqlState: (error as any)?.sqlState,
-      sqlMessage: (error as any)?.sqlMessage,
     })
     throw error
   }
@@ -304,37 +222,21 @@ async function ensureSchemaInitialized() {
 }
 
 export async function testConnection(): Promise<boolean> {
-  console.log("=== 接続テスト開始 ===")
+  console.log("接続テスト開始")
 
   return withRetry(async () => {
-    console.log("接続取得試行中...")
     const conn = await pool.getConnection()
-    console.log("✅ 接続取得成功")
 
     try {
-      console.log("セッション設定中...")
       await setSessionJst(conn)
-      console.log("✅ セッション設定完了")
-
-      console.log("テストクエリ実行中...")
-      const [result] = await conn.query("SELECT 1 as test, NOW() as now_time, DATABASE() as db_name")
-      console.log("✅ テストクエリ結果:", result)
-
+      const [result] = await conn.query("SELECT 1 as test")
+      console.log("接続テスト成功:", result)
       return true
     } finally {
       conn.release()
-      console.log("✅ 接続解放完了")
     }
   }).catch((e) => {
-    console.error("❌ CloudSQL接続テストエラー詳細:", {
-      message: e?.message,
-      stack: e?.stack,
-      code: e?.code,
-      errno: e?.errno,
-      sqlState: e?.sqlState,
-      sqlMessage: e?.sqlMessage,
-      fatal: e?.fatal,
-    })
+    console.error("接続テストエラー:", e?.message)
     return false
   })
 }
@@ -624,11 +526,16 @@ export async function findCustomerFlexible(
 }
 
 export async function insertCustomer(data: InsertCustomerData): Promise<number> {
+  console.log("insertCustomer開始")
   await ensureSchemaInitialized()
 
-  const storeCode = await getStoreCodeByName(data.storeName)
-  if (!storeCode) {
-    throw new Error(`店舗が見つかりません: ${data.storeName}`)
+  let storeCode: string | null = null
+  try {
+    if (data.storeName) {
+      storeCode = await getStoreCodeByName(data.storeName)
+    }
+  } catch (error) {
+    console.warn("店舗コード取得失敗（続行）:", error)
   }
 
   const conn = await pool.getConnection()
@@ -636,36 +543,45 @@ export async function insertCustomer(data: InsertCustomerData): Promise<number> 
     await setSessionJst(conn)
     await conn.beginTransaction()
 
-    const [result] = await conn.execute(
-      `INSERT INTO customers (
-        reference_id, square_customer_id, family_name, given_name, email, phone, 
-        course, car_model, color, plate_info_1, plate_info_2, plate_info_3, plate_info_4,
-        store_name, store_code, registration_date, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), 'active')`,
-      [
-        data.referenceId,
-        data.squareCustomerId || null,
-        data.familyName,
-        data.givenName,
-        data.email,
-        data.phone,
-        data.course,
-        data.carModel,
-        data.color,
-        data.plateInfo1 ?? null,
-        data.plateInfo2 ?? null,
-        data.plateInfo3 ?? null,
-        data.plateInfo4 ?? null,
-        data.storeName,
-        storeCode,
-      ],
-    )
+    const insertSql = `INSERT INTO customers (
+      reference_id, square_customer_id, family_name, given_name, email, phone, 
+      course, car_model, color, plate_info_1, plate_info_2, plate_info_3, plate_info_4,
+      store_name, store_code, registration_date, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), 'active')`
+
+    const insertValues = [
+      data.referenceId,
+      data.squareCustomerId || null,
+      data.familyName,
+      data.givenName,
+      data.email,
+      data.phone,
+      data.course,
+      data.carModel,
+      data.color,
+      data.plateInfo1 ?? null,
+      data.plateInfo2 ?? null,
+      data.plateInfo3 ?? null,
+      data.plateInfo4 ?? null,
+      data.storeName,
+      storeCode,
+    ]
+
+    console.log("SQL実行中")
+    const [result] = await conn.execute(insertSql, insertValues)
 
     const insertResult = result as mysql.ResultSetHeader
     const customerId = insertResult.insertId
+
+    console.log("顧客挿入成功 ID:", customerId)
+
     await conn.commit()
     return customerId
   } catch (e) {
+    console.error("insertCustomer エラー:", {
+      message: e instanceof Error ? e.message : String(e),
+      code: (e as any)?.code,
+    })
     await conn.rollback()
     throw e
   } finally {
