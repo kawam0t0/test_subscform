@@ -44,7 +44,7 @@ export interface UpdateCustomerData {
 export interface InsertCustomerData {
   referenceId: string
   squareCustomerId?: string
-  familyName: string
+  family_name: string
   givenName: string
   email: string
   phone: string
@@ -617,14 +617,10 @@ async function getCustomerById(conn: mysql.PoolConnection, customerId: number): 
 }
 
 export async function updateCustomer(customerId: number, data: UpdateCustomerData): Promise<void> {
-  await ensureSchemaInitialized()
-
   const conn = await pool.getConnection()
   try {
     await setSessionJst(conn)
     await conn.beginTransaction()
-
-    await ensureInquiriesTableStructure(conn)
 
     const current = await getCustomerById(conn, customerId)
     if (!current) {
@@ -638,10 +634,8 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         customer_id, inquiry_type, inquiry_details, cancellation_reasons, status,
         reference_id, square_customer_id, family_name, given_name, email, phone, course,
         car_model, color, plate_info_1, plate_info_2, plate_info_3, plate_info_4,
-        store_name, store_code, new_car_model, new_car_color,
-        new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
-        new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?)`,
+        store_name
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customerId,
         data.inquiryType,
@@ -664,15 +658,6 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         current.plate_info_3 ?? null,
         current.plate_info_4 ?? null,
         data.storeName ?? current.store_name ?? null,
-        resolvedStoreCode ?? null,
-        data.newCarModel ?? null,
-        data.newCarColor ?? null,
-        null, // new_plate_info_1
-        null, // new_plate_info_2
-        null, // new_plate_info_3
-        null, // new_plate_info_4
-        data.newCourseName ?? null,
-        data.newEmail ?? null,
       ],
     )
 
