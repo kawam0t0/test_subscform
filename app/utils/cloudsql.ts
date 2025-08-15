@@ -261,6 +261,33 @@ export async function updateTableStructure(): Promise<void> {
   const conn = await pool.getConnection()
   try {
     await setSessionJst(conn)
+
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS customers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        reference_id VARCHAR(20),
+        square_customer_id VARCHAR(100),
+        family_name VARCHAR(50) NOT NULL,
+        given_name VARCHAR(50) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(20) NOT NULL,
+        course VARCHAR(100),
+        car_model VARCHAR(100),
+        color VARCHAR(50),
+        plate_info_1 VARCHAR(50) DEFAULT NULL,
+        plate_info_2 VARCHAR(50) DEFAULT NULL,
+        plate_info_3 VARCHAR(50) DEFAULT NULL,
+        plate_info_4 VARCHAR(50) DEFAULT NULL,
+        store_name VARCHAR(100),
+        store_code VARCHAR(50),
+        registration_date DATE,
+        status VARCHAR(50) DEFAULT 'active',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `)
+    console.log("✅ customersテーブル作成完了")
+
     const alterCustomers = [
       `ALTER TABLE customers ADD COLUMN course VARCHAR(100) COMMENT '洗車コース名'`,
       `ALTER TABLE customers ADD COLUMN car_model VARCHAR(100) COMMENT '車種'`,
@@ -287,12 +314,6 @@ export async function updateTableStructure(): Promise<void> {
   } finally {
     conn.release()
   }
-}
-
-async function getCustomerById(conn: mysql.PoolConnection, customerId: number): Promise<Customer | null> {
-  const [rows] = await conn.execute(`SELECT * FROM customers WHERE id = ?`, [customerId])
-  const arr = rows as Customer[]
-  return arr.length ? arr[0] : null
 }
 
 async function getCurrentInquiriesOrder(conn: mysql.PoolConnection): Promise<string[]> {
@@ -544,9 +565,10 @@ export async function insertCustomer(data: InsertCustomerData): Promise<number> 
 
     const insertSql = `INSERT INTO customers (
       reference_id, square_customer_id, family_name, given_name, email, phone, 
-      course, car_model, color, plate_info_1, plate_info_2, plate_info_3, plate_info_4,
-      store_name, store_code, registration_date, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), 'active')`
+      registration_date, status, course, car_model, color, 
+      plate_info_1, plate_info_2, plate_info_3, plate_info_4,
+      store_name, store_code
+    ) VALUES (?, ?, ?, ?, ?, ?, CURDATE(), 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
     const insertValues = [
       data.referenceId,
@@ -558,15 +580,15 @@ export async function insertCustomer(data: InsertCustomerData): Promise<number> 
       data.course,
       data.carModel,
       data.color,
-      data.plateInfo1 ?? null,
-      data.plateInfo2 ?? null,
-      data.plateInfo3 ?? null,
-      data.plateInfo4 ?? null,
+      data.plateInfo1 || null,
+      data.plateInfo2 || null,
+      data.plateInfo3 || null,
+      data.plateInfo4 || null,
       data.storeName,
       storeCode,
     ]
 
-    console.log("SQL実行中")
+    console.log("SQL実行中 - 完全版")
     const [result] = await conn.execute(insertSql, insertValues)
 
     const insertResult = result as mysql.ResultSetHeader
@@ -586,6 +608,12 @@ export async function insertCustomer(data: InsertCustomerData): Promise<number> 
   } finally {
     conn.release()
   }
+}
+
+async function getCustomerById(conn: mysql.PoolConnection, customerId: number): Promise<Customer | null> {
+  const [rows] = await conn.execute(`SELECT * FROM customers WHERE id = ?`, [customerId])
+  const customers = rows as Customer[]
+  return customers.length > 0 ? customers[0] : null
 }
 
 export async function updateCustomer(customerId: number, data: UpdateCustomerData): Promise<void> {
@@ -613,7 +641,7 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         store_name, store_code, new_car_model, new_car_color,
         new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
         new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?,?,?,?)`,
       [
         customerId,
         data.inquiryType,
