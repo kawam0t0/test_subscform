@@ -31,22 +31,12 @@ async function getAuthClient(): Promise<JWT> {
 export async function appendToSheet(values: string[][]) {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID
 
-  console.log("[DEBUG] Google Sheets環境変数チェック:", {
-    spreadsheetId: spreadsheetId ? "SET" : "NOT_SET",
-    privateKey: process.env.GOOGLE_SHEETS_PRIVATE_KEY ? "SET" : "NOT_SET",
-    clientEmail: process.env.GOOGLE_SHEETS_CLIENT_EMAIL ? "SET" : "NOT_SET",
-  })
-
   if (!spreadsheetId) {
-    console.error("[ERROR] GOOGLE_SHEETS_SPREADSHEET_ID is not configured")
     throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is not configured in your environment variables.")
   }
 
   try {
-    console.log("[DEBUG] 認証クライアント取得開始...")
     const authClient = await getAuthClient()
-    console.log("[DEBUG] 認証クライアント取得成功")
-
     const sheets = google.sheets({ version: "v4", auth: authClient })
 
     // すべての値を文字列に変換
@@ -54,61 +44,21 @@ export async function appendToSheet(values: string[][]) {
       row.map((cell) => (cell === undefined || cell === null ? "" : cell.toString())),
     )
 
-    // デバッグ用のログ
-    console.log("[DEBUG] Attempting to append data with:", {
-      spreadsheetId,
-      range: "customer_info!A:T", // T列まで拡張
-      values: stringValues,
-    })
-
-    // APIリクエストの構造を修正
     const request = {
       spreadsheetId,
-      range: "customer_info!A:T", // T列まで拡張
-      valueInputOption: "RAW",
-      insertDataOption: "INSERT_ROWS",
+      range: "customer_info!A:T",
+      valueInputOption: "RAW" as const,
+      insertDataOption: "INSERT_ROWS" as const,
       requestBody: {
         values: stringValues,
       },
     }
 
-    console.log("[DEBUG] Google Sheets API呼び出し開始...")
-
-    const response = await Promise.race([
-      sheets.spreadsheets.values.append(request),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Google Sheets API timeout after 15 seconds")), 15000),
-      ),
-    ])
-
-    console.log("[SUCCESS] Data appended successfully:", response.data)
+    const response = await sheets.spreadsheets.values.append(request)
     return response.data
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error"
-    const errorStack = error instanceof Error ? error.stack : undefined
-    const errorType =
-      error && typeof error === "object" && "constructor" in error ? (error.constructor as any)?.name : "Unknown"
-
-    // Google API エラーの場合の追加情報
-    const statusCode =
-      error && typeof error === "object" && ("status" in error || "code" in error)
-        ? (error as any).status || (error as any).code
-        : undefined
-
-    const details =
-      error && typeof error === "object" && ("details" in error || "response" in error)
-        ? (error as any).details || (error as any).response?.data
-        : undefined
-
-    console.error("[ERROR] Google Sheets書き込みエラー:", {
-      error,
-      message: errorMessage,
-      stack: errorStack,
-      errorType,
-      statusCode,
-      details,
-    })
-
-    throw new Error(`Failed to append data to Google Sheets: ${errorMessage}`)
+    throw new Error(
+      `Failed to append data to Google Sheets: ${error instanceof Error ? error.message : "Unknown error"}`,
+    )
   }
 }
