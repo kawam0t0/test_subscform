@@ -616,7 +616,7 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         store_name, store_code,
         new_car_model, new_car_color, new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
         new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customerId,
         data.inquiryType,
@@ -732,7 +732,7 @@ export async function insertInquiry(data: {
         store_name, store_code,
         new_car_model, new_car_color, new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
         new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,? )`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         null, // customer_id は null（顧客検索なし）
         data.inquiryType,
