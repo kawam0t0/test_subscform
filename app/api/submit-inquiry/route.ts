@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { findCustomerFlexible, updateCustomer, type UpdateCustomerData } from "@/app/utils/cloudsql"
+import { findCustomerFlexible, updateCustomer, insertInquiry, type UpdateCustomerData } from "@/app/utils/cloudsql"
 import { appendToSheet } from "@/app/utils/google-sheets"
 import { formatJapanDateTime } from "@/app/utils/date-utils"
 import { sendInquiryConfirmationEmail } from "@/app/utils/email-sender"
@@ -149,9 +149,10 @@ export async function POST(request: Request) {
     })
 
     if (operation === "各種手続き") {
-      // 直接inquiriesテーブルに挿入（顧客検索なし）
-      await updateCustomer(null, {
-        ...updateData,
+      await insertInquiry({
+        inquiryType: updateData.inquiryType,
+        inquiryDetails: updateData.inquiryDetails,
+        storeName: updateData.storeName,
         familyName,
         givenName,
         email,
@@ -159,7 +160,12 @@ export async function POST(request: Request) {
         carModel,
         carColor,
         course,
-        storeName: store,
+        newCarModel: updateData.newCarModel,
+        newCarColor: updateData.newCarColor,
+        newCourseName: updateData.newCourseName,
+        newEmail: updateData.newEmail,
+        cancellationReasons: updateData.cancellationReasons,
+        status: updateData.status,
       })
     } else {
       await updateCustomer(customerId, updateData)

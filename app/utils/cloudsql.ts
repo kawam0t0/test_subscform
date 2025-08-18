@@ -616,7 +616,7 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         store_name, store_code,
         new_car_model, new_car_color, new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
         new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?,?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)`,
       [
         customerId,
         data.inquiryType,
@@ -688,6 +688,84 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         console.warn("customers.status 更新スキップ:", e?.message || e)
       }
     }
+
+    await conn.commit()
+  } catch (e) {
+    await conn.rollback()
+    throw e
+  } finally {
+    conn.release()
+  }
+}
+
+export async function insertInquiry(data: {
+  inquiryType: string
+  inquiryDetails: string
+  storeName?: string | null
+  familyName: string
+  givenName: string
+  email: string
+  phone: string
+  carModel?: string
+  carColor?: string
+  course?: string
+  newCarModel?: string
+  newCarColor?: string
+  newCourseName?: string
+  newEmail?: string
+  cancellationReasons?: string[] | null
+  status?: string
+}): Promise<void> {
+  const conn = await pool.getConnection()
+  try {
+    await setSessionJst(conn)
+    await conn.beginTransaction()
+
+    const resolvedStoreCode = data.storeName ? await getStoreCodeByName(data.storeName) : null
+    const referenceId = `inquiry_${Date.now()}`
+
+    await conn.execute(
+      `INSERT INTO inquiries (
+        customer_id, inquiry_type, inquiry_details, cancellation_reasons, status,
+        reference_id, square_customer_id, family_name, given_name, email, phone, course,
+        car_model, color, plate_info_1, plate_info_2, plate_info_3, plate_info_4,
+        store_name, store_code,
+        new_car_model, new_car_color, new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
+        new_course_name, new_email
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
+      [
+        null, // customer_id は null（顧客検索なし）
+        data.inquiryType,
+        data.inquiryDetails || "",
+        data.cancellationReasons && data.cancellationReasons.length > 0
+          ? JSON.stringify(data.cancellationReasons)
+          : null,
+        data.status || "pending",
+        referenceId,
+        null, // square_customer_id
+        data.familyName,
+        data.givenName,
+        data.email,
+        data.phone,
+        data.course ?? null,
+        data.carModel ?? null,
+        data.carColor ?? null,
+        null, // plate_info_1
+        null, // plate_info_2
+        null, // plate_info_3
+        null, // plate_info_4
+        data.storeName ?? null,
+        resolvedStoreCode ?? null,
+        data.newCarModel ?? null,
+        data.newCarColor ?? null,
+        null, // new_plate_info_1
+        null, // new_plate_info_2
+        null, // new_plate_info_3
+        null, // new_plate_info_4
+        data.newCourseName ?? null,
+        data.newEmail ?? null,
+      ],
+    )
 
     await conn.commit()
   } catch (e) {
