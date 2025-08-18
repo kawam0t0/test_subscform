@@ -361,6 +361,38 @@ export async function POST(request: Request) {
     let googleSheetsStatus = "❌ 記録失敗"
     try {
       console.log("Google Sheetsにデータを追加中...")
+
+      let qColumnData = ""
+      if (operation === "各種手続き" && procedureVal) {
+        // 【解約】解約理由: ... の形式
+        qColumnData = `【${procedureVal}】`
+        if (reasonsMerged.length > 0) {
+          qColumnData += ` 解約理由: ${reasonsMerged.join(", ")}`
+        }
+        if (inquiryDetails && inquiryDetails.trim()) {
+          qColumnData += reasonsMerged.length > 0 ? `, ${inquiryDetails}` : ` ${inquiryDetails}`
+        }
+      } else if (operation === "解約") {
+        qColumnData = "【解約】"
+        if (reasonsMerged.length > 0) {
+          qColumnData += ` 解約理由: ${reasonsMerged.join(", ")}`
+        }
+        if (inquiryDetails && inquiryDetails.trim()) {
+          qColumnData += reasonsMerged.length > 0 ? `, ${inquiryDetails}` : ` ${inquiryDetails}`
+        }
+      } else if (operation === "その他問い合わせ") {
+        qColumnData = "【その他問い合わせ】"
+        if (reasonsMerged.length > 0) {
+          qColumnData += ` 内容: ${reasonsMerged.join(", ")}`
+        }
+        if (inquiryDetails && inquiryDetails.trim()) {
+          qColumnData += reasonsMerged.length > 0 ? `, ${inquiryDetails}` : ` ${inquiryDetails}`
+        }
+      } else {
+        // その他の操作の場合は従来通り
+        qColumnData = inquiryDetails || ""
+      }
+
       const sheetData = [
         formatJapanDateTime(new Date()), // A: タイムスタンプ（JST表記）
         operation, // B: 操作
@@ -378,7 +410,7 @@ export async function POST(request: Request) {
         newCarColor || "", // N: 新しい車の色
         "", // O: 新しいナンバー（削除済み）
         newCourse || "", // P: 新しいコース
-        inquiryDetails || "", // Q: その他（自由記述）— シートは従来通り
+        qColumnData, // Q: お問い合わせの種類と解約理由を組み合わせた形式
         "", // R: 空白
         "", // S: 会員番号
         campaignCode || "", // T: キャンペーンコード

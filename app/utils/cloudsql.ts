@@ -511,6 +511,16 @@ export async function findCustomerFlexible(
   carModel?: string | null,
 ): Promise<Customer | null> {
   return withRetry(async () => {
+    // まずメールアドレスのみで検索
+    if (email) {
+      const [rows] = await pool.execute(`SELECT * FROM customers WHERE email = ? ORDER BY updated_at DESC LIMIT 1`, [
+        email,
+      ])
+      const arr = rows as Customer[]
+      if (arr.length) return arr[0]
+    }
+
+    // メールアドレスで見つからない場合のみ、他の組み合わせを試行
     if (email && phone && carModel) {
       const [rows] = await pool.execute(
         `SELECT * FROM customers WHERE email = ? AND phone = ? AND car_model = ? LIMIT 1`,
@@ -524,13 +534,6 @@ export async function findCustomerFlexible(
         `SELECT * FROM customers WHERE email = ? AND phone = ? ORDER BY updated_at DESC LIMIT 1`,
         [email, phone],
       )
-      const arr = rows as Customer[]
-      if (arr.length) return arr[0]
-    }
-    if (email) {
-      const [rows] = await pool.execute(`SELECT * FROM customers WHERE email = ? ORDER BY updated_at DESC LIMIT 1`, [
-        email,
-      ])
       const arr = rows as Customer[]
       if (arr.length) return arr[0]
     }
@@ -637,7 +640,7 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
         store_name, store_code,
         new_car_model, new_car_color, new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
         new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         customerId,
         data.inquiryType,

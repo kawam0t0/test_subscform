@@ -142,6 +142,48 @@ export async function POST(request: Request) {
     let googleSheetsStatus = "❌ 記録失敗"
     try {
       console.log("Google Sheetsにデータを追加中...")
+
+      let qColumnData = ""
+      const reasonsMerged: string[] = [
+        ...toArray(formData.cancellationReasons),
+        ...toArray(formData.cancellationReason),
+        ...toArray(formData.reasons),
+      ]
+
+      if (operation === "各種手続き") {
+        const subType = formData.inquiryType || formData.procedure || formData.subOperation || formData.procedureType
+        if (subType) {
+          qColumnData = `【${subType}】`
+          if (reasonsMerged.length > 0) {
+            qColumnData += ` 解約理由: ${reasonsMerged.join(", ")}`
+          }
+          if (inquiryDetails && inquiryDetails.trim()) {
+            qColumnData += reasonsMerged.length > 0 ? `, ${inquiryDetails}` : ` ${inquiryDetails}`
+          }
+        } else {
+          qColumnData = inquiryDetails || "【各種手続き】"
+        }
+      } else if (operation === "解約") {
+        qColumnData = "【解約】"
+        if (reasonsMerged.length > 0) {
+          qColumnData += ` 解約理由: ${reasonsMerged.join(", ")}`
+        }
+        if (inquiryDetails && inquiryDetails.trim()) {
+          qColumnData += reasonsMerged.length > 0 ? `, ${inquiryDetails}` : ` ${inquiryDetails}`
+        }
+      } else if (operation === "その他問い合わせ") {
+        qColumnData = "【その他問い合わせ】"
+        if (reasonsMerged.length > 0) {
+          qColumnData += ` 内容: ${reasonsMerged.join(", ")}`
+        }
+        if (inquiryDetails && inquiryDetails.trim()) {
+          qColumnData += reasonsMerged.length > 0 ? `, ${inquiryDetails}` : ` ${inquiryDetails}`
+        }
+      } else {
+        // その他の操作の場合は従来通り
+        qColumnData = inquiryDetails || ""
+      }
+
       const sheetData = [
         formatJapanDateTime(new Date()), // A
         operation || "", // B
@@ -159,7 +201,7 @@ export async function POST(request: Request) {
         newCarColor || "", // N
         "", // O: new license plate (未使用)
         newCourse || "", // P
-        inquiryDetails || "", // Q: 自由記述（従来互換）
+        qColumnData, // Q: お問い合わせの種類と解約理由を組み合わせた形式
         "", // R
         "", // S: 会員番号
         campaignCode || "", // T
