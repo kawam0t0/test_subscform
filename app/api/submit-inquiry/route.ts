@@ -168,7 +168,9 @@ export async function POST(request: Request) {
         status: updateData.status,
       })
     } else {
-      await updateCustomer(customerId, updateData)
+      if (customerId !== null) {
+        await updateCustomer(customerId, updateData)
+      }
     }
 
     // 3) Google Sheets（従来通り）
