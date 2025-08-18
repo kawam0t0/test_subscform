@@ -113,13 +113,25 @@ export async function POST(request: Request) {
       campaignCode,
     } = formData
 
-    // 1) CloudSQLで顧客検索（柔軟に）
-    const customer = await findCustomerFlexible(email, phone, carModel)
-    if (!customer) {
-      return NextResponse.json({ success: false, error: "該当する顧客が見つかりませんでした" }, { status: 404 })
+    let customer = null
+    let customerId = null
+    let referenceId = ""
+
+    if (operation === "各種手続き") {
+      // 各種手続きの場合は顧客検索せず、直接処理
+      console.log("各種手続きのため顧客検索をスキップします")
+      referenceId = `inquiry_${Date.now()}` // 一意のID生成
+    } else {
+      // その他の操作の場合は従来通り顧客検索
+      customer = await findCustomerFlexible(email, phone, carModel)
+      if (!customer) {
+        return NextResponse.json({ success: false, error: "該当する顧客が見つかりませんでした" }, { status: 404 })
+      }
+      customerId = customer.id
+      referenceId = customer.reference_id
     }
 
-    // 2) CloudSQL: inquiriesに必ず1行追加 + 必要に応じてcustomers.statusをpendingに
+    // 2) CloudSQL: inquiriesに必ず1行追加
     const updateData = buildUpdateDataFromForm(formData)
 
     // 補助: もしフォームが「各種手続き」でも車両/コース/メール変更の新値を持っている場合に備えて、新値を反映（任意）
@@ -129,14 +141,29 @@ export async function POST(request: Request) {
     if (typeof newEmail === "string" && newEmail.trim()) updateData.newEmail = newEmail.trim()
 
     console.log("CloudSQLにinquiriesデータを挿入中:", {
-      customerId: customer.id,
+      customerId: customerId,
       inquiryType: updateData.inquiryType,
       inquiryDetails: updateData.inquiryDetails,
       hasNewCarModel: !!updateData.newCarModel,
       hasNewEmail: !!updateData.newEmail,
     })
 
-    await updateCustomer(customer.id, updateData)
+    if (operation === "各種手続き") {
+      // 直接inquiriesテーブルに挿入（顧客検索なし）
+      await updateCustomer(null, {
+        ...updateData,
+        familyName,
+        givenName,
+        email,
+        phone,
+        carModel,
+        carColor,
+        course,
+        storeName: store,
+      })
+    } else {
+      await updateCustomer(customerId, updateData)
+    }
 
     // 3) Google Sheets（従来通り）
     let googleSheetsStatus = "❌ 記録失敗"
@@ -187,7 +214,7 @@ export async function POST(request: Request) {
       const sheetData = [
         formatJapanDateTime(new Date()), // A
         operation || "", // B
-        customer.reference_id || "", // C
+        referenceId || "", // C
         store || "", // D
         `${familyName || ""} ${givenName || ""}`.trim(), // E
         email || "", // F
@@ -222,7 +249,7 @@ export async function POST(request: Request) {
         email,
         operation,
         store,
-        customer.reference_id,
+        referenceId,
       )
       emailStatus = "✅ 送信完了"
       console.log("問い合わせ確認メールを送信しました")
@@ -234,8 +261,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: "処理が完了しました（CloudSQL・Google Sheets・メール）",
-      customerId: customer.id,
-      referenceId: customer.reference_id,
+      customerId: customerId,
+      referenceId: referenceId,
       dataStorage: {
         cloudSQL: "✅ inquiriesに記録済み",
         googleSheets: googleSheetsStatus,
