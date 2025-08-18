@@ -232,7 +232,7 @@ export async function POST(request: Request) {
           familyNameForSquare = buildFamilyNameWithModel(familyName, newCarModel)
         } else {
           // 入会は別ルートで対応済み。ほかの操作で車種が送られてくる場合に姓を更新したいなら次の行を有効化
-          // familyNameForSquare = buildFamilyNameWithModel(familyName, carModel)
+          familyNameForSquare = buildFamilyNameWithModel(familyName, carModel)
           companyNameCandidate = buildCompanyName(carModel, carColor)
         }
 
