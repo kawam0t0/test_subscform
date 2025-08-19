@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { Client, Environment, ApiError } from "square"
-import { findCustomerFlexible, updateCustomer, type UpdateCustomerData } from "../../utils/cloudsql"
+import { findCustomerFlexible, updateCustomer, insertInquiry, type UpdateCustomerData } from "../../utils/cloudsql"
 import { appendToSheet } from "../../utils/google-sheets"
 import { formatJapanDateTime } from "../../utils/date-utils"
 import { sendInquiryConfirmationEmail } from "../../utils/email-sender"
@@ -209,116 +209,6 @@ export async function POST(request: Request) {
       subOperation,
     } = formData
 
-    // 1) CloudSQLで顧客検索（柔軟に）
-    console.log("CloudSQLで顧客を検索中...")
-    const customer = await findCustomerFlexible(email, phone, carModel)
-    if (!customer) {
-      return NextResponse.json({ success: false, error: "該当する顧客が見つかりませんでした" }, { status: 404 })
-    }
-
-    const cloudSqlCustomerId = customer.id
-    const squareCustomerId: string | undefined = (customer.square_customer_id as string | undefined) || undefined
-    console.log("CloudSQLで顧客が見つかりました:", cloudSqlCustomerId, "SquareID:", squareCustomerId || "(なし)")
-
-    // 2) Square 顧客の会社名（車種/色）と姓（車種/姓）を必要に応じて更新
-    if (squareCustomerId) {
-      try {
-        const customersApi = squareClient.customersApi
-        let companyNameCandidate: string | undefined
-        let familyNameForSquare: string | undefined
-
-        if (operation === "登録車両変更") {
-          companyNameCandidate = buildCompanyName(newCarModel, newCarColor)
-          familyNameForSquare = buildFamilyNameWithModel(familyName, newCarModel)
-        } else {
-          // 入会は別ルートで対応済み。ほかの操作で車種が送られてくる場合に姓を更新したいなら次の行を有効化
-          familyNameForSquare = buildFamilyNameWithModel(familyName, carModel)
-          companyNameCandidate = buildCompanyName(carModel, carColor)
-        }
-
-        const updatePayload: any = {
-          givenName,
-          // familyName は「登録車両変更」のときのみ「車種/姓」に上書きし、それ以外は送られてきた姓を維持
-          familyName: familyNameForSquare ?? familyName,
-          emailAddress: operation === "メールアドレス変更" ? newEmail || email : email,
-          phoneNumber: phone,
-          note: store,
-        }
-        if (companyNameCandidate) {
-          updatePayload.companyName = companyNameCandidate // 会社名は「車種/色」
-        }
-
-        console.log("Square.updateCustomer payload:", updatePayload)
-        await customersApi.updateCustomer(squareCustomerId, updatePayload)
-      } catch (err) {
-        console.error("Square 顧客更新エラー（会社名/姓の更新）:", err)
-        // 続行
-      }
-    }
-
-    // 3) クレジットカード情報変更時は Square Cards API でカードを作成（更新）
-    let cardUpdateSummary: { last4?: string; brand?: string; newCardId?: string } | null = null
-    if (operation === "クレジットカード情報変更") {
-      if (!squareCustomerId) {
-        return NextResponse.json(
-          { success: false, error: "Square顧客IDが見つかりません（カード更新不可）" },
-          { status: 400 },
-        )
-      }
-      if (!cardToken || typeof cardToken !== "string" || cardToken.trim().length === 0) {
-        return NextResponse.json({ success: false, error: "カードトークンが不正です" }, { status: 400 })
-      }
-      try {
-        const idempotencyKey = generateIdempotencyKey("cardupd")
-        console.log("Square: クレジットカード更新 idempotency_key:", idempotencyKey, "len:", idempotencyKey.length)
-
-        const cardsApi = squareClient.cardsApi
-        const { result: cardResult } = await cardsApi.createCard({
-          idempotencyKey,
-          sourceId: cardToken,
-          card: {
-            customerId: squareCustomerId,
-          },
-        })
-        const newCard = cardResult.card
-        cardUpdateSummary = {
-          last4: newCard?.last4,
-          brand: newCard?.cardBrand as string | undefined,
-          newCardId: newCard?.id,
-        }
-        console.log("Square: 新カード作成完了", cardUpdateSummary)
-
-        // 既存カードがあれば無効化（新カード以外）
-        try {
-          const { result: listRes } = await cardsApi.listCards(
-            undefined, // cursor
-            undefined, // limit
-            false, // includeDisabled
-            undefined, // referenceId
-            squareCustomerId, // customerId (5th param)
-          )
-          const existing = listRes.cards || []
-          for (const c of existing) {
-            if (c.id && c.id !== newCard?.id) {
-              try {
-                await cardsApi.disableCard(c.id)
-                console.log("Square: 旧カードを無効化:", c.id)
-              } catch (e) {
-                console.warn("Square: 旧カードの無効化呼び出しで警告（続行）:", e)
-              }
-            }
-          }
-        } catch (disableErr) {
-          console.warn("Square: 旧カードの無効化に失敗（続行）:", disableErr)
-        }
-      } catch (err) {
-        console.error("Square カード更新エラー:", err)
-        return NextResponse.json({ success: false, error: "クレジットカード情報の更新に失敗しました" }, { status: 400 })
-      }
-    }
-
-    // 4) CloudSQL顧客情報を更新（問い合わせ記録含む）
-    // 理由入力を一旦正規化（配列/単体文字どちらでも配列化）
     const toArray = (v: any): string[] => {
       if (!v) return []
       if (Array.isArray(v)) return v.filter((x) => typeof x === "string" && x.trim().length > 0)
@@ -338,34 +228,166 @@ export async function POST(request: Request) {
       (typeof subOperation === "string" && subOperation) ||
       undefined
 
-    // 操作ごとの UpdateCustomerData を構築
-    const updateData: UpdateCustomerData = buildOperationUpdateData(operation, {
-      store,
-      carModel,
-      carColor,
-      newCarModel,
-      newCarColor,
-      newCourse,
-      newEmail,
-      inquiryDetails, // 自由記述
-      reasonsInput: reasonsMerged,
-      procedure: procedureVal,
-      cardSummary: cardUpdateSummary || undefined,
-    })
+    const skipCustomerSearch = [
+      "各種手続き",
+      "登録車両変更",
+      "洗車コース変更",
+      "クレジットカード情報変更",
+      "メールアドレス変更",
+    ].includes(operation)
 
-    console.log("CloudSQL顧客情報を更新中...")
-    await updateCustomer(cloudSqlCustomerId, updateData)
-    console.log("CloudSQL顧客情報が正常に更新されました:", cloudSqlCustomerId)
+    let customer = null
+    let cloudSqlCustomerId = null
+    let squareCustomerId: string | undefined = undefined
 
-    // 5) Google Sheets（既存の形式を踏襲）
+    if (!skipCustomerSearch) {
+      // CloudSQLで顧客検索（従来の処理）
+      console.log("CloudSQLで顧客を検索中...")
+      customer = await findCustomerFlexible(email, phone, carModel)
+      if (!customer) {
+        return NextResponse.json({ success: false, error: "該当する顧客が見つかりませんでした" }, { status: 404 })
+      }
+      cloudSqlCustomerId = customer.id
+      squareCustomerId = (customer.square_customer_id as string | undefined) || undefined
+      console.log("CloudSQLで顧客が見つかりました:", cloudSqlCustomerId, "SquareID:", squareCustomerId || "(なし)")
+    } else {
+      console.log("顧客検索をスキップします（問い合わせ項目:", operation, ")")
+    }
+
+    // Square 顧客の会社名（車種/色）と姓（車種/姓）を必要に応じて更新
+    if (squareCustomerId && customer) {
+      const customersApi = squareClient.customersApi
+      let companyNameCandidate: string | undefined
+      let familyNameForSquare: string | undefined
+
+      if (operation === "登録車両変更") {
+        companyNameCandidate = buildCompanyName(newCarModel, newCarColor)
+        familyNameForSquare = buildFamilyNameWithModel(familyName, newCarModel)
+      } else {
+        // 入会は別ルートで対応済み。ほかの操作で車種が送られてくる場合に姓を更新したいなら次の行を有効化
+        familyNameForSquare = buildFamilyNameWithModel(familyName, carModel)
+        companyNameCandidate = buildCompanyName(carModel, carColor)
+      }
+
+      const updatePayload: any = {
+        givenName,
+        // familyName は「登録車両変更」のときのみ「車種/姓」に上書きし、それ以外は送られてきた姓を維持
+        familyName: familyNameForSquare ?? familyName,
+        emailAddress: operation === "メールアドレス変更" ? newEmail || email : email,
+        phoneNumber: phone,
+        note: store,
+      }
+      if (companyNameCandidate) {
+        updatePayload.companyName = companyNameCandidate // 会社名は「車種/色」
+      }
+
+      console.log("Square.updateCustomer payload:", updatePayload)
+      await customersApi.updateCustomer(squareCustomerId, updatePayload)
+    }
+
+    // クレジットカード情報変更時は Square Cards API でカードを作成（更新）
+    let cardUpdateSummary: { last4?: string; brand?: string; newCardId?: string } | null = null
+    if (operation === "クレジットカード情報変更" && squareCustomerId) {
+      const idempotencyKey = generateIdempotencyKey("cardupd")
+      console.log("Square: クレジットカード更新 idempotency_key:", idempotencyKey, "len:", idempotencyKey.length)
+
+      const cardsApi = squareClient.cardsApi
+      const { result: cardResult } = await cardsApi.createCard({
+        idempotencyKey,
+        sourceId: cardToken,
+        card: {
+          customerId: squareCustomerId,
+        },
+      })
+      const newCard = cardResult.card
+      cardUpdateSummary = {
+        last4: newCard?.last4,
+        brand: newCard?.cardBrand as string | undefined,
+        newCardId: newCard?.id,
+      }
+      console.log("Square: 新カード作成完了", cardUpdateSummary)
+
+      // 既存カードがあれば無効化（新カード以外）
+      try {
+        const { result: listRes } = await cardsApi.listCards(
+          undefined, // cursor
+          undefined, // limit
+          false, // includeDisabled
+          undefined, // referenceId
+          squareCustomerId, // customerId (5th param)
+        )
+        const existing = listRes.cards || []
+        for (const c of existing) {
+          if (c.id && c.id !== newCard?.id) {
+            try {
+              await cardsApi.disableCard(c.id)
+              console.log("Square: 旧カードを無効化:", c.id)
+            } catch (e) {
+              console.warn("Square: 旧カードの無効化呼び出しで警告（続行）:", e)
+            }
+          }
+        }
+      } catch (disableErr) {
+        console.warn("Square: 旧カードの無効化に失敗（続行）:", disableErr)
+      }
+    }
+
+    if (customer && cloudSqlCustomerId) {
+      // CloudSQL顧客情報を更新（問い合わせ記録含む）
+      // 操作ごとの UpdateCustomerData を構築
+      const updateData: UpdateCustomerData = buildOperationUpdateData(operation, {
+        store,
+        carModel,
+        carColor,
+        newCarModel,
+        newCarColor,
+        newCourse,
+        newEmail,
+        inquiryDetails, // 自由記述
+        reasonsInput: reasonsMerged,
+        procedure: procedureVal,
+        cardSummary: cardUpdateSummary || undefined,
+      })
+
+      console.log("CloudSQL顧客情報を更新中...")
+      await updateCustomer(cloudSqlCustomerId, updateData)
+      console.log("CloudSQL顧客情報が正常に更新されました:", cloudSqlCustomerId)
+    } else {
+      console.log("CloudSQLのinquiriesテーブルに直接挿入中...")
+
+      await insertInquiry({
+        inquiryType: operation,
+        inquiryDetails: inquiryDetails || "",
+        cancellationReasons: reasonsMerged.length > 0 ? reasonsMerged : null,
+        familyName,
+        givenName,
+        email,
+        phone,
+        course,
+        carModel,
+        carColor,
+        plateInfo1: null,
+        plateInfo2: null,
+        plateInfo3: null,
+        plateInfo4: null,
+        storeName: store,
+        newCarModel,
+        newCarColor,
+        newCourseName: newCourse,
+        newEmail,
+      })
+      console.log("CloudSQLのinquiriesテーブルに正常に挿入されました")
+    }
+
+    // Google Sheets（既存の形式を踏襲）
     let googleSheetsStatus = "❌ 記録失敗"
     try {
       console.log("Google Sheetsにデータを追加中...")
 
       let qColumnData = ""
-      if (operation === "各種手続き" && procedureVal) {
+      if (operation === "各種手続き" && procedure) {
         // 【解約】解約理由: ... の形式
-        qColumnData = `【${procedureVal}】`
+        qColumnData = `【${procedure}】`
         if (reasonsMerged.length > 0) {
           qColumnData += ` 解約理由: ${reasonsMerged.join(", ")}`
         }
@@ -396,7 +418,7 @@ export async function POST(request: Request) {
       const sheetData = [
         formatJapanDateTime(new Date()), // A: タイムスタンプ（JST表記）
         operation, // B: 操作
-        customer.reference_id, // C: リファレンスID
+        customer?.reference_id || "", // C: リファレンスID
         store, // D: 店舗
         `${familyName} ${givenName}`, // E: 名前
         email, // F: メールアドレス
@@ -423,10 +445,16 @@ export async function POST(request: Request) {
       googleSheetsStatus = `❌ 記録失敗: ${sheetError instanceof Error ? sheetError.message : "不明なエラー"}`
     }
 
-    // 6) 確認メール
+    // 確認メール
     let emailStatus = "❌ 送信失敗"
     try {
-      await sendInquiryConfirmationEmail(`${familyName} ${givenName}`, email, operation, store, customer.reference_id)
+      await sendInquiryConfirmationEmail(
+        `${familyName} ${givenName}`,
+        email,
+        operation,
+        store,
+        customer?.reference_id || "",
+      )
       emailStatus = "✅ 送信完了"
       console.log("問い合わせ確認メールを送信しました")
     } catch (emailError) {
@@ -438,7 +466,7 @@ export async function POST(request: Request) {
       success: true,
       message: "処理が完了しました",
       customerId: cloudSqlCustomerId,
-      referenceId: customer.reference_id,
+      referenceId: customer?.reference_id || "",
       dataStorage: {
         cloudSQL: "✅ 更新完了",
         googleSheets: googleSheetsStatus,
