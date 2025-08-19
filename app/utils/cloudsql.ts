@@ -709,6 +709,10 @@ export async function insertInquiry(data: {
   carModel?: string
   carColor?: string
   course?: string
+  plateInfo1?: string | null
+  plateInfo2?: string | null
+  plateInfo3?: string | null
+  plateInfo4?: string | null
   newCarModel?: string
   newCarColor?: string
   newCourseName?: string
