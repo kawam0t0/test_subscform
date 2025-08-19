@@ -105,7 +105,37 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log("CloudSQLに顧客データを挿入中...")
+    console.log("Google Sheetsに即座に書き込み中...")
+    const sheetsData = [
+      formatJapanDateTime(new Date()),
+      operation,
+      finalReferenceId,
+      store,
+      `${familyName} ${givenName}`,
+      email,
+      "",
+      phone,
+      carModel || "",
+      carColor || "",
+      licensePlate || "",
+      extractCourseName(course),
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      campaignCode || "",
+    ]
+
+    try {
+      await appendToSheet([sheetsData])
+      console.log("Google Sheets書き込み成功（即座に反映完了）")
+    } catch (err) {
+      console.error("Google Sheets書き込みエラー:", err)
+    }
+
     const customerData: InsertCustomerData = {
       referenceId: finalReferenceId,
       squareCustomerId: createdSquareCustomerId,
@@ -124,130 +154,25 @@ export async function POST(request: Request) {
       campaignCode: campaignCode || null,
     }
 
-    const cloudSqlStartTime = Date.now()
-    console.log("[SYSTEM] CloudSQL操作開始:", {
-      timestamp: new Date().toISOString(),
-      customerId: createdSquareCustomerId,
-      referenceId: finalReferenceId,
-      environment: process.env.VERCEL_ENV || "development",
-    })
-
-    // CloudSQL操作にタイムアウトを設定（8秒）
-    const cloudSqlPromise = insertCustomer(customerData)
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("CloudSQL操作がタイムアウトしました")), 8000)
-    })
-
-    let cloudSqlCustomerId: number
-    try {
-      cloudSqlCustomerId = (await Promise.race([cloudSqlPromise, timeoutPromise])) as number
-      const executionTime = Date.now() - cloudSqlStartTime
-      console.log("[SYSTEM] CloudSQL操作成功:", {
-        customerId: cloudSqlCustomerId,
-        executionTime: `${executionTime}ms`,
-        timestamp: new Date().toISOString(),
+    // CloudSQL処理をバックグラウンドで実行（レスポンスを待たない）
+    insertCustomer(customerData)
+      .then((cloudSqlCustomerId) => {
+        console.log("CloudSQL挿入成功:", cloudSqlCustomerId)
       })
-    } catch (cloudSqlError) {
-      const executionTime = Date.now() - cloudSqlStartTime
-      console.error("[SYSTEM] CloudSQL操作失敗:", {
-        error: cloudSqlError,
-        errorMessage: cloudSqlError instanceof Error ? cloudSqlError.message : "Unknown error",
-        errorStack: cloudSqlError instanceof Error ? cloudSqlError.stack : undefined,
-        executionTime: `${executionTime}ms`,
-        timestamp: new Date().toISOString(),
-        customerId: createdSquareCustomerId,
-        referenceId: finalReferenceId,
-        environment: process.env.VERCEL_ENV || "development",
-        nodeEnv: process.env.NODE_ENV,
-        vercelRegion: process.env.VERCEL_REGION,
-        customerDataSize: JSON.stringify(customerData).length,
+      .catch((cloudSqlError) => {
+        console.error("CloudSQL挿入エラー:", cloudSqlError)
       })
 
-      // CloudSQLエラーでもSquare顧客は保持し、成功レスポンスを返す
-      console.log("CloudSQLエラーが発生しましたが、Square顧客は正常に作成されました")
-
-      // バックグラウンドでGoogle Sheetsとメール送信を実行
-      Promise.all([
-        appendToSheet([
-          [
-            formatJapanDateTime(new Date()),
-            operation,
-            finalReferenceId,
-            store,
-            `${familyName} ${givenName}`,
-            email,
-            "",
-            phone,
-            carModel || "",
-            carColor || "",
-            licensePlate || "",
-            extractCourseName(course),
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            campaignCode || "",
-          ],
-        ]).catch((err) => console.error("Google Sheets書き込みエラー:", err)),
-        sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId).catch((err) =>
-          console.error("確認メール送信エラー:", err),
-        ),
-      ])
-
-      return NextResponse.json({
-        success: true,
-        customerId: createdSquareCustomerId,
-        referenceId: finalReferenceId,
-        message: "入会が完了しました（データベース同期は後で実行されます）",
-        warning: "データベース同期に時間がかかっています",
-      })
-    }
-
-    // Google SheetsとEmail送信を並行実行（エラーでも処理を継続）
-    const backgroundTasks = [
-      appendToSheet([
-        [
-          formatJapanDateTime(new Date()),
-          operation,
-          finalReferenceId,
-          store,
-          `${familyName} ${givenName}`,
-          email,
-          "",
-          phone,
-          carModel || "",
-          carColor || "",
-          licensePlate || "",
-          extractCourseName(course),
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          campaignCode || "",
-        ],
-      ]).catch((err) => console.error("Google Sheets書き込みエラー:", err)),
-      sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId).catch((err) =>
-        console.error("確認メール送信エラー:", err),
-      ),
-    ]
-
-    // バックグラウンドタスクを並行実行（結果を待たない）
-    Promise.all(backgroundTasks).then(() => {
-      console.log("バックグラウンドタスクが完了しました")
-    })
+    // メール送信をバックグラウンドで実行
+    sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId)
+      .then(() => console.log("確認メール送信成功"))
+      .catch((err) => console.error("確認メール送信エラー:", err))
 
     return NextResponse.json({
       success: true,
       customerId: createdSquareCustomerId,
-      cloudSqlCustomerId,
       referenceId: finalReferenceId,
-      message: "入会が完了しました",
+      message: "入会が完了しました（スプレッドシートに即座に反映されました）",
     })
   } catch (error) {
     console.error("エラーが発生しました:", error)
