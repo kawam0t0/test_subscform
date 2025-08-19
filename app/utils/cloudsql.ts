@@ -526,7 +526,7 @@ export async function findCustomerFlexible(
 
 export async function insertCustomer(data: InsertCustomerData): Promise<number> {
   console.log("insertCustomer開始")
-  // await ensureSchemaInitialized()
+  await ensureSchemaInitialized()
 
   let storeCode: string | null = null
   try {
@@ -609,14 +609,14 @@ export async function updateCustomer(customerId: number, data: UpdateCustomerDat
     const resolvedStoreCode = data.storeName ? await getStoreCodeByName(data.storeName) : current.store_code
 
     await conn.execute(
-      `INSERT INTO inquiries (
+       `INSERT INTO inquiries (
         customer_id, inquiry_type, inquiry_details, cancellation_reasons, status,
         reference_id, square_customer_id, family_name, given_name, email, phone, course,
         car_model, color, plate_info_1, plate_info_2, plate_info_3, plate_info_4,
         store_name, store_code,
         new_car_model, new_car_color, new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
         new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)`,
       [
         customerId,
         data.inquiryType,
@@ -736,7 +736,7 @@ export async function insertInquiry(data: {
         store_name, store_code,
         new_car_model, new_car_color, new_plate_info_1, new_plate_info_2, new_plate_info_3, new_plate_info_4,
         new_course_name, new_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)`,
       [
         null, // customer_id は null（顧客検索なし）
         data.inquiryType,

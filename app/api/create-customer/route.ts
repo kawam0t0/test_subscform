@@ -132,10 +132,10 @@ export async function POST(request: Request) {
       environment: process.env.VERCEL_ENV || "development",
     })
 
-    // CloudSQL操作にタイムアウトを設定（8秒）
+    // CloudSQL操作にタイムアウトを設定（15秒）
     const cloudSqlPromise = insertCustomer(customerData)
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("CloudSQL操作がタイムアウトしました")), 8000)
+      setTimeout(() => reject(new Error("CloudSQL操作がタイムアウトしました")), 15000)
     })
 
     let cloudSqlCustomerId: number
