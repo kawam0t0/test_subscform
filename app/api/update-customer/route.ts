@@ -228,19 +228,51 @@ export async function POST(request: Request) {
       (typeof subOperation === "string" && subOperation) ||
       undefined
 
-    const skipCustomerSearch = [
-      "各種手続き",
-      "登録車両変更",
-      "洗車コース変更",
-      "クレジットカード情報変更",
-      "メールアドレス変更",
-    ].includes(operation)
+    const skipCustomerSearch = ["各種手続き", "登録車両変更", "洗車コース変更", "メールアドレス変更"].includes(
+      operation,
+    )
 
     let customer = null
     let cloudSqlCustomerId = null
     let squareCustomerId: string | undefined = undefined
 
-    if (!skipCustomerSearch) {
+    if (operation === "クレジットカード情報変更") {
+      console.log("Square上でメールアドレスによる顧客検索を実行中...")
+      try {
+        const customersApi = squareClient.customersApi
+        const { result: searchResult } = await customersApi.searchCustomers({
+          filter: {
+            emailAddress: {
+              exact: email,
+            },
+          },
+        })
+
+        if (searchResult.customers && searchResult.customers.length > 0) {
+          const squareCustomer = searchResult.customers[0]
+          squareCustomerId = squareCustomer.id
+          console.log("Square上で顧客が見つかりました:", squareCustomerId)
+        } else {
+          console.log("Square上で顧客が見つかりませんでした")
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Square上に該当するメールアドレスの顧客が見つかりませんでした",
+            },
+            { status: 404 },
+          )
+        }
+      } catch (squareSearchError) {
+        console.error("Square顧客検索エラー:", squareSearchError)
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Square顧客検索中にエラーが発生しました",
+          },
+          { status: 500 },
+        )
+      }
+    } else if (!skipCustomerSearch) {
       // CloudSQLで顧客検索（従来の処理）
       console.log("CloudSQLで顧客を検索中...")
       customer = await findCustomerFlexible(email, phone, carModel)
