@@ -241,9 +241,11 @@ export async function POST(request: Request) {
       try {
         const customersApi = squareClient.customersApi
         const { result: searchResult } = await customersApi.searchCustomers({
-          filter: {
-            emailAddress: {
-              exact: email,
+          query: {
+            filter: {
+              emailAddress: {
+                exact: email,
+              },
             },
           },
         })
