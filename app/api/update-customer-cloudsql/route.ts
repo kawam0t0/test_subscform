@@ -180,12 +180,27 @@ export async function POST(request: Request) {
     const formData = await request.json()
     console.log("受信したフォームデータ:", formData)
 
+    // 確認メール送信を開始します...
+    const { familyName, givenName, email, operation } = formData
+
+    let emailStatus = "❌ 送信失敗"
+    try {
+      console.log("確認メール送信を開始します...")
+      await sendInquiryConfirmationEmail(
+        `${familyName} ${givenName}`,
+        email,
+        operation,
+        "", // reference_idは後で取得
+      )
+      emailStatus = "✅ 送信完了"
+      console.log("✅ 問い合わせ確認メールを送信しました")
+    } catch (emailError) {
+      console.error("❌ メール送信中にエラーが発生しました:", emailError)
+      emailStatus = `❌ 送信失敗: ${emailError instanceof Error ? emailError.message : "不明なエラー"}`
+    }
+
     const {
-      operation,
-      store,
-      familyName,
-      givenName,
-      email,
+      campaignCode,
       phone,
       carModel,
       carColor,
@@ -194,19 +209,15 @@ export async function POST(request: Request) {
       newCarColor,
       newCourse,
       newEmail,
-      inquiryDetails, // 自由記述
-      campaignCode,
-      cardToken, // カード更新時に使用
-
-      // 解約理由（チェックボックス/単体文字）・その他自由記述
-      cancellationReasons, // 例: ["他店舗を使うようになった", ...] または "解約したい"
-      cancellationReason, // 単体キーで来るケース
-      reasons, // 別名で来るケース
-
-      // 各種手続きのサブ種類
+      inquiryDetails,
+      cardToken,
+      cancellationReasons,
+      cancellationReason,
+      reasons,
       procedure,
       procedureType,
       subOperation,
+      storeName, // Renamed from store to avoid redeclaration
     } = formData
 
     const toArray = (v: any): string[] => {
@@ -309,7 +320,7 @@ export async function POST(request: Request) {
         familyName: familyNameForSquare ?? familyName,
         emailAddress: operation === "メールアドレス変更" ? newEmail || email : email,
         phoneNumber: phone,
-        note: store,
+        note: storeName,
       }
       if (companyNameCandidate) {
         updatePayload.companyName = companyNameCandidate // 会社名は「車種/色」
@@ -366,23 +377,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // 確認メール送信（CloudSQL処理より優先）
-    let emailStatus = "❌ 送信失敗"
-    try {
-      await sendInquiryConfirmationEmail(
-        `${familyName} ${givenName}`,
-        email,
-        operation,
-        store,
-        customer?.reference_id || "",
-      )
-      emailStatus = "✅ 送信完了"
-      console.log("問い合わせ確認メールを送信しました")
-    } catch (emailError) {
-      console.error("メール送信中にエラーが発生しました:", emailError)
-      emailStatus = `❌ 送信失敗: ${emailError instanceof Error ? emailError.message : "不明なエラー"}`
-    }
-
     // Google Sheets（既存の形式を踏襲）
     let googleSheetsStatus = "❌ 記録失敗"
     try {
@@ -423,7 +417,7 @@ export async function POST(request: Request) {
         formatJapanDateTime(new Date()), // A: タイムスタンプ（JST表記）
         operation, // B: 操作
         customer?.reference_id || "", // C: リファレンスID
-        store, // D: 店舗
+        storeName, // D: 店舗
         `${familyName} ${givenName}`, // E: 名前
         email, // F: メールアドレス
         newEmail || "", // G: 新しいメールアドレス
@@ -455,7 +449,7 @@ export async function POST(request: Request) {
         // CloudSQL顧客情報を更新（問い合わせ記録含む）
         // 操作ごとの UpdateCustomerData を構築
         const updateData: UpdateCustomerData = buildOperationUpdateData(operation, {
-          store,
+          store: storeName,
           carModel,
           carColor,
           newCarModel,
@@ -489,7 +483,7 @@ export async function POST(request: Request) {
           plateInfo2: null,
           plateInfo3: null,
           plateInfo4: null,
-          storeName: store,
+          storeName,
           newCarModel,
           newCarColor,
           newCourseName: newCourse,

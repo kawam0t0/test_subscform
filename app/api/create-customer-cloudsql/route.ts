@@ -136,6 +136,14 @@ export async function POST(request: Request) {
       console.error("Google Sheets書き込みエラー:", err)
     }
 
+    console.log("確認メール送信中...")
+    try {
+      await sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId)
+      console.log("確認メール送信成功")
+    } catch (err) {
+      console.error("確認メール送信エラー:", err)
+    }
+
     const customerData: InsertCustomerData = {
       referenceId: finalReferenceId,
       squareCustomerId: createdSquareCustomerId,
@@ -154,7 +162,6 @@ export async function POST(request: Request) {
       campaignCode: campaignCode || null,
     }
 
-    // CloudSQL処理をバックグラウンドで実行（レスポンスを待たない）
     insertCustomer(customerData)
       .then((cloudSqlCustomerId) => {
         console.log("CloudSQL挿入成功:", cloudSqlCustomerId)
@@ -162,11 +169,6 @@ export async function POST(request: Request) {
       .catch((cloudSqlError) => {
         console.error("CloudSQL挿入エラー:", cloudSqlError)
       })
-
-    // メール送信をバックグラウンドで実行
-    sendConfirmationEmail(`${familyName} ${givenName}`, email, course, store, finalReferenceId)
-      .then(() => console.log("確認メール送信成功"))
-      .catch((err) => console.error("確認メール送信エラー:", err))
 
     return NextResponse.json({
       success: true,
