@@ -366,51 +366,21 @@ export async function POST(request: Request) {
       }
     }
 
-    if (customer && cloudSqlCustomerId) {
-      // CloudSQL顧客情報を更新（問い合わせ記録含む）
-      // 操作ごとの UpdateCustomerData を構築
-      const updateData: UpdateCustomerData = buildOperationUpdateData(operation, {
-        store,
-        carModel,
-        carColor,
-        newCarModel,
-        newCarColor,
-        newCourse,
-        newEmail,
-        inquiryDetails, // 自由記述
-        reasonsInput: reasonsMerged,
-        procedure: procedureVal,
-        cardSummary: cardUpdateSummary || undefined,
-      })
-
-      console.log("CloudSQL顧客情報を更新中...")
-      await updateCustomer(cloudSqlCustomerId, updateData)
-      console.log("CloudSQL顧客情報が正常に更新されました:", cloudSqlCustomerId)
-    } else {
-      console.log("CloudSQLのinquiriesテーブルに直接挿入中...")
-
-      await insertInquiry({
-        inquiryType: operation,
-        inquiryDetails: inquiryDetails || "",
-        cancellationReasons: reasonsMerged.length > 0 ? reasonsMerged : null,
-        familyName,
-        givenName,
+    // 確認メール送信（CloudSQL処理より優先）
+    let emailStatus = "❌ 送信失敗"
+    try {
+      await sendInquiryConfirmationEmail(
+        `${familyName} ${givenName}`,
         email,
-        phone,
-        course,
-        carModel,
-        carColor,
-        plateInfo1: null,
-        plateInfo2: null,
-        plateInfo3: null,
-        plateInfo4: null,
-        storeName: store,
-        newCarModel,
-        newCarColor,
-        newCourseName: newCourse,
-        newEmail,
-      })
-      console.log("CloudSQLのinquiriesテーブルに正常に挿入されました")
+        operation,
+        store,
+        customer?.reference_id || "",
+      )
+      emailStatus = "✅ 送信完了"
+      console.log("問い合わせ確認メールを送信しました")
+    } catch (emailError) {
+      console.error("メール送信中にエラーが発生しました:", emailError)
+      emailStatus = `❌ 送信失敗: ${emailError instanceof Error ? emailError.message : "不明なエラー"}`
     }
 
     // Google Sheets（既存の形式を踏襲）
@@ -479,21 +449,57 @@ export async function POST(request: Request) {
       googleSheetsStatus = `❌ 記録失敗: ${sheetError instanceof Error ? sheetError.message : "不明なエラー"}`
     }
 
-    // 確認メール
-    let emailStatus = "❌ 送信失敗"
+    let cloudSqlStatus = "✅ 更新完了"
     try {
-      await sendInquiryConfirmationEmail(
-        `${familyName} ${givenName}`,
-        email,
-        operation,
-        store,
-        customer?.reference_id || "",
-      )
-      emailStatus = "✅ 送信完了"
-      console.log("問い合わせ確認メールを送信しました")
-    } catch (emailError) {
-      console.error("メール送信中にエラーが発生しました:", emailError)
-      emailStatus = `❌ 送信失敗: ${emailError instanceof Error ? emailError.message : "不明なエラー"}`
+      if (customer && cloudSqlCustomerId) {
+        // CloudSQL顧客情報を更新（問い合わせ記録含む）
+        // 操作ごとの UpdateCustomerData を構築
+        const updateData: UpdateCustomerData = buildOperationUpdateData(operation, {
+          store,
+          carModel,
+          carColor,
+          newCarModel,
+          newCarColor,
+          newCourse,
+          newEmail,
+          inquiryDetails, // 自由記述
+          reasonsInput: reasonsMerged,
+          procedure: procedureVal,
+          cardSummary: cardUpdateSummary || undefined,
+        })
+
+        console.log("CloudSQL顧客情報を更新中...")
+        await updateCustomer(cloudSqlCustomerId, updateData)
+        console.log("CloudSQL顧客情報が正常に更新されました:", cloudSqlCustomerId)
+      } else {
+        console.log("CloudSQLのinquiriesテーブルに直接挿入中...")
+
+        await insertInquiry({
+          inquiryType: operation,
+          inquiryDetails: inquiryDetails || "",
+          cancellationReasons: reasonsMerged.length > 0 ? reasonsMerged : null,
+          familyName,
+          givenName,
+          email,
+          phone,
+          course,
+          carModel,
+          carColor,
+          plateInfo1: null,
+          plateInfo2: null,
+          plateInfo3: null,
+          plateInfo4: null,
+          storeName: store,
+          newCarModel,
+          newCarColor,
+          newCourseName: newCourse,
+          newEmail,
+        })
+        console.log("CloudSQLのinquiriesテーブルに正常に挿入されました")
+      }
+    } catch (cloudSqlError) {
+      console.error("CloudSQL処理エラー:", cloudSqlError)
+      cloudSqlStatus = `❌ 処理失敗: ${cloudSqlError instanceof Error ? cloudSqlError.message : "不明なエラー"}`
     }
 
     return NextResponse.json({
@@ -502,7 +508,7 @@ export async function POST(request: Request) {
       customerId: cloudSqlCustomerId,
       referenceId: customer?.reference_id || "",
       dataStorage: {
-        cloudSQL: "✅ 更新完了",
+        cloudSQL: cloudSqlStatus,
         googleSheets: googleSheetsStatus,
         email: emailStatus,
         square: operation === "クレジットカード情報変更" ? "✅ カード更新済" : "—",
