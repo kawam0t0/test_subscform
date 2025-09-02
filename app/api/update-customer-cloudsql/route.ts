@@ -239,15 +239,13 @@ export async function POST(request: Request) {
       (typeof subOperation === "string" && subOperation) ||
       undefined
 
-    const skipCustomerSearch = ["各種手続き", "登録車両変更", "洗車コース変更", "メールアドレス変更"].includes(
-      operation,
-    )
+    const skipCustomerSearch = ["各種手続き", "登録車両変更", "洗車コース変更"].includes(operation)
 
     let customer = null
     let cloudSqlCustomerId = null
     let squareCustomerId: string | undefined = undefined
 
-    if (operation === "クレジットカード情報変更") {
+    if (operation === "クレジットカード情報変更" || operation === "メールアドレス変更") {
       console.log("Square上でメールアドレスによる顧客検索を実行中...")
       try {
         const customersApi = squareClient.customersApi
@@ -300,7 +298,10 @@ export async function POST(request: Request) {
     }
 
     // Square 顧客の会社名（車種/色）と姓（車種/姓）を必要に応じて更新
-    if (squareCustomerId && customer) {
+    if (
+      squareCustomerId &&
+      (customer || operation === "メールアドレス変更" || operation === "クレジットカード情報変更")
+    ) {
       const customersApi = squareClient.customersApi
       let companyNameCandidate: string | undefined
       let familyNameForSquare: string | undefined
@@ -328,6 +329,7 @@ export async function POST(request: Request) {
 
       console.log("Square.updateCustomer payload:", updatePayload)
       await customersApi.updateCustomer(squareCustomerId, updatePayload)
+      console.log("Square顧客情報が正常に更新されました")
     }
 
     // クレジットカード情報変更時は Square Cards API でカードを作成（更新）
@@ -505,7 +507,12 @@ export async function POST(request: Request) {
         cloudSQL: cloudSqlStatus,
         googleSheets: googleSheetsStatus,
         email: emailStatus,
-        square: operation === "クレジットカード情報変更" ? "✅ カード更新済" : "—",
+        square:
+          operation === "クレジットカード情報変更"
+            ? "✅ カード更新済"
+            : operation === "メールアドレス変更"
+              ? "✅ メールアドレス更新済"
+              : "—",
       },
     })
   } catch (error) {
