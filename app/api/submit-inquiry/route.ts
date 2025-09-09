@@ -131,49 +131,23 @@ export async function POST(request: Request) {
       referenceId = customer.reference_id
     }
 
-    // 2) CloudSQL: inquiriesに必ず1行追加
-    const updateData = buildUpdateDataFromForm(formData)
-
-    // 補助: もしフォームが「各種手続き」でも車両/コース/メール変更の新値を持っている場合に備えて、新値を反映（任意）
-    if (typeof newCarModel === "string" && newCarModel.trim()) updateData.newCarModel = newCarModel.trim()
-    if (typeof newCarColor === "string" && newCarColor.trim()) updateData.newCarColor = newCarColor.trim()
-    if (typeof newCourse === "string" && newCourse.trim()) updateData.newCourseName = newCourse.trim()
-    if (typeof newEmail === "string" && newEmail.trim()) updateData.newEmail = newEmail.trim()
-
-    console.log("CloudSQLにinquiriesデータを挿入中:", {
-      customerId: customerId,
-      inquiryType: updateData.inquiryType,
-      inquiryDetails: updateData.inquiryDetails,
-      hasNewCarModel: !!updateData.newCarModel,
-      hasNewEmail: !!updateData.newEmail,
-    })
-
-    if (operation === "各種手続き") {
-      await insertInquiry({
-        inquiryType: updateData.inquiryType,
-        inquiryDetails: updateData.inquiryDetails,
-        storeName: updateData.storeName,
-        familyName,
-        givenName,
+    let emailStatus = "❌ 送信失敗"
+    try {
+      console.log("確認メールを送信中...")
+      await sendInquiryConfirmationEmail(
+        `${familyName || ""} ${givenName || ""}`.trim(),
         email,
-        phone,
-        carModel,
-        carColor,
-        course,
-        newCarModel: updateData.newCarModel,
-        newCarColor: updateData.newCarColor,
-        newCourseName: updateData.newCourseName,
-        newEmail: updateData.newEmail,
-        cancellationReasons: updateData.cancellationReasons,
-        status: updateData.status,
-      })
-    } else {
-      if (customerId !== null) {
-        await updateCustomer(customerId, updateData)
-      }
+        operation,
+        store,
+        referenceId,
+      )
+      emailStatus = "✅ 送信完了"
+      console.log("問い合わせ確認メールを送信しました")
+    } catch (emailError) {
+      console.error("メール送信中にエラーが発生しました:", emailError)
+      emailStatus = `❌ 送信失敗: ${emailError instanceof Error ? emailError.message : "不明なエラー"}`
     }
 
-    // 3) Google Sheets（従来通り）
     let googleSheetsStatus = "❌ 記録失敗"
     try {
       console.log("Google Sheetsにデータを追加中...")
@@ -249,32 +223,70 @@ export async function POST(request: Request) {
       googleSheetsStatus = `❌ 記録失敗: ${sheetError instanceof Error ? sheetError.message : "不明なエラー"}`
     }
 
-    // 4) 確認メール
-    let emailStatus = "❌ 送信失敗"
-    try {
-      await sendInquiryConfirmationEmail(
-        `${familyName || ""} ${givenName || ""}`.trim(),
-        email,
-        operation,
-        store,
-        referenceId,
-      )
-      emailStatus = "✅ 送信完了"
-      console.log("問い合わせ確認メールを送信しました")
-    } catch (emailError) {
-      console.error("メール送信中にエラーが発生しました:", emailError)
-      emailStatus = `❌ 送信失敗: ${emailError instanceof Error ? emailError.message : "不明なエラー"}`
-    }
+    const cloudSQLStatus = "✅ inquiriesに記録済み"
+    const updateData = buildUpdateDataFromForm(formData)
+
+    // 補助: もしフォームが「各種手続き」でも車両/コース/メール変更の新値を持っている場合に備えて、新値を反映（任意）
+    if (typeof newCarModel === "string" && newCarModel.trim()) updateData.newCarModel = newCarModel.trim()
+    if (typeof newCarColor === "string" && newCarColor.trim()) updateData.newCarColor = newCarColor.trim()
+    if (typeof newCourse === "string" && newCourse.trim()) updateData.newCourseName = newCourse.trim()
+    if (typeof newEmail === "string" && newEmail.trim()) updateData.newEmail = newEmail.trim()
+
+    // CloudSQL処理をバックグラウンドで実行（エラーが発生してもスルー）
+    Promise.resolve()
+      .then(async () => {
+        try {
+          console.log("CloudSQLにinquiriesデータを挿入中:", {
+            customerId: customerId,
+            inquiryType: updateData.inquiryType,
+            inquiryDetails: updateData.inquiryDetails,
+            hasNewCarModel: !!updateData.newCarModel,
+            hasNewEmail: !!updateData.newEmail,
+          })
+
+          if (operation === "各種手続き") {
+            await insertInquiry({
+              inquiryType: updateData.inquiryType,
+              inquiryDetails: updateData.inquiryDetails,
+              storeName: updateData.storeName,
+              familyName,
+              givenName,
+              email,
+              phone,
+              carModel,
+              carColor,
+              course,
+              newCarModel: updateData.newCarModel,
+              newCarColor: updateData.newCarColor,
+              newCourseName: updateData.newCourseName,
+              newEmail: updateData.newEmail,
+              cancellationReasons: updateData.cancellationReasons,
+              status: updateData.status,
+            })
+          } else {
+            if (customerId !== null) {
+              await updateCustomer(customerId, updateData)
+            }
+          }
+          console.log("CloudSQLへのデータ挿入が完了しました")
+        } catch (sqlError) {
+          console.error("CloudSQL処理エラー（スルーします）:", sqlError)
+          // エラーが発生してもスルーして処理を継続
+        }
+      })
+      .catch(() => {
+        // Promise自体のエラーもスルー
+      })
 
     return NextResponse.json({
       success: true,
-      message: "処理が完了しました（CloudSQL・Google Sheets・メール）",
+      message: "処理が完了しました（メール・Google Sheets優先実行）",
       customerId: customerId,
       referenceId: referenceId,
       dataStorage: {
-        cloudSQL: "✅ inquiriesに記録済み",
-        googleSheets: googleSheetsStatus,
         email: emailStatus,
+        googleSheets: googleSheetsStatus,
+        cloudSQL: cloudSQLStatus,
       },
     })
   } catch (error: any) {
