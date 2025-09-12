@@ -446,56 +446,61 @@ export async function POST(request: Request) {
     }
 
     let cloudSqlStatus = "✅ 更新完了"
-    try {
-      if (customer && cloudSqlCustomerId) {
-        // CloudSQL顧客情報を更新（問い合わせ記録含む）
-        // 操作ごとの UpdateCustomerData を構築
-        const updateData: UpdateCustomerData = buildOperationUpdateData(operation, {
-          store: storeName,
-          carModel,
-          carColor,
-          newCarModel,
-          newCarColor,
-          newCourse,
-          newEmail,
-          inquiryDetails, // 自由記述
-          reasonsInput: reasonsMerged,
-          procedure: procedureVal,
-          cardSummary: cardUpdateSummary || undefined,
-        })
+    if (operation === "クレジットカード情報変更") {
+      console.log("クレジットカード情報変更のため、CloudSQL処理をスキップします")
+      cloudSqlStatus = "— スキップ済"
+    } else {
+      try {
+        if (customer && cloudSqlCustomerId) {
+          // CloudSQL顧客情報を更新（問い合わせ記録含む）
+          // 操作ごとの UpdateCustomerData を構築
+          const updateData: UpdateCustomerData = buildOperationUpdateData(operation, {
+            store: storeName,
+            carModel,
+            carColor,
+            newCarModel,
+            newCarColor,
+            newCourse,
+            newEmail,
+            inquiryDetails, // 自由記述
+            reasonsInput: reasonsMerged,
+            procedure: procedureVal,
+            cardSummary: cardUpdateSummary || undefined,
+          })
 
-        console.log("CloudSQL顧客情報を更新中...")
-        await updateCustomer(cloudSqlCustomerId, updateData)
-        console.log("CloudSQL顧客情報が正常に更新されました:", cloudSqlCustomerId)
-      } else {
-        console.log("CloudSQLのinquiriesテーブルに直接挿入中...")
+          console.log("CloudSQL顧客情報を更新中...")
+          await updateCustomer(cloudSqlCustomerId, updateData)
+          console.log("CloudSQL顧客情報が正常に更新されました:", cloudSqlCustomerId)
+        } else {
+          console.log("CloudSQLのinquiriesテーブルに直接挿入中...")
 
-        await insertInquiry({
-          inquiryType: operation,
-          inquiryDetails: inquiryDetails || "",
-          cancellationReasons: reasonsMerged.length > 0 ? reasonsMerged : null,
-          familyName,
-          givenName,
-          email,
-          phone,
-          course,
-          carModel,
-          carColor,
-          plateInfo1: null,
-          plateInfo2: null,
-          plateInfo3: null,
-          plateInfo4: null,
-          storeName,
-          newCarModel,
-          newCarColor,
-          newCourseName: newCourse,
-          newEmail,
-        })
-        console.log("CloudSQLのinquiriesテーブルに正常に挿入されました")
+          await insertInquiry({
+            inquiryType: operation,
+            inquiryDetails: inquiryDetails || "",
+            cancellationReasons: reasonsMerged.length > 0 ? reasonsMerged : null,
+            familyName,
+            givenName,
+            email,
+            phone,
+            course,
+            carModel,
+            carColor,
+            plateInfo1: null,
+            plateInfo2: null,
+            plateInfo3: null,
+            plateInfo4: null,
+            storeName,
+            newCarModel,
+            newCarColor,
+            newCourseName: newCourse,
+            newEmail,
+          })
+          console.log("CloudSQLのinquiriesテーブルに正常に挿入されました")
+        }
+      } catch (cloudSqlError) {
+        console.error("CloudSQL処理エラー:", cloudSqlError)
+        cloudSqlStatus = `❌ 処理失敗: ${cloudSqlError instanceof Error ? cloudSqlError.message : "不明なエラー"}`
       }
-    } catch (cloudSqlError) {
-      console.error("CloudSQL処理エラー:", cloudSqlError)
-      cloudSqlStatus = `❌ 処理失敗: ${cloudSqlError instanceof Error ? cloudSqlError.message : "不明なエラー"}`
     }
 
     return NextResponse.json({
