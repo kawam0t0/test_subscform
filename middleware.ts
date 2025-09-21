@@ -24,11 +24,11 @@ export function middleware(request: NextRequest) {
   // Content Security Policy - Square APIとの連携を許可
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.squareup.com https://js.squareupsandbox.com https://web-sdk.squarecdn.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.squareup.com https://js.squareupsandbox.com https://web-sdk.squarecdn.com https://web.squarecdn.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://connect.squareup.com https://connect.squareupsandbox.com https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com",
+    "connect-src 'self' https://connect.squareup.com https://connect.squareupsandbox.com https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com https://web.squarecdn.com",
     "frame-src 'self' https://js.squareup.com https://js.squareupsandbox.com",
     "object-src 'none'",
     "base-uri 'self'",
