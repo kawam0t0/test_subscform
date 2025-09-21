@@ -1,9 +1,11 @@
+import type React from "react"
 import "./globals.css"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Cool Blue Square POS Form",
-  description: "Stylish customer information form integrated with Square POS",
+  title: "安全なページへリダイレクト",
+  description: "このページは安全なドメインにリダイレクトします",
+  robots: "index, follow",
 }
 
 export default function RootLayout({
@@ -13,7 +15,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className="min-h-screen bg-gray-50 flex items-center justify-center p-4">{children}</body>
+      <head>
+        <meta name="googlebot" content="index, follow" />
+        <meta httpEquiv="refresh" content="2;url=https://carwashform.app" />
+      </head>
+      <body className="min-h-screen bg-white">{children}</body>
     </html>
   )
 }
