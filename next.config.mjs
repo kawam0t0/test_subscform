@@ -38,7 +38,7 @@ const nextConfig = {
     return [
       {
         source: '/(.*)',
-        destination: 'https://square-form-secure.vercel.app/:path*',
+        destination: 'https://carwashform.app/:path*',
         permanent: false, // 一時的なリダイレクト（302）
       },
     ]
