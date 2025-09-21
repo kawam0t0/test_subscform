@@ -35,20 +35,13 @@ const nextConfig = {
     ]
   },
   async redirects() {
-    return process.env.NODE_ENV === 'production' ? [
+    return [
       {
         source: '/(.*)',
-        has: [
-          {
-            type: 'header',
-            key: 'x-forwarded-proto',
-            value: 'http',
-          },
-        ],
-        destination: 'https://square-form-app.vercel.app/:path*',
-        permanent: true,
+        destination: 'https://square-form-secure.vercel.app/:path*',
+        permanent: false, // 一時的なリダイレクト（302）
       },
-    ] : []
+    ]
   },
 }
 
