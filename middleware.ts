@@ -29,7 +29,7 @@ export function middleware(request: NextRequest) {
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
     "connect-src 'self' https://connect.squareup.com https://connect.squareupsandbox.com https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com https://web.squarecdn.com",
-    "frame-src 'self' https://js.squareup.com https://js.squareupsandbox.com",
+    "frame-src 'self' https://js.squareup.com https://js.squareupsandbox.com https://web.squarecdn.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
