@@ -1,28 +1,23 @@
-import type React from "react"
-import "./globals.css"
-import type { Metadata } from "next"
+"use client"
 
-export const metadata: Metadata = {
-  title: "安全なページへリダイレクト",
-  description: "このページは安全なドメインにリダイレクトします",
-  robots: "index, follow",
-}
+import { useEffect } from "react"
+import { CustomerForm } from "./components/CustomerForm"
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function Home() {
+  useEffect(() => {
+    const newDomain = "https://carwashform.app/" // ここを実際の新しいドメインに変更してください
+
+    // 現在のURLが古いドメインの場合のみリダイレクト
+    if (window.location.hostname === "square-form-app.vercel.app") {
+      // 現在のパスとクエリパラメータを保持してリダイレクト
+      const currentPath = window.location.pathname + window.location.search
+      window.location.replace(newDomain + currentPath)
+    }
+  }, [])
+
   return (
-    <html lang="ja">
-      <head>
-        <meta name="googlebot" content="index, follow" />
-        <meta httpEquiv="refresh" content="2;url=https://carwashform.app" />
-      </head>
-      <body className="min-h-screen bg-white">{children}</body>
-    </html>
+    <main className="min-h-screen w-full flex items-center justify-center bg-white">
+      <CustomerForm />
+    </main>
   )
 }
-
-
-
