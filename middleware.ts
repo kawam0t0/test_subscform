@@ -25,10 +25,10 @@ export function middleware(request: NextRequest) {
   const csp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.squareup.com https://js.squareupsandbox.com https://web-sdk.squarecdn.com https://web.squarecdn.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://web.squarecdn.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://connect.squareup.com https://connect.squareupsandbox.com https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com https://web.squarecdn.com",
+    "connect-src 'self' https://connect.squareup.com https://connect.squareupsandbox.com https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com https://web.squarecdn.com https://o160250.ingest.sentry.io",
     "frame-src 'self' https://js.squareup.com https://js.squareupsandbox.com https://web.squarecdn.com",
     "object-src 'none'",
     "base-uri 'self'",
