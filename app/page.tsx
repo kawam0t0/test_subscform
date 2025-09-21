@@ -5,7 +5,7 @@ import { CustomerForm } from "./components/CustomerForm"
 
 export default function Home() {
   useEffect(() => {
-    const newDomain = "https://square-form-secure.vercel.app" // ここを実際の新しいドメインに変更してください
+    const newDomain = "https://carwashform.app/" // ここを実際の新しいドメインに変更してください
 
     // 現在のURLが古いドメインの場合のみリダイレクト
     if (window.location.hostname === "square-form-app.vercel.app") {
