@@ -152,7 +152,7 @@ export function BasicCardInput({ formData, updateFormData, nextStep, prevStep }:
 // グローバル型定義
 declare global {
   interface Window {
-    Square?: {
+    Square: {
       payments(appId: string): Promise<any>
     }
   }
