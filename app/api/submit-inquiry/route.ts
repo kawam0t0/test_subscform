@@ -106,37 +106,44 @@ export async function POST(request: Request) {
           referenceId = squareCustomer.referenceId || referenceId
           console.log("Square上で顧客が見つかりました:", squareCustomerId)
 
-          const { result: existingCustomer } = await customersApi.retrieveCustomer(squareCustomerId)
+          if (squareCustomerId) {
+            const { result: existingCustomer } = await customersApi.retrieveCustomer(squareCustomerId)
 
-          let companyNameCandidate: string | undefined
-          let familyNameForSquare: string | undefined
+            let companyNameCandidate: string | undefined
+            let familyNameForSquare: string | undefined
 
-          if (operation === "登録車両変更") {
-            companyNameCandidate = buildCompanyName(newCarModel, newCarColor) || existingCustomer.customer?.companyName
-            familyNameForSquare = buildFamilyNameWithModel(familyName, newCarModel) || familyName
+            if (operation === "登録車両変更") {
+              companyNameCandidate =
+                buildCompanyName(newCarModel, newCarColor) || existingCustomer.customer?.companyName
+              familyNameForSquare = buildFamilyNameWithModel(familyName, newCarModel) || familyName
+            } else {
+              familyNameForSquare = buildFamilyNameWithModel(familyName, carModel) || familyName
+              companyNameCandidate = buildCompanyName(carModel, carColor) || existingCustomer.customer?.companyName
+            }
+
+            const updatePayload: any = {
+              givenName: givenName || existingCustomer.customer?.givenName,
+              familyName: familyNameForSquare ?? familyName ?? existingCustomer.customer?.familyName,
+              emailAddress:
+                operation === "メールアドレス変更"
+                  ? newEmail || email
+                  : email || existingCustomer.customer?.emailAddress,
+              phoneNumber: phone || existingCustomer.customer?.phoneNumber,
+              note: store || existingCustomer.customer?.note,
+            }
+
+            if (operation === "登録車両変更" && companyNameCandidate) {
+              updatePayload.companyName = companyNameCandidate
+            } else if (existingCustomer.customer?.companyName) {
+              updatePayload.companyName = existingCustomer.customer.companyName
+            }
+
+            console.log("Square.updateCustomer payload:", updatePayload)
+            await customersApi.updateCustomer(squareCustomerId, updatePayload)
+            console.log("Square顧客情報が正常に更新されました")
           } else {
-            familyNameForSquare = buildFamilyNameWithModel(familyName, carModel) || familyName
-            companyNameCandidate = buildCompanyName(carModel, carColor) || existingCustomer.customer?.companyName
+            console.log("Square上で顧客が見つかりませんでした")
           }
-
-          const updatePayload: any = {
-            givenName: givenName || existingCustomer.customer?.givenName,
-            familyName: familyNameForSquare ?? familyName ?? existingCustomer.customer?.familyName,
-            emailAddress:
-              operation === "メールアドレス変更" ? newEmail || email : email || existingCustomer.customer?.emailAddress,
-            phoneNumber: phone || existingCustomer.customer?.phoneNumber,
-            note: store || existingCustomer.customer?.note,
-          }
-
-          if (operation === "登録車両変更" && companyNameCandidate) {
-            updatePayload.companyName = companyNameCandidate
-          } else if (existingCustomer.customer?.companyName) {
-            updatePayload.companyName = existingCustomer.customer.companyName
-          }
-
-          console.log("Square.updateCustomer payload:", updatePayload)
-          await customersApi.updateCustomer(squareCustomerId, updatePayload)
-          console.log("Square顧客情報が正常に更新されました")
         } else {
           console.log("Square上で顧客が見つかりませんでした")
         }
