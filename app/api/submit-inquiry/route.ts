@@ -112,11 +112,11 @@ export async function POST(request: Request) {
           let familyNameForSquare: string | undefined
 
           if (operation === "登録車両変更") {
-            companyNameCandidate = buildCompanyName(newCarModel, newCarColor)
-            familyNameForSquare = buildFamilyNameWithModel(familyName, newCarModel)
+            companyNameCandidate = buildCompanyName(newCarModel, newCarColor) || existingCustomer.customer?.companyName
+            familyNameForSquare = buildFamilyNameWithModel(familyName, newCarModel) || familyName
           } else {
-            familyNameForSquare = buildFamilyNameWithModel(familyName, carModel)
-            companyNameCandidate = buildCompanyName(carModel, carColor)
+            familyNameForSquare = buildFamilyNameWithModel(familyName, carModel) || familyName
+            companyNameCandidate = buildCompanyName(carModel, carColor) || existingCustomer.customer?.companyName
           }
 
           const updatePayload: any = {
