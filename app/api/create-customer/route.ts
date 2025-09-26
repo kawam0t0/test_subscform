@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { Client, Environment, ApiError } from "square"
-import { insertCustomer, type InsertCustomerData } from "../../utils/cloudsql"
 import { appendToSheet } from "../../utils/google-sheets"
 import { formatJapanDateTime } from "../../utils/date-utils"
 import { generateReferenceId } from "../../utils/reference-id"
@@ -143,32 +142,6 @@ export async function POST(request: Request) {
     } catch (err) {
       console.error("確認メール送信エラー:", err)
     }
-
-    const customerData: InsertCustomerData = {
-      referenceId: finalReferenceId,
-      squareCustomerId: createdSquareCustomerId,
-      family_name: familyName,
-      givenName: givenName,
-      email: email,
-      phone: phone,
-      course: extractCourseName(course),
-      carModel: carModel,
-      color: carColor,
-      plateInfo1: licensePlate || null,
-      plateInfo2: null,
-      plateInfo3: null,
-      plateInfo4: null,
-      storeName: store,
-      campaignCode: campaignCode || null,
-    }
-
-    insertCustomer(customerData)
-      .then((cloudSqlCustomerId) => {
-        console.log("CloudSQL挿入成功:", cloudSqlCustomerId)
-      })
-      .catch((cloudSqlError) => {
-        console.error("CloudSQL挿入エラー:", cloudSqlError)
-      })
 
     return NextResponse.json({
       success: true,

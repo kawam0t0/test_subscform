@@ -23,22 +23,16 @@ export async function loadSquareSdk() {
       throw new Error("Required environment variable NEXT_PUBLIC_SQUARE_APP_ID is missing")
     }
 
-    if (!window.Square) {
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script")
-        script.src = "https://web.squarecdn.com/v1/square.js"
-        script.onload = () => {
-          console.log("Square.js script loaded successfully")
-          resolve()
-        }
-        script.onerror = (error) => {
-          console.error("Failed to load Square.js script:", error)
-          reject(error)
-        }
-        document.head.appendChild(script)
-      })
+    let attempts = 0
+    const maxAttempts = 50 // 5秒間待機
 
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+    while (!window.Square && attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      attempts++
+    }
+
+    if (!window.Square) {
+      throw new Error("Square SDK failed to load")
     }
 
     console.log("Initializing Square payments with:", { appId })
