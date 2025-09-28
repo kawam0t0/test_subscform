@@ -5,7 +5,7 @@ import { useState } from "react"
 import { Car, Palette } from "lucide-react"
 import type { BaseFormProps } from "../types"
 
-const carColors = ["白系", "黒系", "赤系", "青系", "黄系", "紫系", "緑系", "茶系", "紺系", "グレー系", "シルバー系"]
+const carColors = ["白系", "黒系", "赤系", "青系", "黄系", "紫系", "緑系", "茶系", "紺系", "灰系", "銀系"]
 
 export function VehicleInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [carModelError, setCarModelError] = useState<string>("")
