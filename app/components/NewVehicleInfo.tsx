@@ -5,13 +5,18 @@ import { useState } from "react"
 import { Car, Palette } from "lucide-react"
 import type { BaseFormProps } from "../types"
 
-const carColors = ["白系", "黒系", "赤系", "青系", "黄系", "紫系", "緑系", "茶系", "紺系", "灰系", "銀系"]
+const carColors = ["白系", "黒系", "赤系", "青系", "黄系", "紫系", "緑系", "茶系", "紺系", "グレー系", "シルバー系"]
 
 export function NewVehicleInfo({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [carModelError, setCarModelError] = useState<string>("")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (formData.newCarModel.length > 10) {
+      setCarModelError("車種は10文字以内で入力してください。")
+      return
+    }
 
     // 車種のバリデーション - 全角カタカナまたは半角ローマ字を許可
     if (!/^[ァ-ヶー　a-zA-Z0-9\s-]+$/.test(formData.newCarModel)) {
@@ -37,12 +42,14 @@ export function NewVehicleInfo({ formData, updateFormData, nextStep, prevStep }:
             (全角カタカナ/ローマ字で入力して下さい)
           </span>
         </label>
+        <p className="text-xs text-gray-500 mb-2">※メーカー名やグレード名ではなく、車種を記載ください（10文字以内）</p>
         <input
           id="newCarModel"
           type="text"
           value={formData.newCarModel}
           onChange={handleCarModelChange}
           required
+          maxLength={10}
           className="form-input"
           placeholder="例：タント、BMW"
         />
