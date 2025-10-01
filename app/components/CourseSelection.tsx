@@ -61,7 +61,7 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
         <h2 className="text-2xl font-bold text-gray-800 mb-2">洗車コースを選択</h2>
         {isJoining && (
           <div className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-full px-6 py-2">
-            <span className="text-sm font-semibold text-yellow-800">初月限定キャンペーン実施中！</span>
+            <span className="text-sm font-semibold text-yellow-800">10/1~11/30迄キャンペーン実施中!</span>
           </div>
         )}
       </div>
