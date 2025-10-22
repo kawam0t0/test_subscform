@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Sparkles } from "lucide-react"
+import { Check } from "lucide-react"
 import type { BaseFormProps } from "../types"
 import type React from "react"
 
@@ -9,46 +9,45 @@ const allCourses = [
   {
     id: "980",
     name: "プレミアムスタンダード",
-    price: "980円",
-    campaignPrice: "139円",
+    regularPrice: "980円",
+    campaignPrice: "139円", // Added campaign price
   },
   {
     id: "1280",
     name: "コーティングプラス",
-    price: "1280円",
-    campaignPrice: "139円",
+    regularPrice: "1280円",
+    campaignPrice: "139円", // Added campaign price
   },
   {
     id: "1480",
     name: "スーパーシャンプーナイアガラ",
-    price: "1480円",
-    campaignPrice: "399円",
+    regularPrice: "1480円",
+    campaignPrice: "339円", // Added campaign price
   },
   {
     id: "2980",
     name: ["セラミックコーティングタートル", "シェル"],
-    price: "2980円",
-    campaignPrice: "1939円",
+    regularPrice: "2980円",
+    campaignPrice: "1939円", // Added campaign price
   },
 ]
 
-// 制限付き商品を提供する店舗
 const limitedStores = ["SPLASH'N'GO!前橋50号店", "SPLASH'N'GO!伊勢崎韮塚店", "SPLASH'N'GO!足利緑町店"]
 
 export function CourseSelection({ formData, updateFormData, nextStep, prevStep }: BaseFormProps) {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
 
-  // 店舗に基づいてコースをフィルタリング
   const courses = limitedStores.includes(formData.store)
     ? allCourses.filter((course) => ["980", "1280"].includes(course.id))
     : allCourses
 
-  const isJoining = formData.operation === "入会"
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (selectedCourse) {
-      updateFormData({ course: selectedCourse })
+      updateFormData({
+        course: selectedCourse,
+        enableSubscription: true, // 入会時は自動的にサブスクリプションを有効化
+      })
       nextStep()
     } else {
       alert("コースを選択してください")
@@ -59,11 +58,10 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">洗車コースを選択</h2>
-        {isJoining && (
-          <div className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-full px-6 py-2">
-            <span className="text-sm font-semibold text-yellow-800">10/1~11/30迄キャンペーン実施中!</span>
-          </div>
-        )}
+        <div className="mt-4 bg-gradient-to-r from-red-500 to-pink-500 text-white py-3 px-6 rounded-lg shadow-lg inline-block">
+          <p className="text-lg font-bold">🎉 初月限定キャンペーン実施中！</p>
+          <p className="text-sm mt-1">2ヶ月目以降は通常価格で自動課金されます</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -77,11 +75,9 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
             }`}
             onClick={() => setSelectedCourse(Array.isArray(course.name) ? course.name.join("") : course.name)}
           >
-            {isJoining && (
-              <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                初月限定
-              </div>
-            )}
+            <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+              初月限定
+            </div>
 
             <div className="p-6 cursor-pointer flex flex-col items-center justify-center h-full">
               <h3 className="text-xl font-semibold text-gray-800 mb-3 text-center">
@@ -97,18 +93,9 @@ export function CourseSelection({ formData, updateFormData, nextStep, prevStep }
               </h3>
 
               <div className="flex flex-col items-center">
-                {isJoining ? (
-                  <>
-                    <div className="text-lg text-gray-400 line-through mb-1">通常 月額{course.price}</div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-sm text-orange-600 font-semibold">初月</span>
-                      <span className="text-4xl font-bold text-orange-600">{course.campaignPrice}</span>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2">2ヶ月目以降 月額{course.price}</div>
-                  </>
-                ) : (
-                  <div className="text-3xl font-bold text-primary">月額{course.price}</div>
-                )}
+                <div className="text-sm text-gray-500 line-through mb-1">通常 月額{course.regularPrice}</div>
+                <div className="text-3xl font-bold text-red-500 mb-1">初月 {course.campaignPrice}</div>
+                <div className="text-xs text-gray-600 mt-2">2ヶ月目以降: 月額{course.regularPrice}</div>
               </div>
             </div>
 

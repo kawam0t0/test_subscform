@@ -21,6 +21,7 @@ const stores = [
   "SPLASH'N'GO!足利緑町店",
   "SPLASH'N'GO!新前橋店",
   "SPLASH'N'GO!太田新田店",
+  "テスト店舗",
 ]
 
 export function OperationSelection({ formData, updateFormData, nextStep }: BaseFormProps) {
