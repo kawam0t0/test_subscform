@@ -116,8 +116,8 @@ async function getOrCreateStaticPlan(courseName: string, regularPrice: number, c
                 phases: [
                   {
                     cadence: "MONTHLY",
-                    ordinal: BigInt(0), // TypeScript requires bigint type
-                    periods: BigInt(1), // TypeScript requires bigint type - Only 1 billing cycle for campaign
+                    ordinal: 0 as any, // Type assertion to bypass SDK type inconsistency
+                    periods: 1 as any, // Only 1 billing cycle for campaign
                     pricing: {
                       type: "STATIC",
                       priceMoney: {
@@ -128,7 +128,7 @@ async function getOrCreateStaticPlan(courseName: string, regularPrice: number, c
                   },
                   {
                     cadence: "MONTHLY",
-                    ordinal: BigInt(1), // TypeScript requires bigint type
+                    ordinal: 1 as any, // Type assertion to bypass SDK type inconsistency
                     // No periods limit - continues indefinitely at regular price
                     pricing: {
                       type: "STATIC",
