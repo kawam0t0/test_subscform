@@ -17,7 +17,6 @@ import {
 import Link from "next/link"
 import type React from "react"
 import type { FormData } from "../types"
-import { isCampaignValid } from "../utils/campaign-utils"
 
 interface ConfirmationProps {
   formData: FormData
@@ -49,12 +48,35 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
   const handleSubmit = async () => {
     if (isSubmitting || !isAgreed) return
     setIsSubmitting(true)
-    setError(null) // エラーをリセット
+    setError(null)
 
     try {
-      await submitForm()
+      if (formData.operation === "洗車コース変更") {
+        console.log("[v0] コース変更APIを呼び出し中...")
+        const response = await fetch("/api/change-course", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || "コース変更に失敗しました")
+        }
+
+        console.log("[v0] ✅ コース変更成功:", data)
+
+        // Redirect to thank you page with success message
+        window.location.href = `/thank-you?message=${encodeURIComponent(data.message)}`
+      } else {
+        // For all other operations, use the original submitForm
+        await submitForm()
+      }
     } catch (err) {
-      console.error("フォーム送信エラー:", err)
+      console.error("[v0] ❌ フォーム送信エラー:", err)
       setError(err instanceof Error ? err.message : "エラーが発生しました。お手数ですが、最初からやり直してください。")
     } finally {
       setIsSubmitting(false)
@@ -73,14 +95,6 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
           ? "2980円"
           : ""
 
-  // キャンペーン適用チェック
-  const isCampaignApplied = isCampaignValid(
-    formData.campaignCode || "",
-    formData.store,
-    formData.operation,
-    formData.course,
-  )
-
   return (
     <div className="space-y-6">
       {error && (
@@ -98,12 +112,11 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
       <div className="bg-blue-50/80 rounded-2xl p-6 space-y-6">
         <ConfirmationItem icon={<MapPin className="w-6 h-6" />} label="入会店舗" value={formData.store} />
 
-        {/* キャンペーンコード表示 */}
-        {formData.campaignCode && (
+        {formData.operation === "洗車コース変更" && formData.referenceId && (
           <ConfirmationItem
-            icon={<Gift className="w-6 h-6" />}
-            label="キャンペーンコード"
-            value={formData.campaignCode}
+            icon={<FileText className="w-6 h-6" />}
+            label="リファレンスID"
+            value={formData.referenceId}
           />
         )}
 
@@ -128,23 +141,21 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
               label="選択されたコース"
               value={formData.course}
             />
-
-            {/* キャンペーン適用時の特別表示 */}
-            {isCampaignApplied && (
-              <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+            {formData.store === "SPLASH'N'GO!新前橋店" && formData.campaignCode === "SPGO418" && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border-2 border-yellow-200">
                 <div className="flex">
-                  <Gift className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <Gift className="w-5 h-5 text-yellow-500 flex-shrink-0" />
                   <div className="ml-3">
-                    <p className="text-sm text-red-700 font-medium">🎉 キャンペーン適用</p>
-                    <p className="text-sm text-red-600 mt-1">
-                      プレミアムスタンダードが2ヶ月間無料！3ヶ月目から月額980円が適用されます。
+                    <p className="text-sm text-yellow-700 font-medium">🎉 キャンペーン適用中！</p>
+                    <p className="text-sm text-yellow-600 mt-1">
+                      プレミアムスタンダードが2ヶ月無料！3ヶ月目から月額980円となります。
                     </p>
+                    <p className="text-xs text-yellow-600 mt-1">キャンペーンコード: {formData.campaignCode}</p>
                   </div>
                 </div>
               </div>
             )}
-
-            {formData.enableSubscription && !isCampaignApplied && (
+            {formData.enableSubscription && (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-100">
                 <div className="flex">
                   <Calendar className="w-5 h-5 text-green-500 flex-shrink-0" />
@@ -175,14 +186,12 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
           <>
             <ConfirmationItem
               icon={<CreditCard className="w-6 h-6" />}
-              label="現在のコース"
-              value={formData.currentCourse}
-            />
-            <ConfirmationItem
-              icon={<CreditCard className="w-6 h-6" />}
               label="新しいコース"
               value={formData.newCourse}
             />
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+              <p className="text-sm text-blue-700">次回請求日から新しいコースの料金が適用されます</p>
+            </div>
           </>
         )}
 
@@ -249,14 +258,9 @@ export function Confirmation({ formData, prevStep, submitForm }: ConfirmationPro
             プライバシーポリシー
           </Link>
           <span>を読み、理解し、これらに基づいて利用契約を締結することに同意します。</span>
-          {formData.enableSubscription && !isCampaignApplied && (
+          {formData.enableSubscription && (
             <span className="block mt-2 text-red-600 font-medium">
               また、定期支払いを選択したことにより、毎月自動的に料金が引き落とされることに同意します。
-            </span>
-          )}
-          {isCampaignApplied && (
-            <span className="block mt-2 text-red-600 font-medium">
-              また、キャンペーン適用により2ヶ月無料期間終了後、3ヶ月目から通常料金が適用されることに同意します。
             </span>
           )}
         </label>
